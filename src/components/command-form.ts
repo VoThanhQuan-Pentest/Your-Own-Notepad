@@ -8,13 +8,23 @@ import { button, element } from "../utils/dom";
 import { createId } from "../utils/ids";
 import { openModal } from "./modal";
 
+interface CommandFormOptions {
+  tableRow?: boolean;
+}
+
 export function openCommandForm(
   initial: CommandEntry | null,
   existingIds: ReadonlySet<string>,
+  options: CommandFormOptions = {},
 ): Promise<CommandEntry | null> {
   return new Promise((resolve) => {
     const form = element("form", "modal-form command-entry-form");
-    const name = textInput(form, "Name", initial?.name ?? "", true);
+    const name = textInput(
+      form,
+      options.tableRow ? "Function / Label" : "Name",
+      initial?.name ?? "",
+      true,
+    );
     const command = textArea(form, "Command", initial?.command ?? "", true, true);
     const description = textArea(form, "Description", initial?.description ?? "");
     const syntax = textArea(form, "Syntax", initial?.syntax ?? "", false, true);
@@ -46,7 +56,13 @@ export function openCommandForm(
     form.append(variableSection);
 
     const modal = openModal(
-      initial ? "Edit Command" : "Add Command",
+      initial
+        ? options.tableRow
+          ? "Edit Table Row"
+          : "Edit Command"
+        : options.tableRow
+          ? "Add Table Row"
+          : "Add Command",
       form,
       [
         { label: "CANCEL", action: () => finish(null) },

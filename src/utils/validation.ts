@@ -4,12 +4,14 @@ import type {
   CommandFile,
   CommandRisk,
   CommandSection,
+  CommandSectionLayout,
   CommandVariable,
 } from "../models/command-file.ts";
 
 const SUPPORTED_VERSION = 1;
 const ACTIONS = new Set<CommandAction>(["copy", "run", "open", "open-terminal"]);
 const RISKS = new Set<CommandRisk>(["safe", "caution", "danger"]);
+const SECTION_LAYOUTS = new Set<CommandSectionLayout>(["standard", "table"]);
 
 export interface ValidationIssue {
   path: string;
@@ -115,6 +117,7 @@ function readSection(
 
   const id = requiredString(value, "id", path, issues, true);
   const title = requiredString(value, "title", path, issues, true);
+  const layout = optionalEnum(value, "layout", path, issues, SECTION_LAYOUTS);
   const commandsValue = requiredArray(value, "commands", path, issues);
   const commands: CommandEntry[] = [];
 
@@ -140,7 +143,12 @@ function readSection(
     return undefined;
   }
 
-  return { id, title, commands };
+  return {
+    id,
+    title,
+    ...(layout === undefined ? {} : { layout }),
+    commands,
+  };
 }
 
 function readCommand(
@@ -337,6 +345,19 @@ function requiredEnum<T extends string>(
     return undefined;
   }
   return candidate as T;
+}
+
+function optionalEnum<T extends string>(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: ValidationIssue[],
+  options: ReadonlySet<T>,
+): T | undefined {
+  if (value[key] === undefined) {
+    return undefined;
+  }
+  return requiredEnum(value, key, path, issues, options);
 }
 
 function failure(

@@ -4,6 +4,7 @@ import { createCommandSection } from "./command-section";
 
 export interface CommandTableCallbacks {
   onAddSection(): void;
+  onAddTable(): void;
   onAddCommand(sectionId: string): void;
   onSectionToggle(sectionId: string, expanded: boolean): void;
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
@@ -34,9 +35,13 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
   }
   header.append(titleGroup);
 
-  const addSection = button("primary-button", "+ ADD SECTION");
+  const headerActions = element("div", "file-header-actions");
+  const addSection = button("secondary-button", "+ ADD SECTION");
   addSection.addEventListener("click", options.callbacks.onAddSection);
-  header.append(addSection);
+  const addTable = button("primary-button", "+ ADD TABLE");
+  addTable.addEventListener("click", options.callbacks.onAddTable);
+  headerActions.append(addSection, addTable);
+  header.append(headerActions);
 
   const content = element("div", "command-content");
   if (file.sections.length === 0) {
@@ -44,7 +49,11 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
     empty.append(element("p", undefined, "No sections yet."));
     const addFirst = button("primary-button", "+ ADD SECTION");
     addFirst.addEventListener("click", options.callbacks.onAddSection);
-    empty.append(addFirst);
+    const addFirstTable = button("secondary-button", "+ ADD TABLE");
+    addFirstTable.addEventListener("click", options.callbacks.onAddTable);
+    const emptyActions = element("div", "content-empty-actions");
+    emptyActions.append(addFirst, addFirstTable);
+    empty.append(emptyActions);
     content.append(empty);
   } else {
     file.sections.forEach((section, index) => {

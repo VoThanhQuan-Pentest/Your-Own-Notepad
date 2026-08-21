@@ -20,6 +20,15 @@
 
 .file-title-group {
   min-width: 0;
+  flex: 1;
+}
+
+.file-header-actions,
+.content-empty-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--button-gap);
 }
 
 .file-title-group h1 {
@@ -94,6 +103,8 @@
 }
 
 .section-title {
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
   font-size: var(--font-section-title);
   font-weight: 720;
@@ -101,6 +112,19 @@
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.section-layout-badge {
+  flex: 0 0 auto;
+  margin-left: 9px;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--accent-secondary) 55%, var(--border));
+  border-radius: 999px;
+  color: #b9a4ff;
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .section-count {
@@ -441,4 +465,98 @@
   padding: 14px 16px;
   color: var(--text-muted);
   gap: 16px;
+}
+
+.command-row.compact-table-row .command-cell {
+  display: grid;
+  grid-template-areas:
+    "name code actions"
+    "variables variables variables";
+  grid-template-columns: minmax(85px, 0.7fr) minmax(0, 1.3fr) auto;
+  min-height: 82px;
+  padding: 11px 14px;
+  align-content: center;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.command-row.compact-table-row .command-name-row {
+  grid-area: name;
+  align-items: center;
+}
+
+.command-row.compact-table-row .command-name {
+  max-height: 3em;
+  -webkit-line-clamp: 2;
+}
+
+.command-row.compact-table-row .command-code {
+  grid-area: code;
+  margin-top: 0;
+}
+
+.command-row.compact-table-row .command-code code {
+  padding: 7px 9px;
+}
+
+.command-row.compact-table-row .command-cell > .variable-list {
+  grid-area: variables;
+  max-height: 106px;
+  margin-top: 0;
+}
+
+.command-row.compact-table-row .compact-variable-detail .variable-list {
+  margin-top: 7px;
+}
+
+.command-row.compact-table-row .command-actions {
+  grid-area: actions;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.command-row.compact-table-row .command-actions .action-button:not(.primary-action) {
+  display: none;
+}
+
+.command-row.compact-table-row .action-button,
+.command-row.compact-table-row .more-button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: var(--font-caption);
+}
+
+.command-row.compact-table-row .info-cell {
+  display: grid;
+  grid-template-areas:
+    "summary actions"
+    "details details";
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 82px;
+  padding: 11px 14px;
+  align-content: center;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.command-row.compact-table-row .info-top {
+  grid-area: summary;
+  align-items: center;
+}
+
+.command-row.compact-table-row .command-description {
+  max-height: 3em;
+  -webkit-line-clamp: 2;
+}
+
+.command-row.compact-table-row .info-actions {
+  grid-area: actions;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.command-row.compact-table-row .expanded-content {
+  grid-area: details;
+  width: 100%;
+  margin-top: 3px;
 }

@@ -24,14 +24,18 @@ export function createCommandSection(
   const chevron = element("span", "section-chevron", initiallyExpanded ? "▾" : "▸");
   chevron.setAttribute("aria-hidden", "true");
   toggle.append(chevron, element("span", "section-title", section.title));
+  if (section.layout === "table") {
+    toggle.append(element("span", "section-layout-badge", "TABLE"));
+  }
 
   const count = element("span", "section-count", String(section.commands.length));
   count.title = `${section.commands.length} ${section.commands.length === 1 ? "command" : "commands"}`;
   header.append(toggle, count);
 
   const add = button("section-add", "+");
-  add.title = `Add command to ${section.title}`;
-  add.setAttribute("aria-label", `Add command to ${section.title}`);
+  const rowLabel = section.layout === "table" ? "row" : "command";
+  add.title = `Add ${rowLabel} to ${section.title}`;
+  add.setAttribute("aria-label", `Add ${rowLabel} to ${section.title}`);
   add.addEventListener("click", () => callbacks.onAddCommand(section.id));
   header.append(add);
 
@@ -46,7 +50,7 @@ export function createCommandSection(
 
   const columnHeader = element("div", "table-heading");
   columnHeader.append(
-    element("div", undefined, "COMMAND"),
+    element("div", undefined, section.layout === "table" ? "FUNCTION / COMMAND" : "COMMAND"),
     element("div", undefined, "INFORMATION"),
   );
   content.append(columnHeader);
@@ -67,14 +71,24 @@ export function createCommandSection(
         expandedRow = requestedRow;
       },
       callbacks.rowCallbacks,
+      section.layout === "table",
     );
     content.append(row.element);
   });
 
   if (section.commands.length === 0) {
     const empty = element("div", "section-empty");
-    empty.append(element("p", undefined, "No commands in this section."));
-    const addFirst = button("inline-button", "+ ADD COMMAND");
+    empty.append(
+      element(
+        "p",
+        undefined,
+        section.layout === "table" ? "No rows in this table." : "No commands in this section.",
+      ),
+    );
+    const addFirst = button(
+      "inline-button",
+      section.layout === "table" ? "+ ADD ROW" : "+ ADD COMMAND",
+    );
     addFirst.addEventListener("click", () => callbacks.onAddCommand(section.id));
     empty.append(addFirst);
     content.append(empty);

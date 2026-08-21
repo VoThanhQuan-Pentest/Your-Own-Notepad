@@ -40,6 +40,34 @@ test("parses a valid version 1 command file", () => {
   }
 });
 
+test("preserves backward-compatible compact table sections", () => {
+  const value = JSON.parse(validSource) as {
+    sections: Array<Record<string, unknown>>;
+  };
+  const first = value.sections[0];
+  ok(first !== undefined);
+  first.layout = "table";
+  const result = parseCommandFile(JSON.stringify(value));
+  equal(result.ok, true);
+  if (result.ok) {
+    equal(result.data.sections[0]?.layout, "table");
+  }
+});
+
+test("rejects unknown section layouts", () => {
+  const value = JSON.parse(validSource) as {
+    sections: Array<Record<string, unknown>>;
+  };
+  const first = value.sections[0];
+  ok(first !== undefined);
+  first.layout = "cards";
+  const result = parseCommandFile(JSON.stringify(value));
+  equal(result.ok, false);
+  if (!result.ok) {
+    ok(result.error.issues.some((issue) => issue.path.endsWith(".layout")));
+  }
+});
+
 test("returns a friendly invalid JSON result", () => {
   const result = parseCommandFile('{"version": 1,');
   equal(result.ok, false);

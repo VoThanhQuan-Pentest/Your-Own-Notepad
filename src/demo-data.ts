@@ -38,6 +38,7 @@ export const demoCommandFile: CommandFile = {
     {
       id: "port-scanning",
       title: "Port Scanning",
+      layout: "table",
       commands: [
         {
           id: "syn-scan",
@@ -123,6 +124,7 @@ export function buildStressFile(): CommandFile {
     sections: Array.from({ length: 20 }, (_, sectionIndex) => ({
       id: `stress-section-${sectionIndex + 1}`,
       title: `Stress Section ${String(sectionIndex + 1).padStart(2, "0")}`,
+      ...(sectionIndex % 2 === 1 ? { layout: "table" as const } : {}),
       commands: Array.from({ length: 5 }, (_, commandIndex) =>
         buildStressCommand(sectionIndex, commandIndex, longToken, longDescription),
       ),

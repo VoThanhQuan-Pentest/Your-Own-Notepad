@@ -22,8 +22,12 @@ export function createCommandRow(
   command: CommandEntry,
   requestExpansion: (row: CommandRowHandle) => void,
   callbacks: CommandRowCallbacks,
+  compactTable = false,
 ): CommandRowHandle {
-  const row = element("article", `command-row risk-${command.risk}`);
+  const row = element(
+    "article",
+    `command-row risk-${command.risk}${compactTable ? " compact-table-row" : ""}`,
+  );
   row.id = `command-${command.id}`;
   row.dataset.commandId = command.id;
 
@@ -49,8 +53,10 @@ export function createCommandRow(
 
   commandCell.append(commandHeader, codeScroller);
 
+  let variableList: HTMLElement | null = null;
   if (runtimeVariables.length > 0) {
-    const variableList = element("div", "variable-list");
+    const createdVariableList = element("div", "variable-list");
+    variableList = createdVariableList;
     runtimeVariables.forEach((variable) => {
       const label = element("label", "variable-control");
       label.append(element("span", undefined, variable.name));
@@ -63,9 +69,11 @@ export function createCommandRow(
         refreshGeneratedCommand();
       });
       label.append(input);
-      variableList.append(label);
+      createdVariableList.append(label);
     });
-    commandCell.append(variableList);
+    if (!compactTable) {
+      commandCell.append(createdVariableList);
+    }
   }
 
   const commandActions = element("div", "command-actions");
@@ -98,6 +106,11 @@ export function createCommandRow(
 
   const expanded = element("div", "expanded-content");
   expanded.hidden = true;
+  if (compactTable && variableList) {
+    const variableDetail = element("section", "detail-group compact-variable-detail");
+    variableDetail.append(element("h4", undefined, "Variables"), variableList);
+    expanded.append(variableDetail);
+  }
   appendDetail(expanded, "Description", command.description);
   appendDetail(expanded, "Syntax", command.syntax, true);
   appendDetail(expanded, "Example", command.example, true);

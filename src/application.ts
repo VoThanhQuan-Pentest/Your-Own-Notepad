@@ -5,7 +5,13 @@ import { openMenu } from "./components/menu";
 import { openConfirm, openModal, openPrompt, showMessage } from "./components/modal";
 import { createToolbar, type ToolbarHandle } from "./components/toolbar";
 import { buildStressFile, demoCommandFile } from "./demo-data";
-import type { CommandAction, CommandEntry, CommandFile, CommandSection } from "./models/command-file";
+import type {
+  CommandAction,
+  CommandEntry,
+  CommandFile,
+  CommandSection,
+  CommandSectionLayout,
+} from "./models/command-file";
 import type { FilesystemEntry } from "./models/filesystem";
 import { defaultSettings, type AppSettings } from "./models/settings";
 import { copyText } from "./services/clipboard";
@@ -397,6 +403,7 @@ export class CommandVaultApplication {
       expandAllSections: this.stressMode,
       callbacks: {
         onAddSection: () => void this.addSection(),
+        onAddTable: () => void this.addSection("table"),
         onAddCommand: (sectionId) => void this.addCommand(sectionId),
         onSectionToggle: (sectionId, isExpanded) => this.rememberSection(sectionId, isExpanded),
         onSectionMenu: (anchor, section) => this.openSectionMenu(anchor, section),
@@ -558,16 +565,25 @@ export class CommandVaultApplication {
     }
   }
 
-  private async addSection(): Promise<void> {
+  private async addSection(layout: CommandSectionLayout = "standard"): Promise<void> {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
-    const name = await openPrompt({ title: "Add Section", label: "Section Name" });
+    const tableLayout = layout === "table";
+    const name = await openPrompt({
+      title: tableLayout ? "Add Compact Table" : "Add Section",
+      label: tableLayout ? "Table Name" : "Section Name",
+    });
     if (!name) {
       return;
     }
     const existing = new Set(this.activeFile.sections.map((section) => section.id));
-    const section: CommandSection = { id: createId(name, existing), title: name, commands: [] };
+    const section: CommandSection = {
+      id: createId(name, existing),
+      title: name,
+      ...(tableLayout ? { layout: "table" as const } : {}),
+      commands: [],
+    };
     await this.updateCurrentFile((file) => file.sections.push(section));
     this.transientExpandedSections.add(sectionStateKey(this.activeFilePath, section.id));
     this.renderActiveFile();
@@ -578,7 +594,10 @@ export class CommandVaultApplication {
       return;
     }
     const existing = commandIds(this.activeFile);
-    const command = await openCommandForm(null, existing);
+    const targetSection = this.activeFile.sections.find((section) => section.id === sectionId);
+    const command = await openCommandForm(null, existing, {
+      tableRow: targetSection?.layout === "table",
+    });
     if (!command) {
       return;
     }
@@ -597,6 +616,14 @@ export class CommandVaultApplication {
     const index = this.activeFile.sections.findIndex((candidate) => candidate.id === section.id);
     openMenu(anchor, [
       { label: "Rename", action: () => this.renameSection(section.id) },
+      {
+        label: section.layout === "table" ? "Use Standard Rows" : "Use Compact Table",
+        action: () =>
+          this.setSectionLayout(
+            section.id,
+            section.layout === "table" ? "standard" : "table",
+          ),
+      },
       { label: "Move Up", disabled: index <= 0, action: () => this.moveSection(index, index - 1) },
       {
         label: "Move Down",
@@ -631,6 +658,23 @@ export class CommandVaultApplication {
 
   private async moveSection(from: number, to: number): Promise<void> {
     await this.updateCurrentFile((file) => moveItem(file.sections, from, to));
+  }
+
+  private async setSectionLayout(
+    sectionId: string,
+    layout: CommandSectionLayout,
+  ): Promise<void> {
+    await this.updateCurrentFile((file) => {
+      const section = file.sections.find((candidate) => candidate.id === sectionId);
+      if (!section) {
+        return;
+      }
+      if (layout === "table") {
+        section.layout = "table";
+      } else {
+        delete section.layout;
+      }
+    });
   }
 
   private async deleteSection(sectionId: string): Promise<void> {
@@ -683,7 +727,9 @@ export class CommandVaultApplication {
     }
     const ids = commandIds(this.activeFile);
     ids.delete(commandId);
-    const edited = await openCommandForm(location.command, ids);
+    const edited = await openCommandForm(location.command, ids, {
+      tableRow: location.section.layout === "table",
+    });
     if (!edited) {
       return;
     }
