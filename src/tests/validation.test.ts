@@ -2,6 +2,7 @@ import { parseCommandFile, serializeCommandFile } from "../utils/validation";
 import { createId } from "../utils/ids";
 import { extractVariableNames, renderCommandTemplate } from "../utils/variables";
 import { supportsDirectRun, tokenizeStructuredCommand } from "../utils/command-safety";
+import { hasTableImportErrors, parseTablePaste } from "../utils/table-import";
 
 interface TestCase {
   name: string;
@@ -165,6 +166,78 @@ test("allows structured execution and rejects shell-backed commands", () => {
     JSON.stringify(tokenizeStructuredCommand("nmap -p \"22, 80\" 'example host'")),
     JSON.stringify(["nmap", "-p", "22, 80", "example host"]),
   );
+});
+
+test("imports a fenced Markdown table with Vietnamese headers", () => {
+  const preview = parseTablePaste(
+    `GPT output:\n\n\`\`\`markdown\n| Port | Dịch vụ | Mô tả | Hành động | Rủi ro | Biến |\n| --- | --- | --- | --- | --- | --- |\n| 443 | HTTPS | Scan an HTTPS service | Open Terminal | Cảnh báo | target=192.168.1.10; ports=443 |\n| 53 | DNS | Scan a DNS service | Copy | An toàn | |\n\`\`\``,
+    "Common Ports",
+    new Set(["common-ports-row-1"]),
+  );
+  equal(preview.format, "markdown");
+  equal(hasTableImportErrors(preview), false);
+  equal(preview.commands.length, 2);
+  equal(preview.commands[0]?.id, "common-ports-row-1-2");
+  equal(preview.commands[0]?.name, "Table Row 1");
+  equal(preview.commands[0]?.command, "443");
+  equal(preview.commands[0]?.action, "open-terminal");
+  equal(preview.commands[0]?.risk, "caution");
+  equal(preview.commands[0]?.variables?.[0]?.default, "192.168.1.10");
+  ok(Boolean(preview.commands[0]?.notes?.includes("Dịch vụ: HTTPS")));
+});
+
+test("imports TSV and CSV with quoted values", () => {
+  const tsv = parseTablePaste(
+    "Command\tInformation\tRisk\nnmap -sV {{target}}\tService detection\tDanger",
+    "Nmap",
+    new Set(),
+  );
+  equal(tsv.format, "tsv");
+  equal(hasTableImportErrors(tsv), false);
+  equal(tsv.commands[0]?.description, "Service detection");
+  equal(tsv.commands[0]?.risk, "danger");
+
+  const csv = parseTablePaste(
+    'Command,Description,Notes\n"nmap -p ""22,80"" {{target}}","Comma, kept","Line one\nLine two"',
+    "Quoted CSV",
+    new Set(),
+  );
+  equal(csv.format, "csv");
+  equal(hasTableImportErrors(csv), false);
+  equal(csv.commands[0]?.command, 'nmap -p "22,80" {{target}}');
+  equal(csv.commands[0]?.description, "Comma, kept");
+  equal(csv.commands[0]?.notes, "Line one\nLine two");
+});
+
+test("keeps unknown columns and rejects invalid pasted rows", () => {
+  const unknowns = parseTablePaste(
+    "Port,Service,State\n22,SSH,open",
+    "Ports",
+    new Set(),
+  );
+  equal(hasTableImportErrors(unknowns), false);
+  equal(unknowns.commands[0]?.description, "Service: SSH");
+  equal(unknowns.commands[0]?.notes, "State: open");
+  ok(unknowns.issues.some((issue) => issue.severity === "warning"));
+
+  const invalid = parseTablePaste(
+    "Command,Risk,Variables\nnmap -sV target,urgent,1bad=value",
+    "Bad Import",
+    new Set(),
+  );
+  equal(hasTableImportErrors(invalid), true);
+  ok(invalid.issues.some((issue) => issue.message.includes("Unknown Risk")));
+  ok(invalid.issues.some((issue) => issue.message.includes("Invalid variable")));
+});
+
+test("requires a recognized command column and complete rows", () => {
+  const missingCommand = parseTablePaste("Name,Description\nHTTPS,Service", "Broken", new Set());
+  equal(hasTableImportErrors(missingCommand), true);
+  ok(missingCommand.issues.some((issue) => issue.message.includes("Command, Port, or Value")));
+
+  const incomplete = parseTablePaste("Command,Description\nnmap -sV", "Broken", new Set());
+  equal(hasTableImportErrors(incomplete), true);
+  ok(incomplete.issues.some((issue) => issue.message.includes("Expected 2 columns")));
 });
 
 let failures = 0;

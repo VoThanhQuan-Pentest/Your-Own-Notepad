@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.2.1</strong>
+  <strong>Current version: 0.3.0</strong>
 </p>
 
 <p align="center">
@@ -34,6 +34,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Nested filesystem Explorer with create, rename, delete, and refresh actions.
 - Section and command CRUD, duplication, reordering, and moving between sections.
 - Compact Table sections for dense command/port/function references without creating oversized cards.
+- Paste-to-import GPT tables with automatic Markdown, TSV, and CSV detection plus a validation preview.
 - Runtime variables parsed from `{{variable}}` placeholders.
 - Copy, structured Run, Open, and Open Terminal actions.
 - Explicit `safe`, `caution`, and `danger` risk levels.
@@ -45,7 +46,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.2.1 gives Compact Table rows automatic numbering and removes the unnecessary Name/Label field. It retains the larger typography and interface scaling introduced in 0.1.2, while keeping the shared 42/58 grid stable at every supported scale.
+Version 0.3.0 adds paste-to-import Compact Tables from GPT, Excel, or Google Sheets. It retains automatic table numbering, larger typography, and stable 42/58 command-information grid scaling.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -63,6 +64,19 @@ Use **+ ADD TABLE** when many related commands or values should be scanned as on
 - Variables stay inside MORE in table mode so collapsed rows remain compact.
 - Existing sections can switch between **Use Compact Table** and **Use Standard Rows** from the section menu without losing data.
 - Add, edit, duplicate, reorder, move, delete, search, and runtime variable behavior are shared with regular commands.
+
+### Paste a GPT table
+
+Click **+ ADD TABLE**, enter the table name, then paste a table. The live preview detects Markdown, TSV (Excel/Google Sheets), and CSV; it shows errors before anything is saved. Leave the paste field empty to create a blank Compact Table.
+
+Use a header row. `Command`, `Port`, or `Value` is required; the importer also recognizes `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk`, and `Variables` in English or Vietnamese. Unknown columns are kept in Notes.
+
+Ask GPT for this output format:
+
+```text
+Return only a Markdown table with the columns: Command, Description, Syntax, Example, Notes, Action, Risk, Variables.
+Use Variables as: target=192.168.1.10; ports=22,80,443.
+```
 
 ### Technology
 
@@ -184,6 +198,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Explorer filesystem lồng nhau với tạo, đổi tên, xóa và refresh.
 - CRUD section/command, duplicate, sắp xếp và chuyển command giữa các section.
 - Compact Table để tổng hợp dày các command, port hoặc chức năng liên quan mà không tạo quá nhiều card lớn.
+- Paste/import bảng do GPT tạo, tự nhận diện Markdown, TSV và CSV kèm preview kiểm tra dữ liệu.
 - Tự phân tích runtime variable từ placeholder `{{variable}}`.
 - Các action Copy, Run có cấu trúc, Open và Open Terminal.
 - Risk level rõ ràng: `safe`, `caution`, `danger`.
@@ -195,7 +210,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.2.1 tự đánh số hàng trong Bảng compact và loại bỏ trường Name/Label không cần thiết. Phiên bản này vẫn giữ typography lớn hơn và khả năng scale giao diện đã có từ 0.1.2, đồng thời duy trì grid 42/58 ổn định ở mọi mức scale được hỗ trợ.
+Phiên bản 0.3.0 bổ sung paste/import Bảng compact từ GPT, Excel hoặc Google Sheets. Phiên bản vẫn giữ số thứ tự tự động, typography lớn hơn và grid Command/Information 42/58 ổn định.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -213,6 +228,19 @@ Sử dụng **+ ADD TABLE** khi cần xem nhiều command hoặc giá trị liê
 - Trong table mode, variable inputs chỉ xuất hiện khi mở MORE để các hàng collapsed luôn gọn.
 - Section hiện có có thể chuyển giữa **Use Compact Table** và **Use Standard Rows** từ section menu mà không mất dữ liệu.
 - Add, edit, duplicate, reorder, move, delete, search và runtime variable dùng chung với command thông thường.
+
+### Paste bảng từ GPT
+
+Nhấn **+ ADD TABLE**, nhập tên bảng rồi paste dữ liệu. Preview sẽ tự nhận diện Markdown, TSV (Excel/Google Sheets) và CSV; lỗi được hiện trước khi bất kỳ dữ liệu nào được lưu. Có thể để trống vùng paste để tạo Compact Table rỗng.
+
+Bảng cần có hàng header. Cột bắt buộc là `Command`, `Port` hoặc `Value`; importer cũng nhận `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk` và `Variables` bằng tiếng Anh hoặc tiếng Việt. Các cột chưa nhận diện sẽ được giữ trong Notes.
+
+Bạn có thể yêu cầu GPT theo mẫu sau:
+
+```text
+Chỉ trả về một bảng Markdown với các cột: Command, Description, Syntax, Example, Notes, Action, Risk, Variables.
+Viết Variables theo dạng: target=192.168.1.10; ports=22,80,443.
+```
 
 ### Công nghệ
 

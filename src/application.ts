@@ -3,6 +3,7 @@ import { openCommandForm } from "./components/command-form";
 import { createExplorer } from "./components/explorer";
 import { openMenu } from "./components/menu";
 import { openConfirm, openModal, openPrompt, showMessage } from "./components/modal";
+import { openTableImportForm } from "./components/table-import-form";
 import { createToolbar, type ToolbarHandle } from "./components/toolbar";
 import { buildStressFile, demoCommandFile } from "./demo-data";
 import type {
@@ -569,11 +570,11 @@ export class CommandVaultApplication {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
-    const tableLayout = layout === "table";
-    const name = await openPrompt({
-      title: tableLayout ? "Add Compact Table" : "Add Section",
-      label: tableLayout ? "Table Name" : "Section Name",
-    });
+    if (layout === "table") {
+      await this.addTable();
+      return;
+    }
+    const name = await openPrompt({ title: "Add Section", label: "Section Name" });
     if (!name) {
       return;
     }
@@ -581,8 +582,27 @@ export class CommandVaultApplication {
     const section: CommandSection = {
       id: createId(name, existing),
       title: name,
-      ...(tableLayout ? { layout: "table" as const } : {}),
       commands: [],
+    };
+    await this.updateCurrentFile((file) => file.sections.push(section));
+    this.transientExpandedSections.add(sectionStateKey(this.activeFilePath, section.id));
+    this.renderActiveFile();
+  }
+
+  private async addTable(): Promise<void> {
+    if (!this.activeFile || !this.activeFilePath) {
+      return;
+    }
+    const imported = await openTableImportForm(commandIds(this.activeFile));
+    if (!imported) {
+      return;
+    }
+    const sectionIds = new Set(this.activeFile.sections.map((section) => section.id));
+    const section: CommandSection = {
+      id: createId(imported.title, sectionIds),
+      title: imported.title,
+      layout: "table",
+      commands: imported.commands,
     };
     await this.updateCurrentFile((file) => file.sections.push(section));
     this.transientExpandedSections.add(sectionStateKey(this.activeFilePath, section.id));

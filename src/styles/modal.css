@@ -158,6 +158,137 @@
   font-size: var(--code-font-size);
 }
 
+.table-import-form {
+  gap: 12px;
+}
+
+.table-import-source-field textarea {
+  min-height: 170px;
+  font-family: var(--font-code);
+  font-size: var(--code-font-size);
+  line-height: 1.5;
+}
+
+.table-import-help,
+.table-import-empty,
+.table-import-more {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.table-import-preview {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-main) 72%, var(--bg-panel));
+}
+
+.table-import-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 10px;
+}
+
+.table-import-preview-heading strong {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-family: var(--font-code);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-import-status {
+  flex: 0 0 auto;
+  color: #78dba9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.table-import-status.error {
+  color: #f5a3aa;
+}
+
+.table-import-sample {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.table-import-sample-row {
+  display: grid;
+  grid-template-columns: 32px minmax(120px, 0.9fr) minmax(0, 1.1fr);
+  min-width: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-import-sample-row:last-of-type {
+  border-bottom: 0;
+}
+
+.table-import-sample-number,
+.table-import-sample code,
+.table-import-sample-info {
+  min-width: 0;
+  padding: 7px 8px;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-import-sample-number {
+  color: var(--accent-hover);
+  font-family: var(--font-code);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.table-import-sample code {
+  border-right: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+.table-import-sample-info {
+  color: var(--text-secondary);
+}
+
+.table-import-more {
+  padding: 7px 8px;
+  border-top: 1px solid var(--border);
+}
+
+.table-import-issues {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 5px;
+}
+
+.table-import-issue {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.table-import-issue.error {
+  color: #f5a3aa;
+}
+
+.table-import-issue.warning {
+  color: #f1c15a;
+}
+
 .form-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
