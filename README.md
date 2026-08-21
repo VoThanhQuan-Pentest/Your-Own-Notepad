@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.2.0</strong>
+  <strong>Current version: 0.2.1</strong>
 </p>
 
 <p align="center">
@@ -45,7 +45,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.2.0 adds Compact Tables while retaining the larger typography and interface scaling introduced in 0.1.2. The shared 42/58 grid remains stable at every supported scale.
+Version 0.2.1 gives Compact Table rows automatic numbering and removes the unnecessary Name/Label field. It retains the larger typography and interface scaling introduced in 0.1.2, while keeping the shared 42/58 grid stable at every supported scale.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -57,7 +57,8 @@ Version 0.2.0 adds Compact Tables while retaining the larger typography and inte
 
 Use **+ ADD TABLE** when many related commands or values should be scanned as one dense reference—for example common ports, Nmap scan modes, service probes, or Wireshark filters.
 
-- The left 42% column contains the function label, generated command/value, and a COPY button at the end of every row.
+- The left 42% column contains an automatically maintained row number, generated command/value, and a COPY button at the end of every row.
+- Table rows do not require a separate Name or Label; numbering updates automatically after add, delete, duplicate, or reorder operations.
 - The right 58% column contains description, risk, and MORE/LESS details for variables, syntax, examples, and notes.
 - Variables stay inside MORE in table mode so collapsed rows remain compact.
 - Existing sections can switch between **Use Compact Table** and **Use Standard Rows** from the section menu without losing data.
@@ -194,7 +195,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.2.0 bổ sung Bảng compact, đồng thời giữ typography lớn hơn và khả năng scale giao diện đã có từ 0.1.2. Grid 42/58 dùng chung vẫn ổn định ở mọi mức scale được hỗ trợ.
+Phiên bản 0.2.1 tự đánh số hàng trong Bảng compact và loại bỏ trường Name/Label không cần thiết. Phiên bản này vẫn giữ typography lớn hơn và khả năng scale giao diện đã có từ 0.1.2, đồng thời duy trì grid 42/58 ổn định ở mọi mức scale được hỗ trợ.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -206,7 +207,8 @@ Phiên bản 0.2.0 bổ sung Bảng compact, đồng thời giữ typography l�
 
 Sử dụng **+ ADD TABLE** khi cần xem nhiều command hoặc giá trị liên quan trong cùng một bảng—ví dụ danh sách port phổ biến, các chế độ scan Nmap, service probe hoặc Wireshark filter.
 
-- Cột trái 42% chứa tên chức năng, command/value đã generate và nút COPY ở cuối mỗi hàng.
+- Cột trái 42% chứa số thứ tự tự động, command/value đã generate và nút COPY ở cuối mỗi hàng.
+- Hàng trong bảng không cần nhập Name hoặc Label; số thứ tự tự cập nhật sau khi thêm, xóa, duplicate hoặc sắp xếp lại.
 - Cột phải 58% chứa description, risk và MORE/LESS cho variables, syntax, example và notes.
 - Trong table mode, variable inputs chỉ xuất hiện khi mở MORE để các hàng collapsed luôn gọn.
 - Section hiện có có thể chuyển giữa **Use Compact Table** và **Use Standard Rows** từ section menu mà không mất dữ liệu.

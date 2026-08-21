@@ -50,13 +50,13 @@ export function createCommandSection(
 
   const columnHeader = element("div", "table-heading");
   columnHeader.append(
-    element("div", undefined, section.layout === "table" ? "FUNCTION / COMMAND" : "COMMAND"),
+    element("div", undefined, section.layout === "table" ? "NO. / COMMAND" : "COMMAND"),
     element("div", undefined, "INFORMATION"),
   );
   content.append(columnHeader);
 
   let expandedRow: CommandRowHandle | null = null;
-  section.commands.forEach((command) => {
+  section.commands.forEach((command, commandIndex) => {
     const row = createCommandRow(
       command,
       (requestedRow) => {
@@ -72,6 +72,7 @@ export function createCommandSection(
       },
       callbacks.rowCallbacks,
       section.layout === "table",
+      commandIndex + 1,
     );
     content.append(row.element);
   });

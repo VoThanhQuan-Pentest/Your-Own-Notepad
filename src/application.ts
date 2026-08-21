@@ -597,6 +597,7 @@ export class CommandVaultApplication {
     const targetSection = this.activeFile.sections.find((section) => section.id === sectionId);
     const command = await openCommandForm(null, existing, {
       tableRow: targetSection?.layout === "table",
+      tableRowNumber: (targetSection?.commands.length ?? 0) + 1,
     });
     if (!command) {
       return;

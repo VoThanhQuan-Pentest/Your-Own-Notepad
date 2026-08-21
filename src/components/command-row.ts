@@ -23,6 +23,7 @@ export function createCommandRow(
   requestExpansion: (row: CommandRowHandle) => void,
   callbacks: CommandRowCallbacks,
   compactTable = false,
+  tableRowNumber?: number,
 ): CommandRowHandle {
   const row = element(
     "article",
@@ -33,11 +34,21 @@ export function createCommandRow(
 
   const commandCell = element("div", "command-cell");
   const commandHeader = element("div", "command-name-row");
-  commandHeader.append(element("h3", "command-name", command.name));
+  const visibleName = compactTable
+    ? String(tableRowNumber ?? 1).padStart(2, "0")
+    : command.name;
+  commandHeader.append(
+    element(
+      compactTable ? "span" : "h3",
+      compactTable ? "compact-row-number" : "command-name",
+      visibleName,
+    ),
+  );
 
   const menu = button("row-menu", "⋮");
-  menu.title = `Actions for ${command.name}`;
-  menu.setAttribute("aria-label", `Actions for ${command.name}`);
+  const accessibleName = compactTable ? `table row ${visibleName}` : command.name;
+  menu.title = `Actions for ${accessibleName}`;
+  menu.setAttribute("aria-label", `Actions for ${accessibleName}`);
   menu.addEventListener("click", () => callbacks.onMenu(menu, command));
   commandHeader.append(menu);
 

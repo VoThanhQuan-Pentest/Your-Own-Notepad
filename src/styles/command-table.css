@@ -472,7 +472,7 @@
   grid-template-areas:
     "name code actions"
     "variables variables variables";
-  grid-template-columns: minmax(85px, 0.7fr) minmax(0, 1.3fr) auto;
+  grid-template-columns: minmax(72px, 0.35fr) minmax(0, 1.65fr) auto;
   min-height: 82px;
   padding: 11px 14px;
   align-content: center;
@@ -485,9 +485,14 @@
   align-items: center;
 }
 
-.command-row.compact-table-row .command-name {
-  max-height: 3em;
-  -webkit-line-clamp: 2;
+.compact-row-number {
+  min-width: 2.25em;
+  color: var(--accent-bright);
+  font-family: var(--font-code);
+  font-size: var(--font-command-name);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 
 .command-row.compact-table-row .command-code {

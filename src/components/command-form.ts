@@ -10,6 +10,7 @@ import { openModal } from "./modal";
 
 interface CommandFormOptions {
   tableRow?: boolean;
+  tableRowNumber?: number;
 }
 
 export function openCommandForm(
@@ -19,12 +20,7 @@ export function openCommandForm(
 ): Promise<CommandEntry | null> {
   return new Promise((resolve) => {
     const form = element("form", "modal-form command-entry-form");
-    const name = textInput(
-      form,
-      options.tableRow ? "Function / Label" : "Name",
-      initial?.name ?? "",
-      true,
-    );
+    const name = options.tableRow ? null : textInput(form, "Name", initial?.name ?? "", true);
     const command = textArea(form, "Command", initial?.command ?? "", true, true);
     const description = textArea(form, "Description", initial?.description ?? "");
     const syntax = textArea(form, "Syntax", initial?.syntax ?? "", false, true);
@@ -84,11 +80,13 @@ export function openCommandForm(
     });
 
     function save(): void {
-      const nameValue = name.value.trim();
+      const nameValue = options.tableRow
+        ? initial?.name.trim() || `Table Row ${options.tableRowNumber ?? 1}`
+        : name?.value.trim() ?? "";
       const commandValue = command.value.trim();
       if (!nameValue) {
         modal.setError("Name is required.");
-        name.focus();
+        name?.focus();
         return;
       }
       if (!commandValue) {
@@ -144,7 +142,7 @@ export function openCommandForm(
       resolve(value);
     }
 
-    queueMicrotask(() => name.focus());
+    queueMicrotask(() => (name ?? command).focus());
   });
 }
 
