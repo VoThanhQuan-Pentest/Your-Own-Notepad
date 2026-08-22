@@ -61,6 +61,7 @@ interface WorkspaceSnapshot {
   expandedFolders: Set<string>;
   transientExpandedSections: Set<string>;
   sectionStateInitializedFiles: Set<string>;
+  exampleColumnOverrides: Map<string, boolean>;
 }
 
 export class CommandVaultApplication {
@@ -83,6 +84,7 @@ export class CommandVaultApplication {
   private readonly expandedFolders = new Set<string>();
   private readonly transientExpandedSections = new Set<string>();
   private readonly sectionStateInitializedFiles = new Set<string>();
+  private readonly exampleColumnOverrides = new Map<string, boolean>();
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -208,6 +210,7 @@ export class CommandVaultApplication {
       expandedFolders: new Set(this.expandedFolders),
       transientExpandedSections: new Set(this.transientExpandedSections),
       sectionStateInitializedFiles: new Set(this.sectionStateInitializedFiles),
+      exampleColumnOverrides: new Map(this.exampleColumnOverrides),
     };
   }
 
@@ -223,6 +226,7 @@ export class CommandVaultApplication {
     replaceSet(this.expandedFolders, snapshot.expandedFolders);
     replaceSet(this.transientExpandedSections, snapshot.transientExpandedSections);
     replaceSet(this.sectionStateInitializedFiles, snapshot.sectionStateInitializedFiles);
+    replaceMap(this.exampleColumnOverrides, snapshot.exampleColumnOverrides);
   }
 
   private async openWorkspace(path: string, restoreLastFile: boolean): Promise<void> {
@@ -238,6 +242,7 @@ export class CommandVaultApplication {
     this.expandedFolders.clear();
     this.transientExpandedSections.clear();
     this.sectionStateInitializedFiles.clear();
+    this.exampleColumnOverrides.clear();
     this.renderLoading("Reading workspace…");
     await this.refreshWorkspace(false);
 
@@ -402,11 +407,14 @@ export class CommandVaultApplication {
       expandedSections: expanded,
       sectionStateInitialized,
       expandAllSections: this.stressMode,
+      isExampleColumnVisible: (section) => this.isExampleColumnVisible(section),
       callbacks: {
         onAddSection: () => void this.addSection(),
         onAddTable: () => void this.addSection("table"),
         onAddCommand: (sectionId) => void this.addCommand(sectionId),
         onSectionToggle: (sectionId, isExpanded) => this.rememberSection(sectionId, isExpanded),
+        onExampleColumnToggle: (sectionId, visible) =>
+          this.setExampleColumnVisible(sectionId, visible),
         onSectionMenu: (anchor, section) => this.openSectionMenu(anchor, section),
         onCommandMenu: (anchor, command) => this.openCommandMenu(anchor, command),
         onCommandAction: (action, command, generated, trigger) =>
@@ -891,6 +899,24 @@ export class CommandVaultApplication {
     stateFiles.add(this.activeFilePath);
     this.settings.sectionStateFiles = [...stateFiles];
     void this.persistSettings(false);
+  }
+
+  private isExampleColumnVisible(section: CommandSection): boolean {
+    if (!this.activeFilePath || section.layout !== "table") {
+      return false;
+    }
+    if (!section.commands.some((command) => command.example?.trim())) {
+      return false;
+    }
+    return this.exampleColumnOverrides.get(sectionStateKey(this.activeFilePath, section.id)) ?? true;
+  }
+
+  private setExampleColumnVisible(sectionId: string, visible: boolean): void {
+    if (!this.activeFilePath) {
+      return;
+    }
+    this.exampleColumnOverrides.set(sectionStateKey(this.activeFilePath, sectionId), visible);
+    this.renderActiveFile();
   }
 
   private async performCommandAction(

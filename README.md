@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.3.0</strong>
+  <strong>Current version: 0.4.0</strong>
 </p>
 
 <p align="center">
@@ -35,6 +35,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Section and command CRUD, duplication, reordering, and moving between sections.
 - Compact Table sections for dense command/port/function references without creating oversized cards.
 - Paste-to-import GPT tables with automatic Markdown, TSV, and CSV detection plus a validation preview.
+- Per-table Example column that automatically appears when examples are available.
 - Runtime variables parsed from `{{variable}}` placeholders.
 - Copy, structured Run, Open, and Open Terminal actions.
 - Explicit `safe`, `caution`, and `danger` risk levels.
@@ -46,7 +47,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.3.0 adds paste-to-import Compact Tables from GPT, Excel, or Google Sheets. It retains automatic table numbering, larger typography, and stable 42/58 command-information grid scaling.
+Version 0.4.0 adds a per-table Example column. Tables with examples automatically use a 35/35/30 Command, Information, Example layout; concept-only tables retain the compact 42/58 layout.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -60,21 +61,29 @@ Use **+ ADD TABLE** when many related commands or values should be scanned as on
 
 - The left 42% column contains an automatically maintained row number, generated command/value, and a COPY button at the end of every row.
 - Table rows do not require a separate Name or Label; numbering updates automatically after add, delete, duplicate, or reorder operations.
-- The right 58% column contains description, risk, and MORE/LESS details for variables, syntax, examples, and notes.
+- The Information column contains description, risk, and MORE/LESS details for variables, syntax, notes, and hidden examples.
 - Variables stay inside MORE in table mode so collapsed rows remain compact.
 - Existing sections can switch between **Use Compact Table** and **Use Standard Rows** from the section menu without losing data.
 - Add, edit, duplicate, reorder, move, delete, search, and runtime variable behavior are shared with regular commands.
+
+### Example column
+
+When a Compact Table contains at least one Example, its **EXAMPLES** button is available in the section header and the third column appears automatically. Click the button to hide or show that column for the current app session.
+
+- The visible layout is **35% Command / 35% Information / 30% Example**.
+- Click an Example cell to copy its exact text; an empty Example displays `—`.
+- When the column is visible, Example is not duplicated inside MORE. Hide the column to see it in MORE again.
 
 ### Paste a GPT table
 
 Click **+ ADD TABLE**, enter the table name, then paste a table. The live preview detects Markdown, TSV (Excel/Google Sheets), and CSV; it shows errors before anything is saved. Leave the paste field empty to create a blank Compact Table.
 
-Use a header row. `Command`, `Port`, or `Value` is required; the importer also recognizes `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk`, and `Variables` in English or Vietnamese. Unknown columns are kept in Notes.
+Use a header row. `Command`, `Port`, or `Value` is required; the importer also recognizes `Service`, `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk`, and `Variables` in English or Vietnamese. A separate Service value is appended to Command after a tab; unknown columns are kept in Notes.
 
 Ask GPT for this output format:
 
 ```text
-Return only a Markdown table with the columns: Command, Description, Syntax, Example, Notes, Action, Risk, Variables.
+Return only a Markdown table with the columns: Command, Service, Description, Syntax, Example, Notes, Action, Risk, Variables.
 Use Variables as: target=192.168.1.10; ports=22,80,443.
 ```
 
@@ -199,6 +208,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - CRUD section/command, duplicate, sắp xếp và chuyển command giữa các section.
 - Compact Table để tổng hợp dày các command, port hoặc chức năng liên quan mà không tạo quá nhiều card lớn.
 - Paste/import bảng do GPT tạo, tự nhận diện Markdown, TSV và CSV kèm preview kiểm tra dữ liệu.
+- Cột Example riêng theo từng Table, tự hiện khi Table có ví dụ.
 - Tự phân tích runtime variable từ placeholder `{{variable}}`.
 - Các action Copy, Run có cấu trúc, Open và Open Terminal.
 - Risk level rõ ràng: `safe`, `caution`, `danger`.
@@ -210,7 +220,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.3.0 bổ sung paste/import Bảng compact từ GPT, Excel hoặc Google Sheets. Phiên bản vẫn giữ số thứ tự tự động, typography lớn hơn và grid Command/Information 42/58 ổn định.
+Phiên bản 0.4.0 bổ sung cột Example riêng cho từng Table. Table có ví dụ tự dùng bố cục 35/35/30 cho Command, Information và Example; Table chỉ lưu khái niệm vẫn giữ layout 42/58.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -224,21 +234,29 @@ Sử dụng **+ ADD TABLE** khi cần xem nhiều command hoặc giá trị liê
 
 - Cột trái 42% chứa số thứ tự tự động, command/value đã generate và nút COPY ở cuối mỗi hàng.
 - Hàng trong bảng không cần nhập Name hoặc Label; số thứ tự tự cập nhật sau khi thêm, xóa, duplicate hoặc sắp xếp lại.
-- Cột phải 58% chứa description, risk và MORE/LESS cho variables, syntax, example và notes.
+- Cột Information chứa description, risk và MORE/LESS cho variables, syntax, notes và Example khi cột Example đang ẩn.
 - Trong table mode, variable inputs chỉ xuất hiện khi mở MORE để các hàng collapsed luôn gọn.
 - Section hiện có có thể chuyển giữa **Use Compact Table** và **Use Standard Rows** từ section menu mà không mất dữ liệu.
 - Add, edit, duplicate, reorder, move, delete, search và runtime variable dùng chung với command thông thường.
+
+### Cột Example
+
+Khi một Compact Table có ít nhất một Example, nút **EXAMPLES** xuất hiện ở section header và cột thứ ba tự hiển thị. Nhấn nút để ẩn/hiện cột trong phiên ứng dụng hiện tại.
+
+- Bố cục khi hiện là **35% Command / 35% Information / 30% Example**.
+- Nhấn trực tiếp vào ô Example để copy đúng nội dung; Example trống hiển thị `—`.
+- Khi cột đang hiện, Example không lặp lại trong MORE; ẩn cột để xem Example trong MORE trở lại.
 
 ### Paste bảng từ GPT
 
 Nhấn **+ ADD TABLE**, nhập tên bảng rồi paste dữ liệu. Preview sẽ tự nhận diện Markdown, TSV (Excel/Google Sheets) và CSV; lỗi được hiện trước khi bất kỳ dữ liệu nào được lưu. Có thể để trống vùng paste để tạo Compact Table rỗng.
 
-Bảng cần có hàng header. Cột bắt buộc là `Command`, `Port` hoặc `Value`; importer cũng nhận `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk` và `Variables` bằng tiếng Anh hoặc tiếng Việt. Các cột chưa nhận diện sẽ được giữ trong Notes.
+Bảng cần có hàng header. Cột bắt buộc là `Command`, `Port` hoặc `Value`; importer cũng nhận `Service`, `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk` và `Variables` bằng tiếng Anh hoặc tiếng Việt. Nếu Service nằm ở cột riêng, ứng dụng ghép nó vào Command bằng một tab; các cột chưa nhận diện sẽ được giữ trong Notes.
 
 Bạn có thể yêu cầu GPT theo mẫu sau:
 
 ```text
-Chỉ trả về một bảng Markdown với các cột: Command, Description, Syntax, Example, Notes, Action, Risk, Variables.
+Chỉ trả về một bảng Markdown với các cột: Command, Service, Description, Syntax, Example, Notes, Action, Risk, Variables.
 Viết Variables theo dạng: target=192.168.1.10; ports=22,80,443.
 ```
 

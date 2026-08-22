@@ -31,7 +31,7 @@ export function openTableImportForm(
     const help = element(
       "p",
       "table-import-help",
-      "Accepted columns: Command/Port/Value, Description/Information, Syntax, Example, Notes, Action, Risk, and Variables. English and Vietnamese headers are accepted.",
+      "Accepted columns: Command/Port/Value, Service, Description/Information, Syntax, Example, Notes, Action, Risk, and Variables. English and Vietnamese headers are accepted.",
     );
     const preview = element("section", "table-import-preview");
     preview.setAttribute("aria-live", "polite");

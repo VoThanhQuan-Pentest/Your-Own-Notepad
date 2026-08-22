@@ -7,6 +7,7 @@ export interface CommandTableCallbacks {
   onAddTable(): void;
   onAddCommand(sectionId: string): void;
   onSectionToggle(sectionId: string, expanded: boolean): void;
+  onExampleColumnToggle(sectionId: string, visible: boolean): void;
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
   onCommandMenu(anchor: HTMLButtonElement, command: CommandEntry): void;
   onCommandAction(
@@ -21,6 +22,7 @@ interface CommandTableOptions {
   expandedSections: ReadonlySet<string>;
   sectionStateInitialized?: boolean;
   expandAllSections?: boolean;
+  isExampleColumnVisible(section: CommandSection): boolean;
   callbacks: CommandTableCallbacks;
 }
 
@@ -64,8 +66,10 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
       content.append(
         createCommandSection(section, expanded, {
           onToggle: options.callbacks.onSectionToggle,
+          onExampleColumnToggle: options.callbacks.onExampleColumnToggle,
           onAddCommand: options.callbacks.onAddCommand,
           onSectionMenu: options.callbacks.onSectionMenu,
+          showExampleColumn: options.isExampleColumnVisible(section),
           rowCallbacks: {
             onAction: options.callbacks.onCommandAction,
             onMenu: options.callbacks.onCommandMenu,

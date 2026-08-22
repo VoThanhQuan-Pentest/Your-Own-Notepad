@@ -24,10 +24,11 @@ export function createCommandRow(
   callbacks: CommandRowCallbacks,
   compactTable = false,
   tableRowNumber?: number,
+  showExampleColumn = false,
 ): CommandRowHandle {
   const row = element(
     "article",
-    `command-row risk-${command.risk}${compactTable ? " compact-table-row" : ""}`,
+    `command-row risk-${command.risk}${compactTable ? " compact-table-row" : ""}${showExampleColumn ? " with-example-column" : ""}`,
   );
   row.id = `command-${command.id}`;
   row.dataset.commandId = command.id;
@@ -124,7 +125,9 @@ export function createCommandRow(
   }
   appendDetail(expanded, "Description", command.description);
   appendDetail(expanded, "Syntax", command.syntax, true);
-  appendDetail(expanded, "Example", command.example, true);
+  if (!showExampleColumn) {
+    appendDetail(expanded, "Example", command.example, true);
+  }
   appendDetail(expanded, "Notes", command.notes);
 
   const moreButton = button("more-button", "MORE");
@@ -135,7 +138,11 @@ export function createCommandRow(
   const infoActions = element("div", "info-actions");
   infoActions.append(moreButton);
   infoCell.append(infoTop, expanded, infoActions);
-  row.append(commandCell, infoCell);
+  if (showExampleColumn) {
+    row.append(commandCell, infoCell, createExampleCell(command, callbacks, visibleName));
+  } else {
+    row.append(commandCell, infoCell);
+  }
 
   const handle: CommandRowHandle = {
     element: row,
@@ -164,6 +171,23 @@ export function createCommandRow(
         ? "This generated command uses shell syntax or elevation and cannot run directly."
         : "";
   }
+}
+
+function createExampleCell(
+  command: CommandEntry,
+  callbacks: CommandRowCallbacks,
+  visibleName: string,
+): HTMLElement {
+  if (!command.example) {
+    return element("div", "example-cell example-empty", "—");
+  }
+  const copyExample = button("example-cell example-copy", command.example);
+  copyExample.title = "Copy example";
+  copyExample.setAttribute("aria-label", `Copy example for ${visibleName}`);
+  copyExample.addEventListener("click", () => {
+    callbacks.onAction("copy", command, command.example ?? "", copyExample);
+  });
+  return copyExample;
 }
 
 function mergeRuntimeVariables(command: CommandEntry) {

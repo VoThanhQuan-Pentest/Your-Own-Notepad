@@ -32,6 +32,7 @@ interface ParsedGrid {
 
 type ColumnTarget =
   | "command"
+  | "service"
   | "description"
   | "syntax"
   | "example"
@@ -57,6 +58,7 @@ const COLUMN_ALIASES: Record<ColumnTarget, ReadonlySet<string>> = {
     "value",
     "giatri",
   ]),
+  service: new Set(["service", "dichvu"]),
   description: new Set([
     "description",
     "desc",
@@ -155,11 +157,13 @@ export function parseTablePaste(
       }
     });
 
-    const command = values.get("command") ?? "";
-    if (!command) {
+    const commandValue = values.get("command") ?? "";
+    if (!commandValue) {
       issues.push({ severity: "error", row: row.row, message: "Command/Port/Value is required." });
       return;
     }
+    const service = values.get("service") ?? "";
+    const command = service ? `${commandValue}\t${service}` : commandValue;
 
     let description = values.get("description") ?? "";
     if (!description && unknownValues.length > 0) {

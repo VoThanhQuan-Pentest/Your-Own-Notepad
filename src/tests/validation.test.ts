@@ -179,11 +179,11 @@ test("imports a fenced Markdown table with Vietnamese headers", () => {
   equal(preview.commands.length, 2);
   equal(preview.commands[0]?.id, "common-ports-row-1-2");
   equal(preview.commands[0]?.name, "Table Row 1");
-  equal(preview.commands[0]?.command, "443");
+  equal(preview.commands[0]?.command, "443\tHTTPS");
   equal(preview.commands[0]?.action, "open-terminal");
   equal(preview.commands[0]?.risk, "caution");
   equal(preview.commands[0]?.variables?.[0]?.default, "192.168.1.10");
-  ok(Boolean(preview.commands[0]?.notes?.includes("Dịch vụ: HTTPS")));
+  equal(preview.commands[0]?.notes, undefined);
 });
 
 test("imports TSV and CSV with quoted values", () => {
@@ -211,12 +211,13 @@ test("imports TSV and CSV with quoted values", () => {
 
 test("keeps unknown columns and rejects invalid pasted rows", () => {
   const unknowns = parseTablePaste(
-    "Port,Service,State\n22,SSH,open",
+    "Port,Service,Owner,State\n22,SSH,Network,open",
     "Ports",
     new Set(),
   );
   equal(hasTableImportErrors(unknowns), false);
-  equal(unknowns.commands[0]?.description, "Service: SSH");
+  equal(unknowns.commands[0]?.command, "22\tSSH");
+  equal(unknowns.commands[0]?.description, "Owner: Network");
   equal(unknowns.commands[0]?.notes, "State: open");
   ok(unknowns.issues.some((issue) => issue.severity === "warning"));
 

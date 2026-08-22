@@ -4,9 +4,11 @@ import { createCommandRow, type CommandRowCallbacks, type CommandRowHandle } fro
 
 interface CommandSectionCallbacks {
   onToggle(sectionId: string, expanded: boolean): void;
+  onExampleColumnToggle(sectionId: string, visible: boolean): void;
   onAddCommand(sectionId: string): void;
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
   rowCallbacks: CommandRowCallbacks;
+  showExampleColumn: boolean;
 }
 
 export function createCommandSection(
@@ -32,6 +34,24 @@ export function createCommandSection(
   count.title = `${section.commands.length} ${section.commands.length === 1 ? "command" : "commands"}`;
   header.append(toggle, count);
 
+  const hasExamples = section.layout === "table" && section.commands.some((command) => command.example?.trim());
+  if (hasExamples) {
+    const examples = button(
+      `section-examples${callbacks.showExampleColumn ? " active" : ""}`,
+      "EXAMPLES",
+    );
+    examples.setAttribute("aria-pressed", String(callbacks.showExampleColumn));
+    examples.title = callbacks.showExampleColumn ? "Hide Example column" : "Show Example column";
+    examples.setAttribute(
+      "aria-label",
+      callbacks.showExampleColumn ? "Hide Example column" : "Show Example column",
+    );
+    examples.addEventListener("click", () =>
+      callbacks.onExampleColumnToggle(section.id, !callbacks.showExampleColumn),
+    );
+    header.append(examples);
+  }
+
   const add = button("section-add", "+");
   const rowLabel = section.layout === "table" ? "row" : "command";
   add.title = `Add ${rowLabel} to ${section.title}`;
@@ -48,11 +68,17 @@ export function createCommandSection(
   const content = element("div", "section-content");
   content.hidden = !initiallyExpanded;
 
-  const columnHeader = element("div", "table-heading");
+  const columnHeader = element(
+    "div",
+    `table-heading${callbacks.showExampleColumn ? " with-example-column" : ""}`,
+  );
   columnHeader.append(
     element("div", undefined, section.layout === "table" ? "NO. / COMMAND" : "COMMAND"),
     element("div", undefined, "INFORMATION"),
   );
+  if (callbacks.showExampleColumn) {
+    columnHeader.append(element("div", undefined, "EXAMPLE"));
+  }
   content.append(columnHeader);
 
   let expandedRow: CommandRowHandle | null = null;
@@ -73,6 +99,7 @@ export function createCommandSection(
       callbacks.rowCallbacks,
       section.layout === "table",
       commandIndex + 1,
+      callbacks.showExampleColumn,
     );
     content.append(row.element);
   });
