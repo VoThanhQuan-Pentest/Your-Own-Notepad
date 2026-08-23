@@ -26,10 +26,10 @@ import { copyText } from "./services/clipboard";
 import {
   createCommandFile,
   createFolder,
-  deleteEntry,
   listDirectory,
   readCommandFile,
   renameEntry,
+  trashEntry,
   writeCommandFile,
 } from "./services/filesystem";
 import { isTauriRuntime, normalizeServiceError } from "./services/runtime";
@@ -37,11 +37,13 @@ import { loadSettings, saveSettings } from "./services/settings";
 import { chooseWorkspace } from "./services/workspace";
 import { restoreWindowSize } from "./services/window";
 import { button, element } from "./utils/dom";
+import { SessionHistory } from "./utils/history";
 import { createId } from "./utils/ids";
 import {
   createSearchDocument,
   createSearchTextCache,
-  searchDocuments,
+  rankSearchDocuments,
+  type RankedSearchResult,
   type SearchDocument,
 } from "./utils/search";
 import { parseCommandFile, serializeCommandFile } from "./utils/validation";
@@ -94,7 +96,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.6.0";
+  private appVersion = "0.6.1";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -108,6 +110,7 @@ export class CommandVaultApplication {
   private readonly transientExpandedSections = new Set<string>();
   private readonly sectionStateInitializedFiles = new Set<string>();
   private readonly exampleColumnOverrides = new Map<string, boolean>();
+  private readonly fileHistory = new SessionHistory<CommandFile>(50, cloneCommandFile);
   private workspaceLoadGeneration = 0;
   private searchTimer: number | null = null;
   private searchGeneration = 0;
@@ -147,7 +150,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.6.0 (development)";
+      this.appVersion = "0.6.1 (development)";
     }
 
     if (!this.desktopRuntime) {
@@ -280,6 +283,7 @@ export class CommandVaultApplication {
     this.transientExpandedSections.clear();
     this.sectionStateInitializedFiles.clear();
     this.exampleColumnOverrides.clear();
+    this.fileHistory.clear();
     this.renderLoading("Reading workspace…");
     await this.refreshWorkspace(false);
 
@@ -403,6 +407,7 @@ export class CommandVaultApplication {
   }
 
   private async refreshWorkspaceFromUi(): Promise<void> {
+    this.fileHistory.clear();
     try {
       await this.refreshWorkspace(true);
     } catch (error) {
@@ -499,11 +504,15 @@ export class CommandVaultApplication {
         this.settings.sectionStateFiles.includes(this.activeFilePath));
 
     const table = createCommandTable(this.activeFile, {
+      canUndo: this.fileHistory.canUndo(this.activeFilePath),
+      canRedo: this.fileHistory.canRedo(this.activeFilePath),
       expandedSections: expanded,
       sectionStateInitialized,
       expandAllSections: this.stressMode,
       isExampleColumnVisible: (section) => this.isExampleColumnVisible(section),
       callbacks: {
+        onUndo: () => void this.undoCurrentFile(),
+        onRedo: () => void this.redoCurrentFile(),
         onAddSection: () => void this.addSection(),
         onAddTable: () => void this.addSection("table"),
         onAddCommand: (sectionId) => void this.addCommand(sectionId),
@@ -605,6 +614,7 @@ export class CommandVaultApplication {
     try {
       const previousActive = this.activeFilePath;
       const renamed = await renameEntry(this.workspaceRoot, entry.path, newName);
+      this.fileHistory.remapPrefix(entry.path, renamed.path);
       await this.refreshWorkspace(false);
       if (previousActive === entry.path) {
         await this.openFile(renamed.path);
@@ -626,17 +636,20 @@ export class CommandVaultApplication {
     }
     const isFolder = entry.kind === "folder";
     const confirmed = await openConfirm({
-      title: isFolder ? "Delete Folder" : "Delete Command File",
-      message: `Delete "${entry.name}"?`,
-      detail: isFolder && entry.children.length > 0 ? "This folder contains entries. Its contents will also be deleted." : undefined,
-      confirmLabel: "DELETE",
+      title: isFolder ? "Move Folder to Trash" : "Move Command File to Trash",
+      message: `Move "${entry.name}" to the system Trash?`,
+      detail: isFolder && entry.children.length > 0
+        ? "The folder and all of its contents can be restored from the system Trash."
+        : "The entry can be restored from the system Trash.",
+      confirmLabel: "MOVE TO TRASH",
       danger: true,
     });
     if (!confirmed) {
       return;
     }
     try {
-      await deleteEntry(this.workspaceRoot, entry.path, isFolder && entry.children.length > 0);
+      await trashEntry(this.workspaceRoot, entry.path);
+      this.fileHistory.deletePrefix(entry.path);
       if (this.activeFilePath && isSameOrDescendant(entry.path, this.activeFilePath)) {
         this.activeFile = null;
         this.activeFilePath = null;
@@ -646,28 +659,7 @@ export class CommandVaultApplication {
         this.renderWorkspaceEmpty();
       }
     } catch (error) {
-      const failure = normalizeServiceError(error);
-      if (isFolder && failure.code === "FOLDER_NOT_EMPTY") {
-        const recursive = await openConfirm({
-          title: "Folder Contains Other Files",
-          message: `"${entry.name}" contains files that Command Vault does not display.`,
-          detail: "Deleting it recursively will remove every file and subfolder inside it.",
-          confirmLabel: "DELETE EVERYTHING",
-          danger: true,
-        });
-        if (recursive) {
-          try {
-            await deleteEntry(this.workspaceRoot, entry.path, true);
-            await this.refreshWorkspace(true);
-            return;
-          } catch (recursiveError) {
-            await this.showServiceFailure("Could not delete folder", recursiveError);
-            return;
-          }
-        }
-        return;
-      }
-      await this.showServiceFailure("Could not delete entry", error);
+      await this.showServiceFailure("Could not move entry to Trash", error);
     }
   }
 
@@ -952,8 +944,47 @@ export class CommandVaultApplication {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
+    const path = this.activeFilePath;
+    const previous = cloneCommandFile(this.activeFile);
     const next = cloneCommandFile(this.activeFile);
     mutator(next);
+    if (serializeCommandFile(next) === serializeCommandFile(previous)) {
+      return;
+    }
+    await this.saveCurrentFile(next, () => this.fileHistory.record(path, previous));
+  }
+
+  private async undoCurrentFile(): Promise<void> {
+    if (!this.activeFile || !this.activeFilePath) {
+      return;
+    }
+    const path = this.activeFilePath;
+    const current = cloneCommandFile(this.activeFile);
+    const previous = this.fileHistory.peekUndo(path);
+    if (!previous) {
+      return;
+    }
+    await this.saveCurrentFile(previous, () => this.fileHistory.commitUndo(path, current));
+  }
+
+  private async redoCurrentFile(): Promise<void> {
+    if (!this.activeFile || !this.activeFilePath) {
+      return;
+    }
+    const path = this.activeFilePath;
+    const current = cloneCommandFile(this.activeFile);
+    const next = this.fileHistory.peekRedo(path);
+    if (!next) {
+      return;
+    }
+    await this.saveCurrentFile(next, () => this.fileHistory.commitRedo(path, current));
+  }
+
+  private async saveCurrentFile(next: CommandFile, onCommitted: () => void): Promise<boolean> {
+    if (!this.activeFilePath) {
+      return false;
+    }
+    const path = this.activeFilePath;
     try {
       if (this.desktopRuntime) {
         if (!this.workspaceRoot) {
@@ -961,18 +992,21 @@ export class CommandVaultApplication {
         }
         const saved = await writeCommandFile(
           this.workspaceRoot,
-          this.activeFilePath,
+          path,
           serializeCommandFile(next),
-          this.fileSources.get(this.activeFilePath) ?? "",
+          this.fileSources.get(path) ?? "",
         );
-        this.fileSources.set(this.activeFilePath, saved);
+        this.fileSources.set(path, saved);
       }
+      onCommitted();
       this.activeFile = next;
-      this.files.set(this.activeFilePath, next);
+      this.files.set(path, next);
       this.rebuildSearchIndex();
       this.renderActiveFile();
+      return true;
     } catch (error) {
       await this.showServiceFailure("Could not save command file", error);
+      return false;
     }
   }
 
@@ -1055,7 +1089,7 @@ export class CommandVaultApplication {
       this.toolbar.setResults(null);
       return;
     }
-    this.renderSearchResults(searchDocuments(this.searchIndex, query, 100));
+    this.renderSearchResults(rankSearchDocuments(this.searchIndex, query, 100));
   }
 
   private rebuildSearchIndex(): void {
@@ -1116,16 +1150,25 @@ export class CommandVaultApplication {
     this.searchIndex = records;
   }
 
-  private renderSearchResults(results: SearchResult[]): void {
+  private renderSearchResults(results: RankedSearchResult<SearchResult>[]): void {
     if (results.length === 0) {
       this.toolbar.setResults(element("p", "search-result-empty", "No matching commands."));
       return;
     }
     const list = element("div", "search-result-list");
-    results.forEach((result) => {
+    results.forEach((ranked) => {
+      const result = ranked.result;
       const item = button("search-result", "");
-      item.append(
+      item.setAttribute("role", "option");
+      const title = element("span", "search-result-title-row");
+      title.append(
         element("span", "search-result-title", result.commandName ?? result.sectionTitle ?? result.fileTitle),
+      );
+      if (ranked.matchKind === "near") {
+        title.append(element("span", "search-result-near", "NEAR"));
+      }
+      item.append(
+        title,
         element(
           "span",
           "search-result-path",
@@ -1301,6 +1344,9 @@ export class CommandVaultApplication {
         }
         return;
       }
+      if ((key === "z" || key === "y") && isTextEditingTarget(event.target)) {
+        return;
+      }
       if (key === "k") {
         event.preventDefault();
         this.toolbar.focusSearch();
@@ -1324,6 +1370,15 @@ export class CommandVaultApplication {
         void this.newFile();
       } else if (key === "s") {
         event.preventDefault();
+      } else if (key === "z" && event.shiftKey) {
+        event.preventDefault();
+        void this.redoCurrentFile();
+      } else if (key === "z") {
+        event.preventDefault();
+        void this.undoCurrentFile();
+      } else if (key === "y") {
+        event.preventDefault();
+        void this.redoCurrentFile();
       }
     });
   }
@@ -1540,6 +1595,15 @@ function remapDescendantPath(oldRoot: string, newRoot: string, candidate: string
 function isSameOrDescendant(parent: string, candidate: string): boolean {
   return (
     candidate === parent || candidate.startsWith(`${parent}/`) || candidate.startsWith(`${parent}\\`)
+  );
+}
+
+function isTextEditingTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
   );
 }
 

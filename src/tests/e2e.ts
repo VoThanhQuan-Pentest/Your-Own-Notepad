@@ -12,7 +12,8 @@ interface MockState {
 
 const STORAGE_KEY = "command-vault.e2e-state";
 const WORKSPACE = "/e2e/CommandVault";
-if (new URLSearchParams(window.location.search).has("reset")) {
+const parameters = new URLSearchParams(window.location.search);
+if (parameters.has("reset")) {
   sessionStorage.removeItem(STORAGE_KEY);
 }
 let state = loadState();
@@ -45,8 +46,8 @@ mockIPC((command, rawPayload) => {
       return createFile(String(payload.parentPath), String(payload.name));
     case "rename_entry":
       return renameEntry(String(payload.entryPath), String(payload.newName));
-    case "delete_entry":
-      deleteEntry(String(payload.entryPath), Boolean(payload.recursive));
+    case "trash_entry":
+      deleteEntry(String(payload.entryPath), true);
       return null;
     case "plugin:dialog|open":
       return WORKSPACE;
@@ -72,12 +73,39 @@ function loadState(): MockState {
     const loaded = JSON.parse(source) as MockState;
     return { ...loaded, calls: loaded.calls ?? [] };
   }
-  return {
+  const initial: MockState = {
     folders: [WORKSPACE],
     files: {},
     settings: structuredClone(defaultSettings),
     calls: [],
   };
+  if (parameters.get("fixture") === "basic") {
+    const path = `${WORKSPACE}/Nmap.cmdnote`;
+    initial.files[path] = `${JSON.stringify({
+      version: 2,
+      title: "Nmap",
+      description: "Network commands",
+      sections: [
+        {
+          id: "discovery",
+          title: "Discovery",
+          commands: [
+            {
+              id: "ping-scan",
+              name: "Ping Scan",
+              command: "nmap -sn 192.168.1.0/24",
+              description: "Discover active hosts.",
+              example: "nmap -sn 192.168.1.0/24",
+              notes: "Authorized networks only.",
+            },
+          ],
+        },
+      ],
+    }, null, 2)}\n`;
+    initial.settings.lastWorkspace = WORKSPACE;
+    initial.settings.lastOpenedFile = path;
+  }
+  return initial;
 }
 
 function persist(): void {

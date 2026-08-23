@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.6.0</strong>
+  <strong>Current version: 0.6.1</strong>
 </p>
 
 <p align="center">
@@ -38,6 +38,8 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Example switch for every Section with examples.
 - Copy-only command handling with a smaller, simpler command schema.
 - Ranked typo-tolerant in-memory search with `Ctrl+K`.
+- Keyboard Search navigation with Arrow keys, Enter, and accessible NEAR indicators.
+- Session Undo/Redo for command-file edits and recoverable Explorer deletion through System Trash.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
@@ -45,7 +47,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.6.0 adds typo-tolerant search plus persistent Dark/Light appearance and six accent presets.
+Version 0.6.1 adds bounded per-file Undo/Redo, System Trash deletion, keyboard Search navigation, and automated browser regression tests.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -128,6 +130,7 @@ npm run build
 
 ```bash
 npm run test:model
+npm run test:e2e
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
 npm audit --omit=dev
@@ -137,7 +140,7 @@ The project includes:
 
 - TypeScript tests for parsing, migration, fuzzy ranking, accent normalization, import validation, IDs, and large-list behavior.
 - Rust tests for workspace confinement, symlink rejection, atomic writes, stale-write protection, filesystem CRUD, and backward-compatible settings.
-- A no-dependency Tauri IPC integration harness at `e2e.html`.
+- Playwright browser regression tests backed by the isolated Tauri IPC harness at `e2e.html`.
 - Frontend stress scenarios at `/?stress=100`, `/?stress=1000`, and `/?stress=5000` during development.
 
 ### Release build
@@ -149,7 +152,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.6.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.6.1_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -219,6 +222,8 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Example switch cho mọi Section có ví dụ.
 - Chỉ giữ thao tác COPY và schema command gọn nhẹ.
 - Tìm kiếm toàn workspace có xếp hạng và chịu lỗi chính tả bằng `Ctrl+K`.
+- Điều khiển Search bằng phím mũi tên, Enter và badge NEAR accessible.
+- Undo/Redo trong phiên cho chỉnh sửa file command và xóa Explorer an toàn qua Trash hệ thống.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
@@ -226,7 +231,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.6.0 bổ sung fuzzy search chịu lỗi chính tả cùng Dark/Light và sáu màu accent được lưu tự động.
+Phiên bản 0.6.1 bổ sung Undo/Redo giới hạn theo file, System Trash, keyboard Search và automated browser regression tests.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -309,6 +314,7 @@ npm run build
 
 ```bash
 npm run test:model
+npm run test:e2e
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings
 npm audit --omit=dev
@@ -318,7 +324,7 @@ Project bao gồm:
 
 - TypeScript tests cho parser, migration, fuzzy ranking, chuẩn hóa dấu, import validation, ID và large-list behavior.
 - Rust tests cho workspace boundary, symlink, atomic write, chống stale write, filesystem CRUD và settings tương thích ngược.
-- Tauri IPC integration harness không cần dependency bổ sung tại `e2e.html`.
+- Playwright browser regression tests dùng Tauri IPC harness cô lập tại `e2e.html`.
 - Frontend stress scenarios tại `/?stress=100`, `/?stress=1000` và `/?stress=5000` trong development.
 
 ### Build bản release
@@ -330,7 +336,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.6.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.6.1_amd64.AppImage
 ```
 
 Output Linux:

@@ -1,12 +1,13 @@
 {
   "name": "command-vault",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "test:model": "node scripts/run-model-tests.mjs",
+    "test:e2e": "playwright test",
     "smoke:appimage": "bash scripts/smoke-appimage.sh",
     "preview": "vite preview",
     "tauri": "tauri"
@@ -16,6 +17,7 @@
     "@tauri-apps/plugin-dialog": "^2.7.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@tauri-apps/cli": "^2",
     "typescript": "~5.6.2",
     "vite": "^6.0.3"

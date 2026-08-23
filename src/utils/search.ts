@@ -40,6 +40,11 @@ interface DocumentScore<T> {
   prioritySum: number;
 }
 
+export interface RankedSearchResult<T> {
+  result: T;
+  matchKind: "exact" | "near";
+}
+
 export function createSearchDocument<T>(
   result: T,
   fields: SearchFieldInput[],
@@ -66,6 +71,14 @@ export function searchDocuments<T>(
   query: string,
   limit = 100,
 ): T[] {
+  return rankSearchDocuments(documents, query, limit).map((item) => item.result);
+}
+
+export function rankSearchDocuments<T>(
+  documents: SearchDocument<T>[],
+  query: string,
+  limit = 100,
+): RankedSearchResult<T>[] {
   const normalizedQuery = normalizeSearchText(query);
   if (!normalizedQuery || limit <= 0) {
     return [];
@@ -76,7 +89,10 @@ export function searchDocuments<T>(
     return score ? [score] : [];
   });
   scored.sort(compareScores);
-  return scored.slice(0, limit).map((score) => score.document.result);
+  return scored.slice(0, limit).map((score) => ({
+    result: score.document.result,
+    matchKind: score.worstQuality >= 3 ? "exact" : "near",
+  }));
 }
 
 export function normalizeSearchText(value: string): string {

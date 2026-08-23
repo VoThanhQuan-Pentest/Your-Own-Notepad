@@ -43,10 +43,9 @@ export function renameEntry(
   return invoke("rename_entry", { workspaceRoot, entryPath, newName });
 }
 
-export function deleteEntry(
+export function trashEntry(
   workspaceRoot: string,
   entryPath: string,
-  recursive: boolean,
 ): Promise<void> {
-  return invoke("delete_entry", { workspaceRoot, entryPath, recursive });
+  return invoke("trash_entry", { workspaceRoot, entryPath });
 }

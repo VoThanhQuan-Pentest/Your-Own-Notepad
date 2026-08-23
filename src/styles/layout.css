@@ -164,6 +164,19 @@
   color: var(--text-main);
 }
 
+.primary-button:disabled,
+.secondary-button:disabled {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.48;
+}
+
+.history-button {
+  min-width: 64px;
+}
+
 .app-body {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);

@@ -1,5 +1,11 @@
 import { createId } from "../utils/ids";
-import { createSearchDocument, normalizeSearchText, searchDocuments } from "../utils/search";
+import { SessionHistory } from "../utils/history";
+import {
+  createSearchDocument,
+  normalizeSearchText,
+  rankSearchDocuments,
+  searchDocuments,
+} from "../utils/search";
 import { hasTableImportErrors, parseTablePaste } from "../utils/table-import";
 import { parseCommandFile, serializeCommandFile } from "../utils/validation";
 
@@ -199,6 +205,9 @@ test("ranks exact results above fuzzy results", () => {
   ];
   equal(searchDocuments(documents, "namp")[0], "Exact Namp");
   equal(searchDocuments(documents, "namp")[1], "Fuzzy Nmap");
+  const ranked = rankSearchDocuments(documents, "namp");
+  equal(ranked[0]?.matchKind, "exact");
+  equal(ranked[1]?.matchKind, "near");
 });
 
 test("keeps fuzzy result limits and insertion order stable", () => {
@@ -209,6 +218,33 @@ test("keeps fuzzy result limits and insertion order stable", () => {
   equal(results.length, 100);
   equal(results[0], 0);
   equal(results[99], 99);
+});
+
+test("keeps bounded per-file undo and redo history", () => {
+  const history = new SessionHistory<{ value: number }>(2, structuredClone);
+  history.record("a.cmdnote", { value: 1 });
+  history.record("a.cmdnote", { value: 2 });
+  history.record("a.cmdnote", { value: 3 });
+  equal(history.peekUndo("a.cmdnote")?.value, 3);
+  history.commitUndo("a.cmdnote", { value: 4 });
+  equal(history.peekUndo("a.cmdnote")?.value, 2);
+  equal(history.peekRedo("a.cmdnote")?.value, 4);
+  history.commitRedo("a.cmdnote", { value: 2 });
+  equal(history.peekUndo("a.cmdnote")?.value, 2);
+});
+
+test("clears redo after a new mutation and remaps file history", () => {
+  const history = new SessionHistory<{ value: number }>(50, structuredClone);
+  history.record("/workspace/old/file.cmdnote", { value: 1 });
+  history.commitUndo("/workspace/old/file.cmdnote", { value: 2 });
+  ok(history.canRedo("/workspace/old/file.cmdnote"));
+  history.record("/workspace/old/file.cmdnote", { value: 3 });
+  equal(history.canRedo("/workspace/old/file.cmdnote"), false);
+  history.remapPrefix("/workspace/old", "/workspace/new");
+  equal(history.canUndo("/workspace/old/file.cmdnote"), false);
+  ok(history.canUndo("/workspace/new/file.cmdnote"));
+  history.deletePrefix("/workspace/new");
+  equal(history.canUndo("/workspace/new/file.cmdnote"), false);
 });
 
 let failures = 0;

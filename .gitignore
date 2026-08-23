@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 .test-dist
+/test-results/
+/playwright-report/
 /artifacts/
 *.local
 

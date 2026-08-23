@@ -206,16 +206,30 @@ pub(crate) async fn rename_entry(
 }
 
 #[tauri::command]
-pub(crate) async fn delete_entry(
-    workspace_root: String,
-    entry_path: String,
-    recursive: bool,
-) -> CommandResult<()> {
-    let (root, target) = canonical_existing_path(&workspace_root, &entry_path)?;
+pub(crate) async fn trash_entry(workspace_root: String, entry_path: String) -> CommandResult<()> {
+    trash_entry_with(&workspace_root, &entry_path, |target| {
+        trash::delete(target).map_err(|error| {
+            CommandError::new(
+                "TRASH_FAILED",
+                format!("Could not move the entry to the system Trash: {error}"),
+            )
+        })
+    })
+}
+
+fn trash_entry_with<F>(
+    workspace_root: &str,
+    entry_path: &str,
+    move_to_trash: F,
+) -> CommandResult<()>
+where
+    F: FnOnce(&Path) -> CommandResult<()>,
+{
+    let (root, target) = canonical_existing_path(workspace_root, entry_path)?;
     if target == root {
         return Err(CommandError::new(
             "WORKSPACE_ROOT",
-            "The workspace root cannot be deleted from inside Command Vault.",
+            "The workspace root cannot be moved to Trash from inside Command Vault.",
         ));
     }
 
@@ -228,30 +242,15 @@ pub(crate) async fn delete_entry(
         ));
     }
 
-    if metadata.is_dir() {
-        let has_children = fs::read_dir(&target)
-            .map_err(|error| CommandError::from_io(error, "Could not inspect folder"))?
-            .next()
-            .is_some();
-        if has_children && !recursive {
-            return Err(CommandError::new(
-                "FOLDER_NOT_EMPTY",
-                "The folder is not empty. Confirm recursive deletion to continue.",
-            ));
-        }
-        if recursive {
-            fs::remove_dir_all(&target)
-                .map_err(|error| CommandError::from_io(error, "Could not delete folder"))?;
-        } else {
-            fs::remove_dir(&target)
-                .map_err(|error| CommandError::from_io(error, "Could not delete folder"))?;
-        }
-    } else {
+    if metadata.is_file() {
         ensure_command_file(&target)?;
-        fs::remove_file(&target)
-            .map_err(|error| CommandError::from_io(error, "Could not delete command file"))?;
+    } else if !metadata.is_dir() {
+        return Err(CommandError::new(
+            "UNSUPPORTED_ENTRY",
+            "Only folders and command files can be moved to Trash.",
+        ));
     }
-    Ok(())
+    move_to_trash(&target)
 }
 
 pub(crate) fn atomic_write(target: &Path, bytes: &[u8]) -> CommandResult<()> {
@@ -538,8 +537,8 @@ mod tests {
 
     use super::{
         atomic_write, canonical_existing_path, command_file_name, create_command_file,
-        create_folder, delete_entry, ensure_expected_content, list_directory, read_command_file,
-        read_directory, rename_entry, validate_entry_name, write_command_file,
+        create_folder, ensure_expected_content, list_directory, read_command_file, read_directory,
+        rename_entry, trash_entry_with, validate_entry_name, write_command_file,
     };
 
     struct TestDirectory {
@@ -642,6 +641,30 @@ mod tests {
         .is_err());
     }
 
+    #[test]
+    fn trash_validation_rejects_unsafe_targets_before_backend_call() {
+        let workspace = TestDirectory::new("trash-validation");
+        let root = workspace.path.to_string_lossy().into_owned();
+        let mut backend_called = false;
+        assert!(trash_entry_with(&root, &root, |_| {
+            backend_called = true;
+            Ok(())
+        })
+        .is_err());
+        assert!(!backend_called);
+
+        let ignored = workspace.path.join("ignored.txt");
+        fs::write(&ignored, "not a command file").expect("test file must be created");
+        assert!(
+            trash_entry_with(&root, ignored.to_string_lossy().as_ref(), |_| {
+                backend_called = true;
+                Ok(())
+            })
+            .is_err()
+        );
+        assert!(!backend_called);
+    }
+
     #[cfg(unix)]
     #[test]
     fn rejects_symlink_targets_inside_the_workspace() {
@@ -718,15 +741,14 @@ mod tests {
         assert_eq!(tree[0].children.len(), 1);
         assert_eq!(tree[0].children[0].name, "Scanner.cmdnote");
 
-        assert!(tauri::async_runtime::block_on(delete_entry(
-            root.clone(),
-            folder.path.clone(),
-            false
-        ))
-        .is_err());
-        tauri::async_runtime::block_on(delete_entry(root, folder.path.clone(), true))
-            .expect("confirmed recursive delete must succeed");
-        assert!(!PathBuf::from(folder.path).exists());
+        let mut trashed = None;
+        trash_entry_with(&root, &folder.path, |target| {
+            trashed = Some(target.to_path_buf());
+            Ok(())
+        })
+        .expect("validated folder must be passed to the trash backend");
+        assert_eq!(trashed, Some(PathBuf::from(&folder.path)));
+        assert!(PathBuf::from(folder.path).exists());
     }
 
     #[test]

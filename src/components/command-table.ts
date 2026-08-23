@@ -7,6 +7,8 @@ import {
 import type { CommandRowCallbacks } from "./command-row";
 
 export interface CommandTableCallbacks {
+  onUndo(): void;
+  onRedo(): void;
   onAddSection(): void;
   onAddTable(): void;
   onAddCommand(sectionId: string): void;
@@ -18,6 +20,8 @@ export interface CommandTableCallbacks {
 }
 
 interface CommandTableOptions {
+  canUndo: boolean;
+  canRedo: boolean;
   expandedSections: ReadonlySet<string>;
   sectionStateInitialized?: boolean;
   expandAllSections?: boolean;
@@ -42,11 +46,19 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
   header.append(titleGroup);
 
   const headerActions = element("div", "file-header-actions");
+  const undo = button("secondary-button history-button", "UNDO");
+  undo.disabled = !options.canUndo;
+  undo.title = "Undo last file change (Ctrl+Z)";
+  undo.addEventListener("click", options.callbacks.onUndo);
+  const redo = button("secondary-button history-button", "REDO");
+  redo.disabled = !options.canRedo;
+  redo.title = "Redo last undone change (Ctrl+Y or Ctrl+Shift+Z)";
+  redo.addEventListener("click", options.callbacks.onRedo);
   const addSection = button("secondary-button", "+ ADD SECTION");
   addSection.addEventListener("click", options.callbacks.onAddSection);
   const addTable = button("primary-button", "+ ADD TABLE");
   addTable.addEventListener("click", options.callbacks.onAddTable);
-  headerActions.append(addSection, addTable);
+  headerActions.append(undo, redo, addSection, addTable);
   header.append(headerActions);
 
   const content = element("div", "command-content");
