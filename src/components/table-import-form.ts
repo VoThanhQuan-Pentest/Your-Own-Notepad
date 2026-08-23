@@ -31,7 +31,7 @@ export function openTableImportForm(
     const help = element(
       "p",
       "table-import-help",
-      "Accepted columns: Command/Port/Value, Service, Description/Information, Syntax, Example, Notes, Action, Risk, and Variables. English and Vietnamese headers are accepted.",
+      "Accepted columns: Command/Port/Value, Service, Description/Information, Example, and Notes. English and Vietnamese headers are accepted.",
     );
     const preview = element("section", "table-import-preview");
     preview.setAttribute("aria-live", "polite");
@@ -39,6 +39,7 @@ export function openTableImportForm(
 
     let currentPreview: TableImportPreview = parseTablePaste("", "Imported Table", existingCommandIds);
     let currentSource = "";
+    let previewTimer: number | null = null;
     let modal = openModal(
       "Add Compact Table",
       form,
@@ -47,11 +48,11 @@ export function openTableImportForm(
         { label: "CREATE TABLE", primary: true, action: submit },
       ],
       true,
-      () => resolve(null),
+      () => finish(null),
     );
 
     name.addEventListener("input", refreshPreview);
-    source.addEventListener("input", refreshPreview);
+    source.addEventListener("input", schedulePreview);
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       submit();
@@ -60,6 +61,10 @@ export function openTableImportForm(
     queueMicrotask(() => name.focus());
 
     function refreshPreview(): void {
+      if (previewTimer !== null) {
+        window.clearTimeout(previewTimer);
+        previewTimer = null;
+      }
       currentSource = source.value;
       currentPreview = parseTablePaste(
         currentSource,
@@ -67,6 +72,13 @@ export function openTableImportForm(
         existingCommandIds,
       );
       renderPreview(preview, currentPreview, currentSource.trim().length > 0);
+    }
+
+    function schedulePreview(): void {
+      if (previewTimer !== null) {
+        window.clearTimeout(previewTimer);
+      }
+      previewTimer = window.setTimeout(refreshPreview, 150);
     }
 
     function submit(): void {
@@ -86,6 +98,9 @@ export function openTableImportForm(
     }
 
     function finish(value: ImportedTable | null): void {
+      if (previewTimer !== null) {
+        window.clearTimeout(previewTimer);
+      }
       modal.close(false);
       resolve(value);
     }

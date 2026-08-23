@@ -1,9 +1,8 @@
-import type { CommandAction, CommandEntry, CommandRisk, CommandVariable } from "../models/command-file";
+import type { CommandEntry } from "../models/command-file";
 import { createId } from "./ids";
 
 const MAX_SOURCE_LENGTH = 500_000;
 const MAX_ROWS = 1_000;
-const VARIABLE_NAME = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
 export type TablePasteFormat = "markdown" | "tsv" | "csv";
 
@@ -34,12 +33,8 @@ type ColumnTarget =
   | "command"
   | "service"
   | "description"
-  | "syntax"
   | "example"
-  | "notes"
-  | "action"
-  | "risk"
-  | "variables";
+  | "notes";
 
 interface ColumnDefinition {
   header: string;
@@ -69,13 +64,24 @@ const COLUMN_ALIASES: Record<ColumnTarget, ReadonlySet<string>> = {
     "function",
     "chucnang",
   ]),
-  syntax: new Set(["syntax", "cuphap"]),
   example: new Set(["example", "examples", "vidu"]),
   notes: new Set(["note", "notes", "ghichu"]),
-  action: new Set(["action", "hanhdong"]),
-  risk: new Set(["risk", "ruiro", "mucdoruiro"]),
-  variables: new Set(["variable", "variables", "var", "vars", "bien"]),
 };
+
+const DEPRECATED_HEADERS = new Map([
+  ["syntax", "Syntax"],
+  ["cuphap", "Syntax"],
+  ["action", "Action"],
+  ["hanhdong", "Action"],
+  ["risk", "Risk"],
+  ["ruiro", "Risk"],
+  ["mucdoruiro", "Risk"],
+  ["variable", "Variables"],
+  ["variables", "Variables"],
+  ["var", "Variables"],
+  ["vars", "Variables"],
+  ["bien", "Variables"],
+]);
 
 export function parseTablePaste(
   source: string,
@@ -174,9 +180,6 @@ export function parseTablePaste(
     }
     const importedNotes = unknownValues.map((item) => `${item.header}: ${item.value}`).join("\n");
     const notes = joinNonEmpty(values.get("notes"), importedNotes);
-    const action = readAction(values.get("action"), row.row, issues);
-    const risk = readRisk(values.get("risk"), row.row, issues);
-    const variables = readVariables(values.get("variables"), row.row, issues);
     const rowNumber = index + 1;
     const name = `Table Row ${rowNumber}`;
     const id = createId(`${tableName} row ${rowNumber}`, commandIds);
@@ -186,13 +189,9 @@ export function parseTablePaste(
       id,
       name,
       command,
-      action,
-      risk,
       ...(description ? { description } : {}),
-      ...(values.get("syntax") ? { syntax: values.get("syntax") } : {}),
       ...(values.get("example") ? { example: values.get("example") } : {}),
       ...(notes ? { notes } : {}),
-      ...(variables.length > 0 ? { variables } : {}),
     });
   });
 
@@ -325,6 +324,14 @@ function mapColumns(header: GridRow, issues: TableImportIssue[]): ColumnDefiniti
   const usedTargets = new Set<ColumnTarget>();
   const columns = header.cells.map((rawHeader, index) => {
     const headerName = cleanCell(rawHeader) || `Column ${index + 1}`;
+    const deprecated = DEPRECATED_HEADERS.get(normalizeHeader(headerName));
+    if (deprecated) {
+      issues.push({
+        severity: "error",
+        row: header.row,
+        message: `Remove deprecated column "${deprecated}" before importing.`,
+      });
+    }
     const target = findColumnTarget(headerName);
     if (target && usedTargets.has(target)) {
       issues.push({
@@ -353,80 +360,6 @@ function findColumnTarget(header: string): ColumnTarget | undefined {
   return (Object.keys(COLUMN_ALIASES) as ColumnTarget[]).find((target) =>
     COLUMN_ALIASES[target].has(normalized),
   );
-}
-
-function readAction(
-  value: string | undefined,
-  row: number,
-  issues: TableImportIssue[],
-): CommandAction {
-  if (!value) {
-    return "copy";
-  }
-  const normalized = normalizeHeader(value);
-  const action =
-    normalized === "copy" || normalized === "saochep"
-      ? "copy"
-      : normalized === "run" || normalized === "chay"
-        ? "run"
-        : normalized === "open" || normalized === "mo"
-          ? "open"
-          : normalized === "openterminal" || normalized === "terminal" || normalized === "moterminal"
-            ? "open-terminal"
-            : undefined;
-  if (action) {
-    return action;
-  }
-  issues.push({ severity: "error", row, message: `Unknown Action: "${value}".` });
-  return "copy";
-}
-
-function readRisk(value: string | undefined, row: number, issues: TableImportIssue[]): CommandRisk {
-  if (!value) {
-    return "safe";
-  }
-  const normalized = normalizeHeader(value);
-  const risk =
-    normalized === "safe" || normalized === "antoan"
-      ? "safe"
-      : normalized === "caution" || normalized === "canhbao" || normalized === "thantrong"
-        ? "caution"
-        : normalized === "danger" || normalized === "nguyhiem"
-          ? "danger"
-          : undefined;
-  if (risk) {
-    return risk;
-  }
-  issues.push({ severity: "error", row, message: `Unknown Risk: "${value}".` });
-  return "safe";
-}
-
-function readVariables(value: string | undefined, row: number, issues: TableImportIssue[]): CommandVariable[] {
-  if (!value) {
-    return [];
-  }
-  const variables: CommandVariable[] = [];
-  const names = new Set<string>();
-  value.split(";").forEach((part) => {
-    const trimmed = part.trim();
-    if (!trimmed) {
-      return;
-    }
-    const equals = trimmed.indexOf("=");
-    const name = (equals >= 0 ? trimmed.slice(0, equals) : trimmed).trim();
-    const defaultValue = equals >= 0 ? trimmed.slice(equals + 1).trim() : "";
-    if (!VARIABLE_NAME.test(name)) {
-      issues.push({ severity: "error", row, message: `Invalid variable name: "${name}".` });
-      return;
-    }
-    if (names.has(name)) {
-      issues.push({ severity: "error", row, message: `Duplicate variable: "${name}".` });
-      return;
-    }
-    names.add(name);
-    variables.push({ name, ...(defaultValue ? { default: defaultValue } : {}) });
-  });
-  return variables;
 }
 
 function warnForDuplicateCommands(commands: CommandEntry[], issues: TableImportIssue[]): void {

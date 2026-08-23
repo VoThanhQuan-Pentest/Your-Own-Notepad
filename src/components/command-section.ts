@@ -1,6 +1,13 @@
-import type { CommandSection } from "../models/command-file";
+import type { CommandEntry, CommandSection } from "../models/command-file";
 import { button, element } from "../utils/dom";
-import { createCommandRow, type CommandRowCallbacks, type CommandRowHandle } from "./command-row";
+import { createCommandRow, type CommandRowCallbacks } from "./command-row";
+import { createVirtualRows, type VirtualRowsHandle } from "./virtual-rows";
+
+export interface CommandSectionHandle {
+  element: HTMLElement;
+  ensureCommandVisible(commandId?: string): void;
+  dispose(): void;
+}
 
 interface CommandSectionCallbacks {
   onToggle(sectionId: string, expanded: boolean): void;
@@ -9,47 +16,42 @@ interface CommandSectionCallbacks {
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
   rowCallbacks: CommandRowCallbacks;
   showExampleColumn: boolean;
+  getScrollRoot(): HTMLElement | null;
 }
+
+const VIRTUAL_ROW_THRESHOLD = 40;
 
 export function createCommandSection(
   section: CommandSection,
   initiallyExpanded: boolean,
   callbacks: CommandSectionCallbacks,
-): HTMLElement {
+): CommandSectionHandle {
   const wrapper = element("section", "command-section");
   wrapper.dataset.sectionId = section.id;
-
   const header = element("div", "section-header");
   const toggle = button("section-toggle", "");
-  toggle.setAttribute("aria-expanded", String(initiallyExpanded));
-
   const chevron = element("span", "section-chevron", initiallyExpanded ? "▾" : "▸");
   chevron.setAttribute("aria-hidden", "true");
   toggle.append(chevron, element("span", "section-title", section.title));
   if (section.layout === "table") {
     toggle.append(element("span", "section-layout-badge", "TABLE"));
   }
-
+  toggle.setAttribute("aria-expanded", String(initiallyExpanded));
   const count = element("span", "section-count", String(section.commands.length));
   count.title = `${section.commands.length} ${section.commands.length === 1 ? "command" : "commands"}`;
   header.append(toggle, count);
 
-  const hasExamples = section.layout === "table" && section.commands.some((command) => command.example?.trim());
+  const hasExamples = section.commands.some((command) => command.example?.trim());
+  let showExampleColumn = hasExamples && callbacks.showExampleColumn;
   if (hasExamples) {
-    const examples = button(
-      `section-examples${callbacks.showExampleColumn ? " active" : ""}`,
-      "EXAMPLES",
-    );
-    examples.setAttribute("aria-pressed", String(callbacks.showExampleColumn));
-    examples.title = callbacks.showExampleColumn ? "Hide Example column" : "Show Example column";
-    examples.setAttribute(
-      "aria-label",
-      callbacks.showExampleColumn ? "Hide Example column" : "Show Example column",
-    );
-    examples.addEventListener("click", () =>
-      callbacks.onExampleColumnToggle(section.id, !callbacks.showExampleColumn),
-    );
-    header.append(examples);
+    const exampleSwitch = createExampleSwitch(showExampleColumn);
+    exampleSwitch.addEventListener("click", () => {
+      showExampleColumn = !showExampleColumn;
+      updateExampleSwitch(exampleSwitch, showExampleColumn);
+      callbacks.onExampleColumnToggle(section.id, showExampleColumn);
+      renderContent();
+    });
+    header.append(exampleSwitch);
   }
 
   const add = button("section-add", "+");
@@ -66,71 +68,140 @@ export function createCommandSection(
   header.append(menu);
 
   const content = element("div", "section-content");
-  content.hidden = !initiallyExpanded;
+  let isExpanded = initiallyExpanded;
+  let expandedCommandId: string | null = null;
+  let virtualRows: VirtualRowsHandle | null = null;
 
-  const columnHeader = element(
-    "div",
-    `table-heading${callbacks.showExampleColumn ? " with-example-column" : ""}`,
-  );
-  columnHeader.append(
-    element("div", undefined, section.layout === "table" ? "NO. / COMMAND" : "COMMAND"),
-    element("div", undefined, "INFORMATION"),
-  );
-  if (callbacks.showExampleColumn) {
-    columnHeader.append(element("div", undefined, "EXAMPLE"));
-  }
-  content.append(columnHeader);
-
-  let expandedRow: CommandRowHandle | null = null;
-  section.commands.forEach((command, commandIndex) => {
-    const row = createCommandRow(
-      command,
-      (requestedRow) => {
-        if (expandedRow === requestedRow) {
-          requestedRow.setExpanded(false);
-          expandedRow = null;
-          return;
-        }
-
-        expandedRow?.setExpanded(false);
-        requestedRow.setExpanded(true);
-        expandedRow = requestedRow;
-      },
-      callbacks.rowCallbacks,
-      section.layout === "table",
-      commandIndex + 1,
-      callbacks.showExampleColumn,
-    );
-    content.append(row.element);
-  });
-
-  if (section.commands.length === 0) {
-    const empty = element("div", "section-empty");
-    empty.append(
-      element(
-        "p",
-        undefined,
-        section.layout === "table" ? "No rows in this table." : "No commands in this section.",
-      ),
-    );
-    const addFirst = button(
-      "inline-button",
-      section.layout === "table" ? "+ ADD ROW" : "+ ADD COMMAND",
-    );
-    addFirst.addEventListener("click", () => callbacks.onAddCommand(section.id));
-    empty.append(addFirst);
-    content.append(empty);
-  }
-
-  toggle.addEventListener("click", () => {
-    const expanded = toggle.getAttribute("aria-expanded") === "true";
-    const next = !expanded;
+  function setSectionExpanded(next: boolean, notify: boolean): void {
+    isExpanded = next;
     toggle.setAttribute("aria-expanded", String(next));
     chevron.textContent = next ? "▾" : "▸";
     content.hidden = !next;
-    callbacks.onToggle(section.id, next);
-  });
+    if (notify) {
+      callbacks.onToggle(section.id, next);
+    }
+    renderContent();
+  }
 
+  function renderContent(): void {
+    virtualRows?.destroy();
+    virtualRows = null;
+    content.replaceChildren();
+    content.hidden = !isExpanded;
+    if (!isExpanded) {
+      return;
+    }
+
+    const columnHeader = element(
+      "div",
+      `table-heading${showExampleColumn ? " with-example-column" : ""}`,
+    );
+    columnHeader.append(
+      element("div", undefined, section.layout === "table" ? "NO. / COMMAND" : "COMMAND"),
+      element("div", undefined, "INFORMATION"),
+    );
+    if (showExampleColumn) {
+      columnHeader.append(element("div", undefined, "EXAMPLE"));
+    }
+    content.append(columnHeader);
+
+    if (section.commands.length === 0) {
+      const empty = element("div", "section-empty");
+      empty.append(
+        element(
+          "p",
+          undefined,
+          section.layout === "table" ? "No rows in this table." : "No commands in this section.",
+        ),
+      );
+      const addFirst = button(
+        "inline-button",
+        section.layout === "table" ? "+ ADD ROW" : "+ ADD COMMAND",
+      );
+      addFirst.addEventListener("click", () => callbacks.onAddCommand(section.id));
+      empty.append(addFirst);
+      content.append(empty);
+      return;
+    }
+
+    const renderRow = (index: number): HTMLElement => {
+      const command = section.commands[index] as CommandEntry;
+      return createCommandRow(
+        command,
+        () => {
+          expandedCommandId = expandedCommandId === command.id ? null : command.id;
+          renderContent();
+          if (expandedCommandId) {
+            queueMicrotask(() => virtualRows?.ensureVisible(index));
+          }
+        },
+        callbacks.rowCallbacks,
+        section.layout === "table",
+        index + 1,
+        showExampleColumn,
+        expandedCommandId === command.id,
+      ).element;
+    };
+
+    if (section.commands.length > VIRTUAL_ROW_THRESHOLD) {
+      virtualRows = createVirtualRows({
+        count: section.commands.length,
+        defaultRowHeight: section.layout === "table" ? 82 : 160,
+        renderRow,
+        getScrollRoot: callbacks.getScrollRoot,
+      });
+      content.append(virtualRows.element);
+    } else {
+      const fragment = document.createDocumentFragment();
+      section.commands.forEach((_, index) => fragment.append(renderRow(index)));
+      content.append(fragment);
+    }
+  }
+
+  toggle.addEventListener("click", () => setSectionExpanded(!isExpanded, true));
   wrapper.append(header, content);
-  return wrapper;
+  renderContent();
+
+  return {
+    element: wrapper,
+    ensureCommandVisible(commandId) {
+      if (!isExpanded) {
+        setSectionExpanded(true, true);
+      }
+      const index = commandId ? section.commands.findIndex((command) => command.id === commandId) : 0;
+      if (index < 0) {
+        wrapper.scrollIntoView({ block: "center" });
+        return;
+      }
+      if (virtualRows) {
+        virtualRows.ensureVisible(index);
+      }
+      queueMicrotask(() => {
+        const row = wrapper.querySelector<HTMLElement>(`[data-command-id="${CSS.escape(commandId ?? "")}"]`);
+        (row ?? wrapper).scrollIntoView({ block: "center" });
+      });
+    },
+    dispose() {
+      virtualRows?.destroy();
+      virtualRows = null;
+    },
+  };
+}
+
+function createExampleSwitch(checked: boolean): HTMLButtonElement {
+  const control = button("section-example-switch", "");
+  control.setAttribute("role", "switch");
+  control.append(
+    element("span", "section-example-switch-label", "EXAMPLES"),
+    element("span", "section-example-switch-track"),
+  );
+  updateExampleSwitch(control, checked);
+  return control;
+}
+
+function updateExampleSwitch(control: HTMLButtonElement, checked: boolean): void {
+  control.classList.toggle("active", checked);
+  control.setAttribute("aria-checked", String(checked));
+  control.title = checked ? "Hide Example column" : "Show Example column";
+  control.setAttribute("aria-label", checked ? "Hide Example column" : "Show Example column");
 }

@@ -63,6 +63,7 @@ export function createToolbar(callbacks: ToolbarCallbacks): ToolbarHandle {
       input.value = "";
       results.hidden = true;
       results.replaceChildren();
+      callbacks.onSearch("");
     },
     setResults(content) {
       results.replaceChildren();

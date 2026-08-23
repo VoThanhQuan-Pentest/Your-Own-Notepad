@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.4.0</strong>
+  <strong>Current version: 0.5.0</strong>
 </p>
 
 <p align="center">
@@ -30,15 +30,13 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 - Native Tauri desktop app, optimized first for Kali Linux GNOME.
 - Vanilla TypeScript, HTML, CSS, and Rust—no frontend framework.
-- Stable shared 42/58 command-information grid.
+- Fast lazy Section rendering and virtual scrolling for large command vaults.
 - Nested filesystem Explorer with create, rename, delete, and refresh actions.
 - Section and command CRUD, duplication, reordering, and moving between sections.
 - Compact Table sections for dense command/port/function references without creating oversized cards.
 - Paste-to-import GPT tables with automatic Markdown, TSV, and CSV detection plus a validation preview.
-- Per-table Example column that automatically appears when examples are available.
-- Runtime variables parsed from `{{variable}}` placeholders.
-- Copy, structured Run, Open, and Open Terminal actions.
-- Explicit `safe`, `caution`, and `danger` risk levels.
+- Example switch for every Section with examples.
+- Copy-only command handling with a smaller, simpler command schema.
 - Global in-memory search with `Ctrl+K`.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
@@ -47,7 +45,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.4.0 adds a per-table Example column. Tables with examples automatically use a 35/35/30 Command, Information, Example layout; concept-only tables retain the compact 42/58 layout.
+Version 0.5.0 upgrades command files to version 2, removes syntax/action/risk/variables, and adds lazy rendering plus virtual scrolling for large vaults.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -61,14 +59,13 @@ Use **+ ADD TABLE** when many related commands or values should be scanned as on
 
 - The left 42% column contains an automatically maintained row number, generated command/value, and a COPY button at the end of every row.
 - Table rows do not require a separate Name or Label; numbering updates automatically after add, delete, duplicate, or reorder operations.
-- The Information column contains description, risk, and MORE/LESS details for variables, syntax, notes, and hidden examples.
-- Variables stay inside MORE in table mode so collapsed rows remain compact.
+- The Information column contains Description and MORE/LESS details for Notes and hidden Examples.
 - Existing sections can switch between **Use Compact Table** and **Use Standard Rows** from the section menu without losing data.
-- Add, edit, duplicate, reorder, move, delete, search, and runtime variable behavior are shared with regular commands.
+- Add, edit, duplicate, reorder, move, delete, search, and copy behavior are shared with regular commands.
 
 ### Example column
 
-When a Compact Table contains at least one Example, its **EXAMPLES** button is available in the section header and the third column appears automatically. Click the button to hide or show that column for the current app session.
+When any Section contains at least one Example, its **EXAMPLES** switch is available in the section header and the third column appears automatically. Toggle the switch to hide or show that column for the current app session.
 
 - The visible layout is **35% Command / 35% Information / 30% Example**.
 - Click an Example cell to copy its exact text; an empty Example displays `—`.
@@ -78,13 +75,12 @@ When a Compact Table contains at least one Example, its **EXAMPLES** button is a
 
 Click **+ ADD TABLE**, enter the table name, then paste a table. The live preview detects Markdown, TSV (Excel/Google Sheets), and CSV; it shows errors before anything is saved. Leave the paste field empty to create a blank Compact Table.
 
-Use a header row. `Command`, `Port`, or `Value` is required; the importer also recognizes `Service`, `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk`, and `Variables` in English or Vietnamese. A separate Service value is appended to Command after a tab; unknown columns are kept in Notes.
+Use a header row. `Command`, `Port`, or `Value` is required; the importer also recognizes `Service`, `Description`/`Information`, `Example`, and `Notes` in English or Vietnamese. A separate Service value is appended to Command after a tab. Syntax, Action, Risk, and Variables are rejected.
 
 Ask GPT for this output format:
 
 ```text
-Return only a Markdown table with the columns: Command, Service, Description, Syntax, Example, Notes, Action, Risk, Variables.
-Use Variables as: target=192.168.1.10; ports=22,80,443.
+Return only a Markdown table with the columns: Command, Service, Description, Example, Notes.
 ```
 
 ### Technology
@@ -132,10 +128,10 @@ npm audit --omit=dev
 
 The project includes:
 
-- TypeScript tests for parsing, validation, IDs, variables, and command safety.
-- Rust tests for workspace confinement, symlink rejection, atomic writes, stale-write protection, filesystem CRUD, process parsing, and settings.
+- TypeScript tests for parsing, migration, import validation, IDs, and large-list behavior.
+- Rust tests for workspace confinement, symlink rejection, atomic writes, stale-write protection, filesystem CRUD, and settings.
 - A no-dependency Tauri IPC integration harness at `e2e.html`.
-- A 20-section/100-row frontend stress scenario at `/?stress=1` during development.
+- Frontend stress scenarios at `/?stress=100`, `/?stress=1000`, and `/?stress=5000` during development.
 
 ### Release build
 
@@ -170,19 +166,16 @@ Minimal `.cmdnote` file:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "title": "Nmap",
   "description": "Network scanning commands",
   "sections": []
 }
 ```
 
-### Execution safety
+### Data safety
 
-- Direct Run always launches a program with an argument array; it never wraps arbitrary input in `sh -c`.
-- Pipes, redirects, chaining, expansion, elevation, environment assignments, and shell interpreters are redirected to Open Terminal.
-- Elevated commands request credentials only through the system terminal.
-- Caution and danger actions require confirmation.
+- Version 1 command files are migrated atomically to version 2 when the workspace opens.
 - Workspace paths are canonicalized and confined to the selected root.
 - Symbolic links are not traversed or managed.
 - Command files have a 5 MiB safety limit.
@@ -203,15 +196,13 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 - Ứng dụng desktop Tauri thực sự, ưu tiên Kali Linux GNOME.
 - Vanilla TypeScript, HTML, CSS và Rust—không dùng frontend framework.
-- Grid Command/Information 42/58 dùng chung và luôn thẳng hàng.
+- Lazy Section và virtual scrolling giúp kho command lớn vẫn mượt.
 - Explorer filesystem lồng nhau với tạo, đổi tên, xóa và refresh.
 - CRUD section/command, duplicate, sắp xếp và chuyển command giữa các section.
 - Compact Table để tổng hợp dày các command, port hoặc chức năng liên quan mà không tạo quá nhiều card lớn.
 - Paste/import bảng do GPT tạo, tự nhận diện Markdown, TSV và CSV kèm preview kiểm tra dữ liệu.
-- Cột Example riêng theo từng Table, tự hiện khi Table có ví dụ.
-- Tự phân tích runtime variable từ placeholder `{{variable}}`.
-- Các action Copy, Run có cấu trúc, Open và Open Terminal.
-- Risk level rõ ràng: `safe`, `caution`, `danger`.
+- Example switch cho mọi Section có ví dụ.
+- Chỉ giữ thao tác COPY và schema command gọn nhẹ.
 - Tìm kiếm toàn workspace bằng `Ctrl+K`.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
@@ -220,7 +211,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.4.0 bổ sung cột Example riêng cho từng Table. Table có ví dụ tự dùng bố cục 35/35/30 cho Command, Information và Example; Table chỉ lưu khái niệm vẫn giữ layout 42/58.
+Phiên bản 0.5.0 nâng file command lên version 2, loại bỏ syntax/action/risk/variables và bổ sung lazy rendering cùng virtual scrolling cho kho dữ liệu lớn.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -234,14 +225,13 @@ Sử dụng **+ ADD TABLE** khi cần xem nhiều command hoặc giá trị liê
 
 - Cột trái 42% chứa số thứ tự tự động, command/value đã generate và nút COPY ở cuối mỗi hàng.
 - Hàng trong bảng không cần nhập Name hoặc Label; số thứ tự tự cập nhật sau khi thêm, xóa, duplicate hoặc sắp xếp lại.
-- Cột Information chứa description, risk và MORE/LESS cho variables, syntax, notes và Example khi cột Example đang ẩn.
-- Trong table mode, variable inputs chỉ xuất hiện khi mở MORE để các hàng collapsed luôn gọn.
+- Cột Information chứa Description và MORE/LESS cho Notes cùng Example khi cột Example đang ẩn.
 - Section hiện có có thể chuyển giữa **Use Compact Table** và **Use Standard Rows** từ section menu mà không mất dữ liệu.
-- Add, edit, duplicate, reorder, move, delete, search và runtime variable dùng chung với command thông thường.
+- Add, edit, duplicate, reorder, move, delete, search và COPY dùng chung với command thông thường.
 
 ### Cột Example
 
-Khi một Compact Table có ít nhất một Example, nút **EXAMPLES** xuất hiện ở section header và cột thứ ba tự hiển thị. Nhấn nút để ẩn/hiện cột trong phiên ứng dụng hiện tại.
+Khi một Section có ít nhất một Example, switch **EXAMPLES** xuất hiện ở section header và cột thứ ba tự hiển thị. Bật/tắt switch để đổi trạng thái trong phiên ứng dụng hiện tại.
 
 - Bố cục khi hiện là **35% Command / 35% Information / 30% Example**.
 - Nhấn trực tiếp vào ô Example để copy đúng nội dung; Example trống hiển thị `—`.
@@ -251,13 +241,12 @@ Khi một Compact Table có ít nhất một Example, nút **EXAMPLES** xuất h
 
 Nhấn **+ ADD TABLE**, nhập tên bảng rồi paste dữ liệu. Preview sẽ tự nhận diện Markdown, TSV (Excel/Google Sheets) và CSV; lỗi được hiện trước khi bất kỳ dữ liệu nào được lưu. Có thể để trống vùng paste để tạo Compact Table rỗng.
 
-Bảng cần có hàng header. Cột bắt buộc là `Command`, `Port` hoặc `Value`; importer cũng nhận `Service`, `Description`/`Information`, `Syntax`, `Example`, `Notes`, `Action`, `Risk` và `Variables` bằng tiếng Anh hoặc tiếng Việt. Nếu Service nằm ở cột riêng, ứng dụng ghép nó vào Command bằng một tab; các cột chưa nhận diện sẽ được giữ trong Notes.
+Bảng cần có hàng header. Cột bắt buộc là `Command`, `Port` hoặc `Value`; importer cũng nhận `Service`, `Description`/`Information`, `Example` và `Notes` bằng tiếng Anh hoặc tiếng Việt. Nếu Service nằm ở cột riêng, ứng dụng ghép nó vào Command bằng một tab. Syntax, Action, Risk và Variables sẽ bị chặn.
 
 Bạn có thể yêu cầu GPT theo mẫu sau:
 
 ```text
-Chỉ trả về một bảng Markdown với các cột: Command, Service, Description, Syntax, Example, Notes, Action, Risk, Variables.
-Viết Variables theo dạng: target=192.168.1.10; ports=22,80,443.
+Chỉ trả về một bảng Markdown với các cột: Command, Service, Description, Example, Notes.
 ```
 
 ### Công nghệ
@@ -305,10 +294,10 @@ npm audit --omit=dev
 
 Project bao gồm:
 
-- TypeScript tests cho parser, validation, ID, variable và command safety.
-- Rust tests cho workspace boundary, symlink, atomic write, chống stale write, filesystem CRUD, process parser và settings.
+- TypeScript tests cho parser, migration, import validation, ID và large-list behavior.
+- Rust tests cho workspace boundary, symlink, atomic write, chống stale write, filesystem CRUD và settings.
 - Tauri IPC integration harness không cần dependency bổ sung tại `e2e.html`.
-- Frontend stress scenario 20 section/100 row tại `/?stress=1` trong development.
+- Frontend stress scenarios tại `/?stress=100`, `/?stress=1000` và `/?stress=5000` trong development.
 
 ### Build bản release
 
@@ -343,19 +332,16 @@ File `.cmdnote` tối thiểu:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "title": "Nmap",
   "description": "Các lệnh quét mạng",
   "sections": []
 }
 ```
 
-### An toàn khi thực thi
+### An toàn dữ liệu
 
-- Direct Run luôn chạy program cùng argument array; không bọc input tùy ý bằng `sh -c`.
-- Pipe, redirect, chaining, expansion, elevation, environment assignment và shell interpreter được chuyển sang Open Terminal.
-- Command cần quyền cao chỉ hỏi mật khẩu qua system terminal.
-- Action caution và danger luôn cần xác nhận.
+- File command version 1 được migration atomically sang version 2 khi workspace mở.
 - Mọi path được canonicalize và giới hạn trong workspace đã chọn.
 - Không traverse hoặc quản lý symbolic link.
 - File command có giới hạn an toàn 5 MiB.

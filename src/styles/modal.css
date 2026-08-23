@@ -295,24 +295,6 @@
   gap: 12px;
 }
 
-.form-variables {
-  min-width: 0;
-  padding-top: 4px;
-}
-
-.form-variables-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 0;
-  margin-bottom: 8px;
-}
-
-.form-variables-header h3 {
-  font-size: 11px;
-  font-weight: 650;
-}
-
 .inline-button {
   height: 31px;
   padding: 0 9px;
@@ -328,46 +310,6 @@
 
 .inline-button:hover {
   background: var(--bg-hover);
-}
-
-.form-variable-list {
-  display: grid;
-  gap: 7px;
-}
-
-.form-variable-row {
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) 30px;
-  min-width: 0;
-  gap: 7px;
-}
-
-.form-variable-row input {
-  width: 100%;
-  min-width: 0;
-  height: 32px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-main);
-  font-family: var(--font-code);
-  font-size: 13px;
-}
-
-.remove-variable {
-  width: 30px;
-  height: 32px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 17px;
-  cursor: pointer;
-}
-
-.remove-variable:hover {
-  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
-  color: var(--danger);
 }
 
 .form-field input:focus,

@@ -29,8 +29,6 @@ pub(crate) struct AppSettings {
     pub(crate) ui_scale: u16,
     #[serde(default = "default_true")]
     pub(crate) remember_expanded_sections: bool,
-    #[serde(default = "default_true")]
-    pub(crate) confirm_before_run: bool,
     pub(crate) expanded_sections: Vec<String>,
     pub(crate) section_state_files: Vec<String>,
     pub(crate) window_width: Option<u32>,
@@ -46,7 +44,6 @@ impl Default for AppSettings {
             code_font_size: default_code_font_size(),
             ui_scale: default_ui_scale(),
             remember_expanded_sections: true,
-            confirm_before_run: true,
             expanded_sections: Vec::new(),
             section_state_files: Vec::new(),
             window_width: None,

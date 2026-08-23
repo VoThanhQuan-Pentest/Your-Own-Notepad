@@ -15,10 +15,28 @@ export async function loadSettings(): Promise<AppSettings> {
     return structuredClone(defaultSettings);
   }
   try {
-    return { ...defaultSettings, ...(JSON.parse(source) as Partial<AppSettings>) };
+    return normalizeSettings(JSON.parse(source) as Partial<AppSettings>);
   } catch {
     return structuredClone(defaultSettings);
   }
+}
+
+function normalizeSettings(value: Partial<AppSettings>): AppSettings {
+  return {
+    lastWorkspace: typeof value.lastWorkspace === "string" ? value.lastWorkspace : null,
+    lastOpenedFile: typeof value.lastOpenedFile === "string" ? value.lastOpenedFile : null,
+    uiFontSize: typeof value.uiFontSize === "number" ? value.uiFontSize : defaultSettings.uiFontSize,
+    codeFontSize: typeof value.codeFontSize === "number" ? value.codeFontSize : defaultSettings.codeFontSize,
+    uiScale: typeof value.uiScale === "number" ? value.uiScale : defaultSettings.uiScale,
+    rememberExpandedSections:
+      typeof value.rememberExpandedSections === "boolean"
+        ? value.rememberExpandedSections
+        : defaultSettings.rememberExpandedSections,
+    expandedSections: Array.isArray(value.expandedSections) ? value.expandedSections : [],
+    sectionStateFiles: Array.isArray(value.sectionStateFiles) ? value.sectionStateFiles : [],
+    windowWidth: typeof value.windowWidth === "number" ? value.windowWidth : null,
+    windowHeight: typeof value.windowHeight === "number" ? value.windowHeight : null,
+  };
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {

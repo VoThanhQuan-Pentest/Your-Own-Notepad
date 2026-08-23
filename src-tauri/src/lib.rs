@@ -14,9 +14,6 @@ pub fn run() {
             commands::filesystem::create_command_file,
             commands::filesystem::rename_entry,
             commands::filesystem::delete_entry,
-            commands::process::execute_program,
-            commands::system::open_terminal,
-            commands::system::open_external,
             commands::settings::load_settings,
             commands::settings::save_settings,
         ])

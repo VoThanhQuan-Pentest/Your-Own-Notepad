@@ -5,7 +5,6 @@ export interface AppSettings {
   codeFontSize: number;
   uiScale: number;
   rememberExpandedSections: boolean;
-  confirmBeforeRun: boolean;
   expandedSections: string[];
   sectionStateFiles: string[];
   windowWidth: number | null;
@@ -19,7 +18,6 @@ export const defaultSettings: AppSettings = {
   codeFontSize: 13,
   uiScale: 100,
   rememberExpandedSections: true,
-  confirmBeforeRun: true,
   expandedSections: [],
   sectionStateFiles: [],
   windowWidth: null,

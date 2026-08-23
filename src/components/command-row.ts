@@ -1,7 +1,5 @@
-import type { CommandAction, CommandEntry } from "../models/command-file";
-import { supportsDirectRun } from "../utils/command-safety";
+import type { CommandEntry } from "../models/command-file";
 import { button, element } from "../utils/dom";
-import { extractVariableNames, renderCommandTemplate } from "../utils/variables";
 
 export interface CommandRowHandle {
   element: HTMLElement;
@@ -9,12 +7,7 @@ export interface CommandRowHandle {
 }
 
 export interface CommandRowCallbacks {
-  onAction(
-    action: CommandAction,
-    command: CommandEntry,
-    generatedCommand: string,
-    trigger: HTMLButtonElement,
-  ): void;
+  onCopy(value: string, trigger: HTMLButtonElement): void;
   onMenu(anchor: HTMLButtonElement, command: CommandEntry): void;
 }
 
@@ -25,10 +18,11 @@ export function createCommandRow(
   compactTable = false,
   tableRowNumber?: number,
   showExampleColumn = false,
+  initiallyExpanded = false,
 ): CommandRowHandle {
   const row = element(
     "article",
-    `command-row risk-${command.risk}${compactTable ? " compact-table-row" : ""}${showExampleColumn ? " with-example-column" : ""}`,
+    `command-row${compactTable ? " compact-table-row" : ""}${showExampleColumn ? " with-example-column" : ""}`,
   );
   row.id = `command-${command.id}`;
   row.dataset.commandId = command.id;
@@ -45,7 +39,6 @@ export function createCommandRow(
       visibleName,
     ),
   );
-
   const menu = button("row-menu", "⋮");
   const accessibleName = compactTable ? `table row ${visibleName}` : command.name;
   menu.title = `Actions for ${accessibleName}`;
@@ -53,91 +46,42 @@ export function createCommandRow(
   menu.addEventListener("click", () => callbacks.onMenu(menu, command));
   commandHeader.append(menu);
 
-  const runtimeVariables = mergeRuntimeVariables(command);
-  const values = new Map(
-    runtimeVariables.map((variable) => [variable.name, variable.default ?? ""]),
-  );
   const codeScroller = element("div", "command-code");
-  const generatedCode = element("code", undefined, renderCommandTemplate(command.command, values));
-  let effectiveAction: CommandAction = command.action;
-  let secondaryActionButton: HTMLButtonElement | null = null;
-  codeScroller.append(generatedCode);
-
-  commandCell.append(commandHeader, codeScroller);
-
-  let variableList: HTMLElement | null = null;
-  if (runtimeVariables.length > 0) {
-    const createdVariableList = element("div", "variable-list");
-    variableList = createdVariableList;
-    runtimeVariables.forEach((variable) => {
-      const label = element("label", "variable-control");
-      label.append(element("span", undefined, variable.name));
-      const input = element("input");
-      input.type = "text";
-      input.value = variable.default ?? "";
-      input.autocomplete = "off";
-      input.addEventListener("input", () => {
-        values.set(variable.name, input.value);
-        refreshGeneratedCommand();
-      });
-      label.append(input);
-      createdVariableList.append(label);
-    });
-    if (!compactTable) {
-      commandCell.append(createdVariableList);
-    }
-  }
-
+  codeScroller.append(element("code", undefined, command.command));
   const commandActions = element("div", "command-actions");
   const copyButton = button("action-button primary-action", "COPY");
-  copyButton.addEventListener("click", () => {
-    callbacks.onAction("copy", command, generatedCode.textContent ?? "", copyButton);
-  });
+  copyButton.addEventListener("click", () => callbacks.onCopy(command.command, copyButton));
   commandActions.append(copyButton);
-  if (command.action !== "copy") {
-    secondaryActionButton = button("action-button", "");
-    secondaryActionButton.addEventListener("click", () => {
-      callbacks.onAction(
-        effectiveAction,
-        command,
-        generatedCode.textContent ?? "",
-        secondaryActionButton as HTMLButtonElement,
-      );
-    });
-    commandActions.append(secondaryActionButton);
-    refreshGeneratedCommand();
-  }
-  commandCell.append(commandActions);
+  commandCell.append(commandHeader, codeScroller, commandActions);
 
   const infoCell = element("div", "info-cell");
-  const infoTop = element("div", "info-top");
-  infoTop.append(
-    element("p", "command-description", command.description || "No description provided."),
-    element("span", `risk-badge ${command.risk}`, command.risk.toUpperCase()),
+  const infoTop = element(
+    "div",
+    "info-top",
   );
+  infoTop.append(element("p", "command-description", command.description || "No description provided."));
 
+  const hasDetails = Boolean(command.description || command.notes || (!showExampleColumn && command.example));
   const expanded = element("div", "expanded-content");
   expanded.hidden = true;
-  if (compactTable && variableList) {
-    const variableDetail = element("section", "detail-group compact-variable-detail");
-    variableDetail.append(element("h4", undefined, "Variables"), variableList);
-    expanded.append(variableDetail);
-  }
   appendDetail(expanded, "Description", command.description);
-  appendDetail(expanded, "Syntax", command.syntax, true);
   if (!showExampleColumn) {
     appendDetail(expanded, "Example", command.example, true);
   }
   appendDetail(expanded, "Notes", command.notes);
+  infoCell.append(infoTop, expanded);
 
-  const moreButton = button("more-button", "MORE");
-  moreButton.setAttribute("aria-expanded", "false");
-  moreButton.setAttribute("aria-controls", `details-${command.id}`);
-  expanded.id = `details-${command.id}`;
+  let moreButton: HTMLButtonElement | null = null;
+  if (hasDetails) {
+    moreButton = button("more-button", "MORE");
+    moreButton.setAttribute("aria-expanded", "false");
+    moreButton.setAttribute("aria-controls", `details-${command.id}`);
+    expanded.id = `details-${command.id}`;
+    const infoActions = element("div", "info-actions");
+    infoActions.append(moreButton);
+    infoCell.append(infoActions);
+  }
 
-  const infoActions = element("div", "info-actions");
-  infoActions.append(moreButton);
-  infoCell.append(infoTop, expanded, infoActions);
   if (showExampleColumn) {
     row.append(commandCell, infoCell, createExampleCell(command, callbacks, visibleName));
   } else {
@@ -147,30 +91,19 @@ export function createCommandRow(
   const handle: CommandRowHandle = {
     element: row,
     setExpanded(isExpanded) {
+      if (!moreButton) {
+        return;
+      }
       expanded.hidden = !isExpanded;
+      infoTop.hidden = isExpanded;
       row.classList.toggle("expanded", isExpanded);
       moreButton.textContent = isExpanded ? "LESS" : "MORE";
       moreButton.setAttribute("aria-expanded", String(isExpanded));
     },
   };
-
-  moreButton.addEventListener("click", () => requestExpansion(handle));
+  moreButton?.addEventListener("click", () => requestExpansion(handle));
+  handle.setExpanded(initiallyExpanded);
   return handle;
-
-  function refreshGeneratedCommand(): void {
-    const generated = renderCommandTemplate(command.command, values);
-    generatedCode.textContent = generated;
-    if (!secondaryActionButton) {
-      return;
-    }
-    effectiveAction =
-      command.action === "run" && !supportsDirectRun(generated) ? "open-terminal" : command.action;
-    secondaryActionButton.textContent = actionLabel(effectiveAction);
-    secondaryActionButton.title =
-      effectiveAction !== command.action
-        ? "This generated command uses shell syntax or elevation and cannot run directly."
-        : "";
-  }
 }
 
 function createExampleCell(
@@ -184,23 +117,8 @@ function createExampleCell(
   const copyExample = button("example-cell example-copy", command.example);
   copyExample.title = "Copy example";
   copyExample.setAttribute("aria-label", `Copy example for ${visibleName}`);
-  copyExample.addEventListener("click", () => {
-    callbacks.onAction("copy", command, command.example ?? "", copyExample);
-  });
+  copyExample.addEventListener("click", () => callbacks.onCopy(command.example ?? "", copyExample));
   return copyExample;
-}
-
-function mergeRuntimeVariables(command: CommandEntry) {
-  const explicit = new Map(
-    (command.variables ?? []).map((variable) => [variable.name, variable] as const),
-  );
-  const merged = extractVariableNames(command.command).map((name) => {
-    const variable = explicit.get(name) ?? { name };
-    explicit.delete(name);
-    return variable;
-  });
-  explicit.forEach((variable) => merged.push(variable));
-  return merged;
 }
 
 function appendDetail(
@@ -212,21 +130,7 @@ function appendDetail(
   if (!value) {
     return;
   }
-
   const group = element("section", `detail-group${code ? " code-detail" : ""}`);
   group.append(element("h4", undefined, label), element("p", undefined, value));
   container.append(group);
-}
-
-function actionLabel(action: CommandEntry["action"]): string {
-  switch (action) {
-    case "run":
-      return "RUN";
-    case "open":
-      return "OPEN";
-    case "open-terminal":
-      return "OPEN TERMINAL";
-    case "copy":
-      return "COPY";
-  }
 }

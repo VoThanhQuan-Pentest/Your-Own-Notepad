@@ -7,7 +7,6 @@ interface MockState {
   folders: string[];
   files: Record<string, string>;
   settings: AppSettings;
-  copiedCommands: string[];
   calls: string[];
 }
 
@@ -49,12 +48,6 @@ mockIPC((command, rawPayload) => {
     case "delete_entry":
       deleteEntry(String(payload.entryPath), Boolean(payload.recursive));
       return null;
-    case "execute_program":
-    case "open_terminal":
-    case "open_external":
-      state.copiedCommands.push(String(payload.command ?? payload.target ?? ""));
-      persist();
-      return { pid: 4242, program: "e2e", args: [] };
     case "plugin:dialog|open":
       return WORKSPACE;
     default:
@@ -83,7 +76,6 @@ function loadState(): MockState {
     folders: [WORKSPACE],
     files: {},
     settings: structuredClone(defaultSettings),
-    copiedCommands: [],
     calls: [],
   };
 }
@@ -161,7 +153,7 @@ function createFile(parent: string, name: string): { path: string } {
   const path = join(parent, cleanName);
   assert(!state.folders.includes(path) && state.files[path] === undefined, "Entry exists.");
   state.files[path] = `${JSON.stringify(
-    { version: 1, title: cleanName.replace(/\.cmdnote$/i, ""), description: "", sections: [] },
+    { version: 2, title: cleanName.replace(/\.cmdnote$/i, ""), description: "", sections: [] },
     null,
     2,
   )}\n`;

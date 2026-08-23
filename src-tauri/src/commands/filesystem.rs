@@ -155,7 +155,7 @@ pub(crate) async fn create_command_file(
         .and_then(OsStr::to_str)
         .unwrap_or("Untitled");
     let source = serde_json::to_string_pretty(&json!({
-        "version": 1,
+        "version": 2,
         "title": title,
         "description": "",
         "sections": []
@@ -684,7 +684,7 @@ mod tests {
         ))
         .expect("initial file must be readable");
         let changed = r#"{
-  "version": 1,
+  "version": 2,
   "title": "Nmap",
   "description": "Network scanner",
   "sections": []
@@ -745,7 +745,7 @@ mod tests {
         let result = tauri::async_runtime::block_on(write_command_file(
             root,
             command_file.path.clone(),
-            r#"{"version":1,"title":"Nmap","sections":[]}"#.to_string(),
+            r#"{"version":2,"title":"Nmap","sections":[]}"#.to_string(),
             loaded,
         ));
         assert!(result.is_err());

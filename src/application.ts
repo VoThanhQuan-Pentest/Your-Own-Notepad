@@ -1,4 +1,4 @@
-import { createCommandTable } from "./components/command-table";
+import { createCommandTable, type CommandTableHandle } from "./components/command-table";
 import { openCommandForm } from "./components/command-form";
 import { createExplorer } from "./components/explorer";
 import { openMenu } from "./components/menu";
@@ -7,7 +7,6 @@ import { openTableImportForm } from "./components/table-import-form";
 import { createToolbar, type ToolbarHandle } from "./components/toolbar";
 import { buildStressFile, demoCommandFile } from "./demo-data";
 import type {
-  CommandAction,
   CommandEntry,
   CommandFile,
   CommandSection,
@@ -16,7 +15,6 @@ import type {
 import type { FilesystemEntry } from "./models/filesystem";
 import { defaultSettings, type AppSettings } from "./models/settings";
 import { copyText } from "./services/clipboard";
-import { executeProgram, openExternal, openTerminal } from "./services/commands";
 import {
   createCommandFile,
   createFolder,
@@ -44,9 +42,22 @@ interface SearchResult {
   command?: string;
 }
 
+interface SearchIndexRecord {
+  normalized: string;
+  result: SearchResult;
+}
+
 interface FocusTarget {
   sectionId?: string;
   commandId?: string;
+}
+
+interface LoadedCommandFile {
+  path: string;
+  file?: CommandFile;
+  source?: string;
+  error?: string;
+  migrated?: boolean;
 }
 
 interface WorkspaceSnapshot {
@@ -68,10 +79,12 @@ export class CommandVaultApplication {
   private readonly root: HTMLElement;
   private readonly desktopRuntime = isTauriRuntime();
   private readonly stressMode = new URLSearchParams(window.location.search).has("stress");
+  private readonly stressRowCount = stressRowCountFromLocation();
   private readonly workspace = element("main", "workspace");
   private readonly body = element("div", "app-body");
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
+  private activeTable: CommandTableHandle | null = null;
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -85,11 +98,15 @@ export class CommandVaultApplication {
   private readonly transientExpandedSections = new Set<string>();
   private readonly sectionStateInitializedFiles = new Set<string>();
   private readonly exampleColumnOverrides = new Map<string, boolean>();
+  private workspaceLoadGeneration = 0;
+  private searchTimer: number | null = null;
+  private searchGeneration = 0;
+  private searchIndex: SearchIndexRecord[] = [];
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.toolbar = createToolbar({
-      onSearch: (query) => this.search(query),
+      onSearch: (query) => this.queueSearch(query),
       onSettings: () => this.openSettings(),
     });
   }
@@ -267,22 +284,57 @@ export class CommandVaultApplication {
     if (!this.workspaceRoot) {
       return;
     }
+    const generation = ++this.workspaceLoadGeneration;
+    const workspaceRoot = this.workspaceRoot;
     const active = preserveActive ? this.activeFilePath : null;
-    const entries = await listDirectory(this.workspaceRoot);
+    const entries = await listDirectory(workspaceRoot);
     const paths = flattenFiles(entries).map((entry) => entry.path);
-    const loaded = await Promise.all(
-      paths.map(async (path) => {
-        try {
-          const source = await readCommandFile(this.workspaceRoot as string, path);
-          const parsed = parseCommandFile(source);
-          return parsed.ok
-            ? ({ path, file: parsed.data, source } as const)
-            : ({ path, error: formatParseError(parsed.error.message, parsed.error.issues) } as const);
-        } catch (error) {
-          return ({ path, error: normalizeServiceError(error).message } as const);
+    let completed = 0;
+    const migratedPaths: string[] = [];
+    const loaded = await mapWithConcurrency(paths, 4, async (path) => {
+      try {
+        const source = await readCommandFile(workspaceRoot, path);
+        if (generation !== this.workspaceLoadGeneration) {
+          return { path, error: "Workspace changed while loading." } satisfies LoadedCommandFile;
         }
-      }),
-    );
+        const parsed = parseCommandFile(source);
+        if (!parsed.ok) {
+          return { path, error: formatParseError(parsed.error.message, parsed.error.issues) } satisfies LoadedCommandFile;
+        }
+        if (parsed.needsMigration && this.desktopRuntime) {
+          try {
+            if (generation !== this.workspaceLoadGeneration) {
+              return { path, error: "Workspace changed while loading." } satisfies LoadedCommandFile;
+            }
+            const migrated = await writeCommandFile(
+              workspaceRoot,
+              path,
+              serializeCommandFile(parsed.data),
+              source,
+            );
+            migratedPaths.push(path);
+            return { path, file: parsed.data, source: migrated, migrated: true } satisfies LoadedCommandFile;
+          } catch (error) {
+            return {
+              path,
+              error: `Migration to version 2 failed: ${normalizeServiceError(error).message}`,
+            } satisfies LoadedCommandFile;
+          }
+        }
+        return { path, file: parsed.data, source } satisfies LoadedCommandFile;
+      } catch (error) {
+        return { path, error: normalizeServiceError(error).message } satisfies LoadedCommandFile;
+      } finally {
+        completed += 1;
+        if (generation === this.workspaceLoadGeneration && (completed === paths.length || completed % 8 === 0)) {
+          this.renderLoading(`Reading workspace ${completed}/${paths.length}…`);
+        }
+      }
+    });
+
+    if (generation !== this.workspaceLoadGeneration) {
+      return;
+    }
 
     this.entries = entries;
     this.files.clear();
@@ -296,6 +348,7 @@ export class CommandVaultApplication {
         this.fileErrors.set(item.path, item.error);
       }
     });
+    this.rebuildSearchIndex();
     entries
       .filter((entry) => entry.kind === "folder")
       .forEach((entry) => this.expandedFolders.add(entry.path));
@@ -313,6 +366,16 @@ export class CommandVaultApplication {
       this.activeFilePath = null;
       this.renderWorkspaceEmpty("The previously open file was removed outside Command Vault.");
       this.renderExplorer();
+    }
+
+    const migrationFailures = loaded.filter((item) => item.error?.startsWith("Migration to version 2 failed"));
+    if (migratedPaths.length > 0 || migrationFailures.length > 0) {
+      void showMessage({
+        title: "Command File Migration",
+        message: `${migratedPaths.length} file${migratedPaths.length === 1 ? "" : "s"} migrated to version 2.${migrationFailures.length ? ` ${migrationFailures.length} file${migrationFailures.length === 1 ? "" : "s"} could not be migrated.` : ""}`,
+        detail: migrationFailures.length ? migrationFailures.map((item) => item.path).join("\n") : undefined,
+        kind: migrationFailures.length ? "error" : "info",
+      });
     }
   }
 
@@ -345,10 +408,19 @@ export class CommandVaultApplication {
         const source = await readCommandFile(this.workspaceRoot, path);
         const parsed = parseCommandFile(source);
         if (parsed.ok) {
+          const normalizedSource = parsed.needsMigration
+            ? await writeCommandFile(
+                this.workspaceRoot,
+                path,
+                serializeCommandFile(parsed.data),
+                source,
+              )
+            : source;
           file = parsed.data;
           this.files.set(path, file);
-          this.fileSources.set(path, source);
+          this.fileSources.set(path, normalizedSource);
           this.fileErrors.delete(path);
+          this.rebuildSearchIndex();
         } else {
           file = undefined;
           this.files.delete(path);
@@ -417,14 +489,16 @@ export class CommandVaultApplication {
           this.setExampleColumnVisible(sectionId, visible),
         onSectionMenu: (anchor, section) => this.openSectionMenu(anchor, section),
         onCommandMenu: (anchor, command) => this.openCommandMenu(anchor, command),
-        onCommandAction: (action, command, generated, trigger) =>
-          void this.performCommandAction(action, command, generated, trigger),
+        onCommandCopy: (value, trigger) => void this.copyCommand(value, trigger),
       },
     });
-    this.workspace.replaceChildren(table);
+    this.activeTable?.dispose();
+    this.activeTable = table;
+    this.workspace.replaceChildren(table.element);
 
     if (focus?.commandId || focus?.sectionId) {
       queueMicrotask(() => {
+        table.ensureVisible(focus.sectionId, focus.commandId);
         const selector = focus.commandId
           ? `[data-command-id="${CSS.escape(focus.commandId)}"]`
           : `[data-section-id="${CSS.escape(focus.sectionId as string)}"]`;
@@ -855,7 +929,7 @@ export class CommandVaultApplication {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
-    const next = structuredClone(this.activeFile);
+    const next = cloneCommandFile(this.activeFile);
     mutator(next);
     try {
       if (this.desktopRuntime) {
@@ -872,6 +946,7 @@ export class CommandVaultApplication {
       }
       this.activeFile = next;
       this.files.set(this.activeFilePath, next);
+      this.rebuildSearchIndex();
       this.renderActiveFile();
     } catch (error) {
       await this.showServiceFailure("Could not save command file", error);
@@ -902,7 +977,7 @@ export class CommandVaultApplication {
   }
 
   private isExampleColumnVisible(section: CommandSection): boolean {
-    if (!this.activeFilePath || section.layout !== "table") {
+    if (!this.activeFilePath) {
       return false;
     }
     if (!section.commands.some((command) => command.example?.trim())) {
@@ -916,69 +991,43 @@ export class CommandVaultApplication {
       return;
     }
     this.exampleColumnOverrides.set(sectionStateKey(this.activeFilePath, sectionId), visible);
-    this.renderActiveFile();
   }
 
-  private async performCommandAction(
-    action: CommandAction,
-    command: CommandEntry,
-    generated: string,
-    trigger: HTMLButtonElement,
-  ): Promise<void> {
-    if (action === "copy") {
-      try {
-        await copyText(generated);
-        const previous = trigger.textContent;
-        trigger.textContent = "COPIED";
-        window.setTimeout(() => {
-          if (trigger.isConnected) {
-            trigger.textContent = previous;
-          }
-        }, 1200);
-      } catch (error) {
-        await this.showServiceFailure("Could not copy command", error);
-      }
-      return;
-    }
-
-    if (!this.desktopRuntime) {
-      await this.desktopOnlyMessage();
-      return;
-    }
-
-    const needsConfirmation =
-      command.risk !== "safe" ||
-      ((action === "run" || action === "open-terminal") && this.settings.confirmBeforeRun);
-    if (needsConfirmation) {
-      const dangerous = command.risk === "danger";
-      const confirmed = await openConfirm({
-        title: dangerous ? "Execute Dangerous Command?" : "Confirm Command",
-        message: dangerous
-          ? "This command may modify or delete system data."
-          : `Run this ${command.risk} command?`,
-        detail: generated,
-        confirmLabel: action === "open" ? "OPEN" : "EXECUTE",
-        danger: dangerous,
-      });
-      if (!confirmed) {
-        return;
-      }
-    }
-
+  private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
     try {
-      if (action === "run") {
-        await executeProgram(generated);
-      } else if (action === "open-terminal") {
-        await openTerminal(generated);
-      } else if (action === "open") {
-        await openExternal(generated);
-      }
+      await copyText(value);
+      const previous = trigger.textContent;
+      trigger.textContent = "COPIED";
+      window.setTimeout(() => {
+        if (trigger.isConnected) {
+          trigger.textContent = previous;
+        }
+      }, 1200);
     } catch (error) {
-      await this.showServiceFailure("Command action failed", error);
+      await this.showServiceFailure("Could not copy command", error);
     }
   }
 
-  private search(query: string): void {
+  private queueSearch(query: string): void {
+    if (this.searchTimer !== null) {
+      window.clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+    const generation = ++this.searchGeneration;
+    if (!query.trim()) {
+      this.toolbar.setResults(null);
+      return;
+    }
+    this.searchTimer = window.setTimeout(() => {
+      this.searchTimer = null;
+      this.search(query, generation);
+    }, 120);
+  }
+
+  private search(query: string, generation: number): void {
+    if (generation !== this.searchGeneration) {
+      return;
+    }
     const normalized = query.trim().toLocaleLowerCase();
     if (!normalized) {
       this.toolbar.setResults(null);
@@ -986,31 +1035,44 @@ export class CommandVaultApplication {
     }
     const tokens = normalized.split(/\s+/);
     const results: SearchResult[] = [];
-
-    for (const [filePath, file] of this.files) {
-      if (matchesTokens(`${file.title} ${file.description ?? ""}`, tokens)) {
-        results.push({ filePath, fileTitle: file.title });
+    for (const record of this.searchIndex) {
+      if (matchesTokens(record.normalized, tokens)) {
+        results.push(record.result);
       }
-      for (const section of file.sections) {
-        if (matchesTokens(section.title, tokens)) {
-          results.push({
+      if (results.length >= 100) {
+        break;
+      }
+    }
+    this.renderSearchResults(results);
+  }
+
+  private rebuildSearchIndex(): void {
+    const records: SearchIndexRecord[] = [];
+    this.files.forEach((file, filePath) => {
+      records.push({
+        normalized: `${file.title} ${file.description ?? ""}`.toLocaleLowerCase(),
+        result: { filePath, fileTitle: file.title },
+      });
+      file.sections.forEach((section) => {
+        records.push({
+          normalized: `${section.title} ${file.title}`.toLocaleLowerCase(),
+          result: {
             filePath,
             fileTitle: file.title,
             sectionId: section.id,
             sectionTitle: section.title,
-          });
-        }
-        for (const command of section.commands) {
-          const haystack = [
-            command.name,
-            command.command,
-            command.description,
-            command.syntax,
-            command.example,
-            command.notes,
-          ].join(" ");
-          if (matchesTokens(haystack, tokens)) {
-            results.push({
+          },
+        });
+        section.commands.forEach((command) => {
+          records.push({
+            normalized: [
+              command.name,
+              command.command,
+              command.description,
+              command.example,
+              command.notes,
+            ].join(" ").toLocaleLowerCase(),
+            result: {
               filePath,
               fileTitle: file.title,
               sectionId: section.id,
@@ -1018,15 +1080,12 @@ export class CommandVaultApplication {
               commandId: command.id,
               commandName: command.name,
               command: command.command,
-            });
-          }
-          if (results.length >= 100) {
-            break;
-          }
-        }
-      }
-    }
-    this.renderSearchResults(results);
+            },
+          });
+        });
+      });
+    });
+    this.searchIndex = records;
   }
 
   private renderSearchResults(results: SearchResult[]): void {
@@ -1081,11 +1140,6 @@ export class CommandVaultApplication {
       "Remember expanded sections",
       this.settings.rememberExpandedSections,
     );
-    const confirmRun = checkboxField(
-      form,
-      "Confirm before running safe commands",
-      this.settings.confirmBeforeRun,
-    );
 
     const save = async (): Promise<void> => {
       const nextUi = Number(uiSize.value);
@@ -1110,7 +1164,6 @@ export class CommandVaultApplication {
         codeFontSize: nextCode,
         uiScale: nextScale,
         rememberExpandedSections: remember.checked,
-        confirmBeforeRun: confirmRun.checked,
         ...(!remember.checked ? { expandedSections: [], sectionStateFiles: [] } : {}),
       };
       try {
@@ -1280,6 +1333,7 @@ export class CommandVaultApplication {
   }
 
   private renderLoading(message: string): void {
+    this.clearActiveTable();
     const state = element("section", "empty-state loading-state");
     state.append(element("div", "empty-state-icon", "…"), element("h1", undefined, message));
     this.workspace.replaceChildren(state);
@@ -1292,6 +1346,7 @@ export class CommandVaultApplication {
     action: () => void,
     error = false,
   ): void {
+    this.clearActiveTable();
     const state = element("section", `empty-state${error ? " error-state" : ""}`);
     const icon = element("div", "empty-state-icon", error ? "!" : ">_");
     icon.setAttribute("aria-hidden", "true");
@@ -1302,8 +1357,13 @@ export class CommandVaultApplication {
     this.workspace.replaceChildren(state);
   }
 
+  private clearActiveTable(): void {
+    this.activeTable?.dispose();
+    this.activeTable = null;
+  }
+
   private loadDevelopmentWorkspace(): void {
-    const file = this.stressMode ? buildStressFile() : demoCommandFile;
+    const file = this.stressMode ? buildStressFile(this.stressRowCount) : demoCommandFile;
     const nmapPath = "/demo/Network/Nmap.cmdnote";
     this.workspaceRoot = "/demo";
     this.selectedFolder = "/demo/Network";
@@ -1316,6 +1376,7 @@ export class CommandVaultApplication {
     this.files.set("/demo/Network/tcpdump.cmdnote", { ...demoCommandFile, title: "tcpdump" });
     this.files.set("/demo/Linux/Terminal.cmdnote", { ...demoCommandFile, title: "Linux Terminal" });
     this.files.set("/demo/Development/Git.cmdnote", { ...demoCommandFile, title: "Git" });
+    this.rebuildSearchIndex();
     this.expandedFolders.add("/demo/Network");
     this.expandedFolders.add("/demo/Linux");
     this.expandedFolders.add("/demo/Development");
@@ -1332,7 +1393,7 @@ export class CommandVaultApplication {
   private desktopOnlyMessage(): Promise<void> {
     return showMessage({
       title: "Desktop Feature",
-      message: "Filesystem and process actions are available in the Tauri desktop window.",
+      message: "Filesystem actions are available in the Tauri desktop window.",
     });
   }
 }
@@ -1343,8 +1404,40 @@ function flattenFiles(entries: FilesystemEntry[]): FilesystemEntry[] {
   );
 }
 
+async function mapWithConcurrency<T, R>(
+  values: readonly T[],
+  concurrency: number,
+  mapper: (value: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(values.length);
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < values.length) {
+      const index = next;
+      next += 1;
+      const value = values[index] as T;
+      results[index] = await mapper(value);
+      if ((index + 1) % 8 === 0) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, worker));
+  return results;
+}
+
 function commandIds(file: CommandFile): Set<string> {
   return new Set(file.sections.flatMap((section) => section.commands.map((command) => command.id)));
+}
+
+function cloneCommandFile(file: CommandFile): CommandFile {
+  return {
+    ...file,
+    sections: file.sections.map((section) => ({
+      ...section,
+      commands: section.commands.map((command) => ({ ...command })),
+    })),
+  };
 }
 
 function findCommandInFile(file: CommandFile, id: string) {
@@ -1378,8 +1471,7 @@ function replaceSet<T>(target: Set<T>, source: ReadonlySet<T>): void {
 }
 
 function matchesTokens(value: string, tokens: string[]): boolean {
-  const normalized = value.toLocaleLowerCase();
-  return tokens.every((token) => normalized.includes(token));
+  return tokens.every((token) => value.includes(token));
 }
 
 function formatParseError(message: string, issues: Array<{ path: string; message: string }>): string {
@@ -1407,6 +1499,15 @@ function parentDirectory(path: string): string | null {
 
 function sectionStateKey(filePath: string, sectionId: string): string {
   return `${filePath}::${sectionId}`;
+}
+
+function stressRowCountFromLocation(): number {
+  const raw = new URLSearchParams(window.location.search).get("stress");
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 100;
+  }
+  return Math.min(5_000, Math.max(1, Math.floor(parsed)));
 }
 
 function demoFilesystemEntries(): FilesystemEntry[] {
