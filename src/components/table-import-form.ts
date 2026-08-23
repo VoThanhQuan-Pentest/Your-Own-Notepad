@@ -1,5 +1,10 @@
 import type { CommandEntry } from "../models/command-file";
-import { hasTableImportErrors, parseTablePaste, type TableImportPreview } from "../utils/table-import";
+import {
+  hasTableImportErrors,
+  importableCommands,
+  parseTablePaste,
+  type TableImportPreview,
+} from "../utils/table-import";
 import { element } from "../utils/dom";
 import { openModal } from "./modal";
 
@@ -10,6 +15,7 @@ export interface ImportedTable {
 
 export function openTableImportForm(
   existingCommandIds: ReadonlySet<string>,
+  existingCommands: readonly string[],
 ): Promise<ImportedTable | null> {
   return new Promise((resolve) => {
     const form = element("form", "modal-form table-import-form");
@@ -35,9 +41,19 @@ export function openTableImportForm(
     );
     const preview = element("section", "table-import-preview");
     preview.setAttribute("aria-live", "polite");
-    form.append(nameField, sourceField, help, preview);
+    const duplicateControl = element("label", "checkbox-field table-import-duplicate-toggle");
+    const includeDuplicates = element("input");
+    includeDuplicates.type = "checkbox";
+    duplicateControl.hidden = true;
+    duplicateControl.append(includeDuplicates, element("span", undefined, "Include duplicate commands"));
+    form.append(nameField, sourceField, help, duplicateControl, preview);
 
-    let currentPreview: TableImportPreview = parseTablePaste("", "Imported Table", existingCommandIds);
+    let currentPreview: TableImportPreview = parseTablePaste(
+      "",
+      "Imported Table",
+      existingCommandIds,
+      existingCommands,
+    );
     let currentSource = "";
     let previewTimer: number | null = null;
     let modal = openModal(
@@ -53,6 +69,7 @@ export function openTableImportForm(
 
     name.addEventListener("input", refreshPreview);
     source.addEventListener("input", schedulePreview);
+    includeDuplicates.addEventListener("change", refreshPreview);
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       submit();
@@ -70,8 +87,25 @@ export function openTableImportForm(
         currentSource,
         name.value.trim() || "Imported Table",
         existingCommandIds,
+        existingCommands,
       );
-      renderPreview(preview, currentPreview, currentSource.trim().length > 0);
+      duplicateControl.hidden = currentPreview.duplicates.length === 0;
+      if (duplicateControl.hidden) {
+        includeDuplicates.checked = false;
+      }
+      renderPreview(
+        preview,
+        currentPreview,
+        currentSource.trim().length > 0,
+        includeDuplicates.checked,
+      );
+      const commands = importableCommands(currentPreview, includeDuplicates.checked);
+      modal.setActionDisabled(
+        "CREATE TABLE",
+        currentSource.trim().length > 0 &&
+          commands.length === 0 &&
+          currentPreview.duplicates.length > 0,
+      );
     }
 
     function schedulePreview(): void {
@@ -94,7 +128,13 @@ export function openTableImportForm(
         source.focus();
         return;
       }
-      finish({ title, commands: currentPreview.commands });
+      const commands = importableCommands(currentPreview, includeDuplicates.checked);
+      if (currentSource.trim() && commands.length === 0 && currentPreview.duplicates.length > 0) {
+        modal.setError("Every pasted command is already present. Enable Include duplicate commands to import them anyway.");
+        includeDuplicates.focus();
+        return;
+      }
+      finish({ title, commands });
     }
 
     function finish(value: ImportedTable | null): void {
@@ -111,6 +151,7 @@ function renderPreview(
   container: HTMLElement,
   preview: TableImportPreview,
   hasSource: boolean,
+  includeDuplicates: boolean,
 ): void {
   container.replaceChildren();
   if (!hasSource) {
@@ -126,11 +167,17 @@ function renderPreview(
 
   const errors = preview.issues.filter((issue) => issue.severity === "error");
   const warnings = preview.issues.filter((issue) => issue.severity === "warning");
+  const commandsToImport = importableCommands(preview, includeDuplicates);
+  const skipped = preview.commands.length - commandsToImport.length;
   const heading = element("div", "table-import-preview-heading");
   const format = preview.format?.toUpperCase() ?? "UNKNOWN";
   const state = errors.length > 0 ? "NEEDS FIXES" : "READY";
   heading.append(
-    element("strong", undefined, `${format} · ${preview.commands.length} ROWS · ${state}`),
+    element(
+      "strong",
+      undefined,
+      `${format} · ${commandsToImport.length} TO IMPORT · ${skipped} SKIPPED · ${state}`,
+    ),
     element(
       "span",
       errors.length > 0 ? "table-import-status error" : "table-import-status",
@@ -141,13 +188,29 @@ function renderPreview(
 
   if (preview.commands.length > 0) {
     const sample = element("div", "table-import-sample");
+    const duplicateIds = new Map(
+      preview.duplicates.map((item) => [item.commandId, item.kind] as const),
+    );
     preview.commands.slice(0, 5).forEach((command, index) => {
-      const row = element("div", "table-import-sample-row");
+      const duplicate = duplicateIds.get(command.id);
+      const row = element(
+        "div",
+        `table-import-sample-row${duplicate && !includeDuplicates ? " duplicate-skipped" : ""}`,
+      );
       row.append(
         element("span", "table-import-sample-number", String(index + 1).padStart(2, "0")),
         element("code", undefined, command.command),
         element("span", "table-import-sample-info", command.description || command.notes || "—"),
       );
+      if (duplicate) {
+        row.append(
+          element(
+            "span",
+            "table-import-duplicate-badge",
+            duplicate === "existing" ? "EXISTING FILE" : "PASTED TABLE",
+          ),
+        );
+      }
       sample.append(row);
     });
     if (preview.commands.length > 5) {

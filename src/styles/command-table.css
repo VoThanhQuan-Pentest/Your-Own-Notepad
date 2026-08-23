@@ -66,13 +66,35 @@
 
 .section-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto auto;
   align-items: center;
   min-width: 0;
   height: var(--section-height);
   padding-right: 9px;
   border-bottom: 1px solid transparent;
   background: var(--bg-secondary);
+}
+
+.section-select {
+  height: 25px;
+  margin-left: 6px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.section-select:hover,
+.section-select.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-hover);
 }
 
 .section-header:has(+ .section-content:not([hidden])) {
@@ -224,6 +246,7 @@
 .section-content[hidden],
 .expanded-content[hidden],
 .info-top[hidden],
+.row-menu[hidden],
 .tree-files[hidden] {
   display: none;
 }
@@ -234,6 +257,38 @@
   grid-template-columns: minmax(280px, 42%) minmax(0, 58%);
   width: 100%;
   min-width: 0;
+}
+
+.section-selection-bar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 42px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-panel));
+  gap: 7px;
+}
+
+.selection-summary {
+  min-width: 82px;
+  margin-right: auto;
+  color: var(--accent-hover);
+  font-family: var(--font-code);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.section-selection-bar .inline-button.danger {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  color: var(--danger-text);
+}
+
+.section-selection-bar .inline-button:disabled {
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.45;
 }
 
 .table-heading.with-example-column,
@@ -298,6 +353,31 @@
 
 .command-row.expanded::before {
   background: var(--accent);
+}
+
+.command-row.selection-mode.selected {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-main));
+}
+
+.command-row.selection-mode.selected::before {
+  background: var(--accent);
+}
+
+.row-selection-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+
+.row-selection-control input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .command-cell,

@@ -14,8 +14,13 @@ interface CommandSectionCallbacks {
   onExampleColumnToggle(sectionId: string, visible: boolean): void;
   onAddCommand(sectionId: string): void;
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
+  onSelectionMode(sectionId: string, active: boolean): void;
+  onBulkMove(sectionId: string, commandIds: string[]): void;
+  onBulkDelete(sectionId: string, commandIds: string[]): void;
   rowCallbacks: CommandRowCallbacks;
   showExampleColumn: boolean;
+  selectionActive: boolean;
+  canMoveSelection: boolean;
   getScrollRoot(): HTMLElement | null;
 }
 
@@ -40,6 +45,19 @@ export function createCommandSection(
   const count = element("span", "section-count", String(section.commands.length));
   count.title = `${section.commands.length} ${section.commands.length === 1 ? "command" : "commands"}`;
   header.append(toggle, count);
+
+  if (section.commands.length > 0) {
+    const select = button(
+      `section-select${callbacks.selectionActive ? " active" : ""}`,
+      callbacks.selectionActive ? "SELECTING" : "SELECT",
+    );
+    select.setAttribute("aria-pressed", String(callbacks.selectionActive));
+    select.title = callbacks.selectionActive ? "Exit row selection" : "Select multiple rows";
+    select.addEventListener("click", () =>
+      callbacks.onSelectionMode(section.id, !callbacks.selectionActive),
+    );
+    header.append(select);
+  }
 
   const hasExamples = section.commands.some((command) => command.example?.trim());
   let showExampleColumn = hasExamples && callbacks.showExampleColumn;
@@ -71,8 +89,12 @@ export function createCommandSection(
   let isExpanded = initiallyExpanded;
   let expandedCommandId: string | null = null;
   let virtualRows: VirtualRowsHandle | null = null;
+  const selectedCommandIds = new Set<string>();
 
   function setSectionExpanded(next: boolean, notify: boolean): void {
+    if (!next && callbacks.selectionActive) {
+      callbacks.onSelectionMode(section.id, false);
+    }
     isExpanded = next;
     toggle.setAttribute("aria-expanded", String(next));
     chevron.textContent = next ? "▾" : "▸";
@@ -90,6 +112,41 @@ export function createCommandSection(
     content.hidden = !isExpanded;
     if (!isExpanded) {
       return;
+    }
+
+    let updateSelectionBar = (): void => undefined;
+    if (callbacks.selectionActive) {
+      const selectionBar = element("div", "section-selection-bar");
+      const summary = element("strong", "selection-summary");
+      const selectAll = button("inline-button", "SELECT ALL");
+      const move = button("inline-button", "MOVE TO…");
+      const remove = button("inline-button danger", "DELETE");
+      const cancel = button("inline-button", "CANCEL");
+      updateSelectionBar = () => {
+        const selected = selectedCommandIds.size;
+        summary.textContent = `${selected} SELECTED`;
+        selectAll.textContent = selected === section.commands.length ? "CLEAR ALL" : "SELECT ALL";
+        move.disabled = selected === 0 || !callbacks.canMoveSelection;
+        remove.disabled = selected === 0;
+      };
+      selectAll.addEventListener("click", () => {
+        if (selectedCommandIds.size === section.commands.length) {
+          selectedCommandIds.clear();
+        } else {
+          section.commands.forEach((command) => selectedCommandIds.add(command.id));
+        }
+        renderContent();
+      });
+      move.addEventListener("click", () =>
+        callbacks.onBulkMove(section.id, [...selectedCommandIds]),
+      );
+      remove.addEventListener("click", () =>
+        callbacks.onBulkDelete(section.id, [...selectedCommandIds]),
+      );
+      cancel.addEventListener("click", () => callbacks.onSelectionMode(section.id, false));
+      selectionBar.append(summary, selectAll, move, remove, cancel);
+      content.append(selectionBar);
+      updateSelectionBar();
     }
 
     const columnHeader = element(
@@ -140,6 +197,16 @@ export function createCommandSection(
         index + 1,
         showExampleColumn,
         expandedCommandId === command.id,
+        callbacks.selectionActive
+          ? {
+              active: true,
+              selected: selectedCommandIds.has(command.id),
+              onToggle: (selected) => {
+                selectedCommandIds[selected ? "add" : "delete"](command.id);
+                updateSelectionBar();
+              },
+            }
+          : undefined,
       ).element;
     };
 

@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import {
   defaultSettings,
   isAccentTheme,
+  favoriteKey,
+  isFavoriteItem,
   isThemeMode,
   type AppSettings,
 } from "../models/settings";
@@ -12,7 +14,7 @@ const DEVELOPMENT_STORAGE_KEY = "command-vault.settings";
 
 export async function loadSettings(): Promise<AppSettings> {
   if (isTauriRuntime()) {
-    return invoke("load_settings");
+    return normalizeSettings(await invoke<AppSettings>("load_settings"));
   }
 
   const source = localStorage.getItem(DEVELOPMENT_STORAGE_KEY);
@@ -26,7 +28,13 @@ export async function loadSettings(): Promise<AppSettings> {
   }
 }
 
-function normalizeSettings(value: Partial<AppSettings>): AppSettings {
+export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
+  const favorites = Array.isArray(value.favorites)
+    ? uniqueBy(value.favorites.filter(isFavoriteItem), favoriteKey).slice(0, 50)
+    : [];
+  const recentFiles = Array.isArray(value.recentFiles)
+    ? [...new Set(value.recentFiles.filter((path): path is string => typeof path === "string" && path.length > 0))].slice(0, 8)
+    : [];
   return {
     lastWorkspace: typeof value.lastWorkspace === "string" ? value.lastWorkspace : null,
     lastOpenedFile: typeof value.lastOpenedFile === "string" ? value.lastOpenedFile : null,
@@ -35,6 +43,8 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     uiScale: typeof value.uiScale === "number" ? value.uiScale : defaultSettings.uiScale,
     themeMode: isThemeMode(value.themeMode) ? value.themeMode : defaultSettings.themeMode,
     accentTheme: isAccentTheme(value.accentTheme) ? value.accentTheme : defaultSettings.accentTheme,
+    favorites,
+    recentFiles,
     rememberExpandedSections:
       typeof value.rememberExpandedSections === "boolean"
         ? value.rememberExpandedSections
@@ -44,6 +54,18 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     windowWidth: typeof value.windowWidth === "number" ? value.windowWidth : null,
     windowHeight: typeof value.windowHeight === "number" ? value.windowHeight : null,
   };
+}
+
+function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const value = key(item);
+    if (seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+    return true;
+  });
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {

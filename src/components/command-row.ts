@@ -11,6 +11,12 @@ export interface CommandRowCallbacks {
   onMenu(anchor: HTMLButtonElement, command: CommandEntry): void;
 }
 
+export interface CommandRowSelection {
+  active: boolean;
+  selected: boolean;
+  onToggle(selected: boolean): void;
+}
+
 export function createCommandRow(
   command: CommandEntry,
   requestExpansion: (row: CommandRowHandle) => void,
@@ -19,10 +25,11 @@ export function createCommandRow(
   tableRowNumber?: number,
   showExampleColumn = false,
   initiallyExpanded = false,
+  selection?: CommandRowSelection,
 ): CommandRowHandle {
   const row = element(
     "article",
-    `command-row${compactTable ? " compact-table-row" : ""}${showExampleColumn ? " with-example-column" : ""}`,
+    `command-row${compactTable ? " compact-table-row" : ""}${showExampleColumn ? " with-example-column" : ""}${selection?.active ? " selection-mode" : ""}${selection?.selected ? " selected" : ""}`,
   );
   row.id = `command-${command.id}`;
   row.dataset.commandId = command.id;
@@ -32,6 +39,21 @@ export function createCommandRow(
   const visibleName = compactTable
     ? String(tableRowNumber ?? 1).padStart(2, "0")
     : command.name;
+  if (selection?.active) {
+    const selectionLabel = element("label", "row-selection-control");
+    const checkbox = element("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selection.selected;
+    checkbox.setAttribute("aria-label", `Select ${compactTable ? `table row ${visibleName}` : visibleName}`);
+    checkbox.addEventListener("change", () => {
+      row.classList.toggle("selected", checkbox.checked);
+      row.setAttribute("aria-selected", String(checkbox.checked));
+      selection.onToggle(checkbox.checked);
+    });
+    selectionLabel.append(checkbox);
+    commandHeader.append(selectionLabel);
+    row.setAttribute("aria-selected", String(selection.selected));
+  }
   commandHeader.append(
     element(
       compactTable ? "span" : "h3",
@@ -44,6 +66,7 @@ export function createCommandRow(
   menu.title = `Actions for ${accessibleName}`;
   menu.setAttribute("aria-label", `Actions for ${accessibleName}`);
   menu.addEventListener("click", () => callbacks.onMenu(menu, command));
+  menu.hidden = selection?.active ?? false;
   commandHeader.append(menu);
 
   const codeScroller = element("div", "command-code");

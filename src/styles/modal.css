@@ -99,6 +99,14 @@
   color: var(--text-main);
 }
 
+.modal-button:disabled {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.48;
+}
+
 .modal-button.primary {
   border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
   color: var(--accent-hover);
@@ -259,6 +267,25 @@
 
 .table-import-sample-info {
   color: var(--text-secondary);
+}
+
+.table-import-sample-row.duplicate-skipped {
+  background: color-mix(in srgb, var(--warning) 6%, transparent);
+  opacity: 0.72;
+}
+
+.table-import-duplicate-badge {
+  grid-column: 2 / 4;
+  padding: 2px 8px 6px;
+  color: var(--warning);
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.table-import-duplicate-toggle[hidden] {
+  display: none;
 }
 
 .table-import-more {

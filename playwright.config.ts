@@ -11,6 +11,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:1420",
     viewport: { width: 1100, height: 720 },
     colorScheme: "dark",
+    permissions: ["clipboard-read", "clipboard-write"],
   },
   webServer: {
     command: "npm run dev -- --host 127.0.0.1",

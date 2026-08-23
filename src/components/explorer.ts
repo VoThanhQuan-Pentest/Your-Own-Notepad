@@ -1,4 +1,5 @@
 import type { FilesystemEntry } from "../models/filesystem";
+import type { FavoriteItem } from "../models/settings";
 import { button, element } from "../utils/dom";
 import { openMenu } from "./menu";
 
@@ -9,7 +10,24 @@ interface ExplorerCallbacks {
   onCreateFile(parentPath: string): void;
   onRename(entry: FilesystemEntry): void;
   onDelete(entry: FilesystemEntry): void;
+  onToggleFileFavorite(path: string): void;
+  onOpenFavoriteCommand(filePath: string, commandId: string): void;
+  onCopyFavorite(command: string, trigger: HTMLButtonElement): void;
+  onRemoveFavorite(item: FavoriteItem): void;
+  onToggleQuickGroup(group: string, expanded: boolean): void;
   onRefresh(): void;
+}
+
+export interface ExplorerFavoriteItem {
+  favorite: FavoriteItem;
+  label: string;
+  detail: string;
+  command?: string;
+}
+
+export interface ExplorerRecentFile {
+  path: string;
+  label: string;
 }
 
 interface ExplorerOptions {
@@ -18,6 +36,10 @@ interface ExplorerOptions {
   activeFile: string | null;
   selectedFolder: string | null;
   expandedFolders: ReadonlySet<string>;
+  favoriteFilePaths: ReadonlySet<string>;
+  favoriteItems: ExplorerFavoriteItem[];
+  recentFiles: ExplorerRecentFile[];
+  collapsedQuickGroups: ReadonlySet<string>;
   callbacks: ExplorerCallbacks;
 }
 
@@ -60,6 +82,7 @@ export function createExplorer(options: ExplorerOptions): HTMLElement {
   } else if (options.entries.length === 0) {
     content.append(element("p", "explorer-empty", "This workspace has no folders or .cmdnote files yet."));
   } else {
+    appendQuickAccess(content, options);
     options.entries.forEach((entry) => content.append(createEntry(entry, 0, options)));
   }
 
@@ -128,11 +151,86 @@ function entryMenuButton(entry: FilesystemEntry, options: ExplorerOptions): HTML
         { label: "New Command File", action: () => options.callbacks.onCreateFile(entry.path) },
       );
     }
-    items.push(
-      { label: "Rename", action: () => options.callbacks.onRename(entry) },
-      { label: "Delete", danger: true, action: () => options.callbacks.onDelete(entry) },
-    );
+    items.push({ label: "Rename", action: () => options.callbacks.onRename(entry) });
+    if (entry.kind === "command-file") {
+      items.push({
+        label: options.favoriteFilePaths.has(entry.path) ? "Remove Favorite" : "Add Favorite",
+        action: () => options.callbacks.onToggleFileFavorite(entry.path),
+      });
+    }
+    items.push({ label: "Delete", danger: true, action: () => options.callbacks.onDelete(entry) });
     openMenu(menu, items);
   });
   return menu;
+}
+
+function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): void {
+  if (options.favoriteItems.length > 0) {
+    container.append(
+      quickGroup("favorites", "FAVORITES", options.favoriteItems.map((item) => {
+        const row = element("div", "quick-access-row");
+        const open = button("quick-access-main", item.label);
+        open.title = item.detail;
+        open.addEventListener("click", () => {
+          if (item.favorite.kind === "file") {
+            options.callbacks.onOpenFile(item.favorite.path);
+          } else {
+            options.callbacks.onOpenFavoriteCommand(item.favorite.filePath, item.favorite.commandId);
+          }
+        });
+        row.append(open);
+        if (item.command) {
+          const copy = button("quick-access-action", "COPY");
+          copy.title = `Copy ${item.label}`;
+          copy.setAttribute("aria-label", `Copy favorite ${item.label}`);
+          copy.addEventListener("click", () => options.callbacks.onCopyFavorite(item.command as string, copy));
+          row.append(copy);
+        }
+        const remove = button("quick-access-remove", "×");
+        remove.title = `Remove ${item.label} from Favorites`;
+        remove.setAttribute("aria-label", `Remove favorite ${item.label}`);
+        remove.addEventListener("click", () => options.callbacks.onRemoveFavorite(item.favorite));
+        row.append(remove);
+        return row;
+      }), options),
+    );
+  }
+
+  if (options.recentFiles.length > 0) {
+    container.append(
+      quickGroup("recent", "RECENT", options.recentFiles.map((item) => {
+        const row = element("div", "quick-access-row");
+        const open = button("quick-access-main", item.label);
+        open.title = item.path;
+        open.addEventListener("click", () => options.callbacks.onOpenFile(item.path));
+        row.append(open);
+        return row;
+      }), options),
+    );
+  }
+}
+
+function quickGroup(
+  id: string,
+  label: string,
+  rows: HTMLElement[],
+  options: ExplorerOptions,
+): HTMLElement {
+  const group = element("section", "quick-access-group");
+  const expanded = !options.collapsedQuickGroups.has(id);
+  const toggle = button("quick-access-heading", "");
+  toggle.setAttribute("aria-expanded", String(expanded));
+  const chevron = element("span", "tree-chevron", expanded ? "▾" : "▸");
+  chevron.setAttribute("aria-hidden", "true");
+  toggle.append(
+    chevron,
+    element("span", undefined, label),
+    element("span", "quick-access-count", String(rows.length)),
+  );
+  const content = element("div", "quick-access-items");
+  content.hidden = !expanded;
+  content.append(...rows);
+  toggle.addEventListener("click", () => options.callbacks.onToggleQuickGroup(id, !expanded));
+  group.append(toggle, content);
+  return group;
 }

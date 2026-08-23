@@ -16,6 +16,13 @@ export interface TableImportPreview {
   format: TablePasteFormat | null;
   commands: CommandEntry[];
   issues: TableImportIssue[];
+  duplicates: TableImportDuplicate[];
+}
+
+export interface TableImportDuplicate {
+  commandId: string;
+  row: number;
+  kind: "existing" | "pasted";
 }
 
 interface GridRow {
@@ -87,11 +94,15 @@ export function parseTablePaste(
   source: string,
   tableName: string,
   existingCommandIds: ReadonlySet<string>,
+  existingCommands: readonly string[] = [],
 ): TableImportPreview {
   const issues: TableImportIssue[] = [];
+  const duplicates: TableImportDuplicate[] = [];
+  const existingNormalized = new Set(existingCommands.map(normalizeDuplicateCommand));
+  const pastedNormalized = new Set<string>();
   const normalized = normalizeSource(source);
   if (!normalized) {
-    return { format: null, commands: [], issues };
+    return { format: null, commands: [], issues, duplicates };
   }
   if (normalized.length > MAX_SOURCE_LENGTH) {
     return {
@@ -103,24 +114,25 @@ export function parseTablePaste(
           message: `The pasted table is too large. Limit it to ${MAX_SOURCE_LENGTH.toLocaleString()} characters.`,
         },
       ],
+      duplicates,
     };
   }
 
   const parsed = parseGrid(normalized, issues);
   if (!parsed) {
-    return { format: null, commands: [], issues };
+    return { format: null, commands: [], issues, duplicates };
   }
   if (parsed.rows.length > MAX_ROWS) {
     issues.push({
       severity: "error",
       message: `The pasted table has ${parsed.rows.length.toLocaleString()} rows. Limit it to ${MAX_ROWS.toLocaleString()} rows.`,
     });
-    return { format: parsed.format, commands: [], issues };
+    return { format: parsed.format, commands: [], issues, duplicates };
   }
 
   const columns = mapColumns(parsed.header, issues);
   if (!columns) {
-    return { format: parsed.format, commands: [], issues };
+    return { format: parsed.format, commands: [], issues, duplicates };
   }
 
   const unknownHeaders = columns.filter((column) => !column.target).map((column) => column.header);
@@ -185,25 +197,58 @@ export function parseTablePaste(
     const id = createId(`${tableName} row ${rowNumber}`, commandIds);
     commandIds.add(id);
 
-    commands.push({
+    const entry: CommandEntry = {
       id,
       name,
       command,
       ...(description ? { description } : {}),
       ...(values.get("example") ? { example: values.get("example") } : {}),
       ...(notes ? { notes } : {}),
-    });
+    };
+    commands.push(entry);
+
+    const duplicateKey = normalizeDuplicateCommand(command);
+    const duplicateKind = existingNormalized.has(duplicateKey)
+      ? "existing"
+      : pastedNormalized.has(duplicateKey)
+        ? "pasted"
+        : null;
+    if (duplicateKind) {
+      duplicates.push({ commandId: id, row: row.row, kind: duplicateKind });
+      issues.push({
+        severity: "warning",
+        row: row.row,
+        message: duplicateKind === "existing"
+          ? "This command already exists in the current command file and will be skipped by default."
+          : "This command is duplicated earlier in the pasted table and will be skipped by default.",
+      });
+    }
+    pastedNormalized.add(duplicateKey);
   });
 
   if (commands.length === 0 && !issues.some((issue) => issue.severity === "error")) {
     issues.push({ severity: "error", message: "The pasted table does not contain any data rows." });
   }
-  warnForDuplicateCommands(commands, issues);
-  return { format: parsed.format, commands, issues };
+  return { format: parsed.format, commands, issues, duplicates };
 }
 
 export function hasTableImportErrors(preview: TableImportPreview): boolean {
   return preview.issues.some((issue) => issue.severity === "error");
+}
+
+export function importableCommands(
+  preview: TableImportPreview,
+  includeDuplicates: boolean,
+): CommandEntry[] {
+  if (includeDuplicates) {
+    return preview.commands;
+  }
+  const duplicateIds = new Set(preview.duplicates.map((item) => item.commandId));
+  return preview.commands.filter((command) => !duplicateIds.has(command.id));
+}
+
+export function normalizeDuplicateCommand(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
 }
 
 function normalizeSource(source: string): string {
@@ -360,20 +405,6 @@ function findColumnTarget(header: string): ColumnTarget | undefined {
   return (Object.keys(COLUMN_ALIASES) as ColumnTarget[]).find((target) =>
     COLUMN_ALIASES[target].has(normalized),
   );
-}
-
-function warnForDuplicateCommands(commands: CommandEntry[], issues: TableImportIssue[]): void {
-  const seen = new Set<string>();
-  commands.forEach((command, index) => {
-    if (seen.has(command.command)) {
-      issues.push({
-        severity: "warning",
-        row: index + 2,
-        message: "This command is duplicated in the pasted table.",
-      });
-    }
-    seen.add(command.command);
-  });
 }
 
 function isMarkdownSeparator(value: string): boolean {

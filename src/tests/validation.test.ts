@@ -1,12 +1,17 @@
 import { createId } from "../utils/ids";
 import { SessionHistory } from "../utils/history";
+import { normalizeSettings } from "../services/settings";
 import {
   createSearchDocument,
   normalizeSearchText,
   rankSearchDocuments,
   searchDocuments,
 } from "../utils/search";
-import { hasTableImportErrors, parseTablePaste } from "../utils/table-import";
+import {
+  hasTableImportErrors,
+  importableCommands,
+  parseTablePaste,
+} from "../utils/table-import";
 import { parseCommandFile, serializeCommandFile } from "../utils/validation";
 
 interface TestCase {
@@ -162,6 +167,29 @@ test("blocks deprecated imported columns", () => {
   ok(preview.issues.some((issue) => issue.message.includes("deprecated column")));
 });
 
+test("skips whitespace-normalized commands already present in the file", () => {
+  const preview = parseTablePaste(
+    "Command,Description\nnmap   -sV target,Duplicate\n",
+    "Import",
+    new Set(),
+    [" nmap -sV   target "],
+  );
+  equal(preview.duplicates[0]?.kind, "existing");
+  equal(importableCommands(preview, false).length, 0);
+  equal(importableCommands(preview, true).length, 1);
+});
+
+test("keeps the first pasted duplicate and compares commands case-sensitively", () => {
+  const preview = parseTablePaste(
+    "Command,Description\nnmap -sV target,First\nnmap   -sV target,Duplicate\nNMAP -sV target,Case variant\n",
+    "Import",
+    new Set(),
+  );
+  equal(preview.duplicates.length, 1);
+  equal(preview.duplicates[0]?.kind, "pasted");
+  equal(importableCommands(preview, false).length, 2);
+});
+
 test("normalizes Vietnamese accents for search", () => {
   equal(normalizeSearchText("Mật khẩu và đường dẫn"), "mat khau va duong dan");
 });
@@ -245,6 +273,20 @@ test("clears redo after a new mutation and remaps file history", () => {
   ok(history.canUndo("/workspace/new/file.cmdnote"));
   history.deletePrefix("/workspace/new");
   equal(history.canUndo("/workspace/new/file.cmdnote"), false);
+});
+
+test("defaults and deduplicates backward-compatible quick access settings", () => {
+  const legacy = normalizeSettings({});
+  equal(legacy.favorites.length, 0);
+  equal(legacy.recentFiles.length, 0);
+
+  const favorite = { kind: "command", filePath: "/Nmap.cmdnote", commandId: "ping" } as const;
+  const normalized = normalizeSettings({
+    favorites: [favorite, favorite],
+    recentFiles: ["/Nmap.cmdnote", "/Nmap.cmdnote"],
+  });
+  equal(normalized.favorites.length, 1);
+  equal(normalized.recentFiles.length, 1);
 });
 
 let failures = 0;

@@ -1,7 +1,11 @@
 import { createCommandTable, type CommandTableHandle } from "./components/command-table";
 import { getVersion } from "@tauri-apps/api/app";
 import { openCommandForm } from "./components/command-form";
-import { createExplorer } from "./components/explorer";
+import {
+  createExplorer,
+  type ExplorerFavoriteItem,
+  type ExplorerRecentFile,
+} from "./components/explorer";
 import { openMenu } from "./components/menu";
 import { openConfirm, openModal, openPrompt, showMessage } from "./components/modal";
 import { openTableImportForm } from "./components/table-import-form";
@@ -17,9 +21,11 @@ import type { FilesystemEntry } from "./models/filesystem";
 import {
   accentThemes,
   defaultSettings,
+  favoriteKey,
   themeModes,
   type AccentTheme,
   type AppSettings,
+  type FavoriteItem,
   type ThemeMode,
 } from "./models/settings";
 import { copyText } from "./services/clipboard";
@@ -84,6 +90,8 @@ interface WorkspaceSnapshot {
   transientExpandedSections: Set<string>;
   sectionStateInitializedFiles: Set<string>;
   exampleColumnOverrides: Map<string, boolean>;
+  collapsedQuickGroups: Set<string>;
+  selectionSectionId: string | null;
 }
 
 export class CommandVaultApplication {
@@ -96,7 +104,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.6.1";
+  private appVersion = "0.7.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -111,6 +119,8 @@ export class CommandVaultApplication {
   private readonly sectionStateInitializedFiles = new Set<string>();
   private readonly exampleColumnOverrides = new Map<string, boolean>();
   private readonly fileHistory = new SessionHistory<CommandFile>(50, cloneCommandFile);
+  private readonly collapsedQuickGroups = new Set<string>();
+  private selectionSectionId: string | null = null;
   private workspaceLoadGeneration = 0;
   private searchTimer: number | null = null;
   private searchGeneration = 0;
@@ -150,7 +160,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.6.1 (development)";
+      this.appVersion = "0.7.0 (development)";
     }
 
     if (!this.desktopRuntime) {
@@ -189,6 +199,12 @@ export class CommandVaultApplication {
       activeFile: this.activeFilePath,
       selectedFolder: this.selectedFolder,
       expandedFolders: this.expandedFolders,
+      favoriteFilePaths: new Set(
+        this.settings.favorites.flatMap((item) => item.kind === "file" ? [item.path] : []),
+      ),
+      favoriteItems: this.explorerFavoriteItems(),
+      recentFiles: this.explorerRecentFiles(),
+      collapsedQuickGroups: this.collapsedQuickGroups,
       callbacks: {
         onOpenFile: (path) => void this.openFile(path),
         onSelectFolder: (path) => this.selectFolder(path),
@@ -196,6 +212,15 @@ export class CommandVaultApplication {
         onCreateFile: (parent) => void this.newFile(parent),
         onRename: (entry) => void this.renameFilesystemEntry(entry),
         onDelete: (entry) => void this.deleteFilesystemEntry(entry),
+        onToggleFileFavorite: (path) => this.toggleFavorite({ kind: "file", path }),
+        onOpenFavoriteCommand: (filePath, commandId) =>
+          void this.openFavoriteCommand(filePath, commandId),
+        onCopyFavorite: (command, trigger) => void this.copyCommand(command, trigger),
+        onRemoveFavorite: (item) => this.removeFavorite(item),
+        onToggleQuickGroup: (group, expanded) => {
+          this.collapsedQuickGroups[expanded ? "delete" : "add"](group);
+          this.renderExplorer();
+        },
         onRefresh: () => void this.refreshWorkspaceFromUi(),
       },
     });
@@ -206,6 +231,170 @@ export class CommandVaultApplication {
       this.body.prepend(next);
     }
     this.explorer = next;
+  }
+
+  private explorerFavoriteItems(): ExplorerFavoriteItem[] {
+    if (!this.workspaceRoot) {
+      return [];
+    }
+    return this.settings.favorites.flatMap<ExplorerFavoriteItem>((favorite) => {
+      const filePath = favorite.kind === "file" ? favorite.path : favorite.filePath;
+      if (!isSameOrDescendant(this.workspaceRoot as string, filePath)) {
+        return [];
+      }
+      const file = this.files.get(filePath);
+      if (!file) {
+        return [];
+      }
+      if (favorite.kind === "file") {
+        return [{ favorite, label: commandFileLabel(filePath), detail: filePath }];
+      }
+      const location = findCommandInFile(file, favorite.commandId);
+      if (!location) {
+        return [];
+      }
+      return [{
+        favorite,
+        label: location.command.name,
+        detail: `${commandFileLabel(filePath)} › ${location.section.title}`,
+        command: location.command.command,
+      }];
+    });
+  }
+
+  private explorerRecentFiles(): ExplorerRecentFile[] {
+    if (!this.workspaceRoot) {
+      return [];
+    }
+    return this.settings.recentFiles.flatMap((path) => {
+      if (!isSameOrDescendant(this.workspaceRoot as string, path)) {
+        return [];
+      }
+      const file = this.files.get(path);
+      return file ? [{ path, label: commandFileLabel(path) }] : [];
+    });
+  }
+
+  private toggleFavorite(item: FavoriteItem): void {
+    const key = favoriteKey(item);
+    const exists = this.settings.favorites.some((favorite) => favoriteKey(favorite) === key);
+    this.settings.favorites = exists
+      ? this.settings.favorites.filter((favorite) => favoriteKey(favorite) !== key)
+      : [item, ...this.settings.favorites].slice(0, 50);
+    this.renderExplorer();
+    if (item.kind === "command" && item.filePath === this.activeFilePath && this.activeFile) {
+      this.renderActiveFile();
+    }
+    void this.persistSettings(false);
+  }
+
+  private removeFavorite(item: FavoriteItem): void {
+    const key = favoriteKey(item);
+    this.settings.favorites = this.settings.favorites.filter(
+      (favorite) => favoriteKey(favorite) !== key,
+    );
+    this.renderExplorer();
+    if (item.kind === "command" && item.filePath === this.activeFilePath && this.activeFile) {
+      this.renderActiveFile();
+    }
+    void this.persistSettings(false);
+  }
+
+  private isCommandFavorite(filePath: string, commandId: string): boolean {
+    const key = favoriteKey({ kind: "command", filePath, commandId });
+    return this.settings.favorites.some((favorite) => favoriteKey(favorite) === key);
+  }
+
+  private async openFavoriteCommand(filePath: string, commandId: string): Promise<void> {
+    const file = this.files.get(filePath);
+    const location = file ? findCommandInFile(file, commandId) : null;
+    if (!location) {
+      await showMessage({
+        title: "Favorite Unavailable",
+        message: "This favorite command no longer exists in the current workspace.",
+      });
+      return;
+    }
+    await this.openFile(filePath, { sectionId: location.section.id, commandId });
+  }
+
+  private rememberRecentFile(path: string): void {
+    this.settings.recentFiles = [path, ...this.settings.recentFiles.filter((item) => item !== path)]
+      .slice(0, 8);
+  }
+
+  private remapQuickAccessPaths(oldPath: string, newPath: string): void {
+    const remappedFavorites = this.settings.favorites.map((favorite) => {
+      if (favorite.kind === "file") {
+        return {
+          ...favorite,
+          path: remapDescendantPath(oldPath, newPath, favorite.path) ?? favorite.path,
+        };
+      }
+      return {
+        ...favorite,
+        filePath: remapDescendantPath(oldPath, newPath, favorite.filePath) ?? favorite.filePath,
+      };
+    });
+    this.settings.favorites = [...new Map(
+      remappedFavorites.map((favorite) => [favoriteKey(favorite), favorite]),
+    ).values()].slice(0, 50);
+    this.settings.recentFiles = [...new Set(this.settings.recentFiles.map(
+      (path) => remapDescendantPath(oldPath, newPath, path) ?? path,
+    ))].slice(0, 8);
+    void this.persistSettings(false);
+  }
+
+  private removeQuickAccessPaths(path: string): void {
+    this.settings.favorites = this.settings.favorites.filter((favorite) => {
+      const filePath = favorite.kind === "file" ? favorite.path : favorite.filePath;
+      return !isSameOrDescendant(path, filePath);
+    });
+    this.settings.recentFiles = this.settings.recentFiles.filter(
+      (filePath) => !isSameOrDescendant(path, filePath),
+    );
+    void this.persistSettings(false);
+  }
+
+  private pruneCommandFavorites(filePath: string, file: CommandFile): boolean {
+    const previousLength = this.settings.favorites.length;
+    this.settings.favorites = this.settings.favorites.filter(
+      (favorite) =>
+        favorite.kind !== "command" ||
+        favorite.filePath !== filePath ||
+        findCommandInFile(file, favorite.commandId) !== null,
+    );
+    return this.settings.favorites.length !== previousLength;
+  }
+
+  private pruneUnavailableQuickAccess(): boolean {
+    if (!this.workspaceRoot) {
+      return false;
+    }
+    const workspaceRoot = this.workspaceRoot;
+    const previousFavorites = this.settings.favorites.length;
+    const previousRecent = this.settings.recentFiles.length;
+    this.settings.favorites = this.settings.favorites.filter((favorite) => {
+      const filePath = favorite.kind === "file" ? favorite.path : favorite.filePath;
+      if (!isSameOrDescendant(workspaceRoot, filePath) || this.fileErrors.has(filePath)) {
+        return true;
+      }
+      const file = this.files.get(filePath);
+      if (!file) {
+        return false;
+      }
+      return favorite.kind === "file" || findCommandInFile(file, favorite.commandId) !== null;
+    });
+    this.settings.recentFiles = this.settings.recentFiles.filter(
+      (path) =>
+        !isSameOrDescendant(workspaceRoot, path) ||
+        this.files.has(path) ||
+        this.fileErrors.has(path),
+    );
+    return (
+      previousFavorites !== this.settings.favorites.length ||
+      previousRecent !== this.settings.recentFiles.length
+    );
   }
 
   private async chooseAndOpenWorkspace(): Promise<void> {
@@ -251,6 +440,8 @@ export class CommandVaultApplication {
       transientExpandedSections: new Set(this.transientExpandedSections),
       sectionStateInitializedFiles: new Set(this.sectionStateInitializedFiles),
       exampleColumnOverrides: new Map(this.exampleColumnOverrides),
+      collapsedQuickGroups: new Set(this.collapsedQuickGroups),
+      selectionSectionId: this.selectionSectionId,
     };
   }
 
@@ -267,6 +458,8 @@ export class CommandVaultApplication {
     replaceSet(this.transientExpandedSections, snapshot.transientExpandedSections);
     replaceSet(this.sectionStateInitializedFiles, snapshot.sectionStateInitializedFiles);
     replaceMap(this.exampleColumnOverrides, snapshot.exampleColumnOverrides);
+    replaceSet(this.collapsedQuickGroups, snapshot.collapsedQuickGroups);
+    this.selectionSectionId = snapshot.selectionSectionId;
   }
 
   private async openWorkspace(path: string, restoreLastFile: boolean): Promise<void> {
@@ -284,6 +477,8 @@ export class CommandVaultApplication {
     this.sectionStateInitializedFiles.clear();
     this.exampleColumnOverrides.clear();
     this.fileHistory.clear();
+    this.collapsedQuickGroups.clear();
+    this.selectionSectionId = null;
     this.renderLoading("Reading workspace…");
     await this.refreshWorkspace(false);
 
@@ -372,6 +567,9 @@ export class CommandVaultApplication {
         this.fileErrors.set(item.path, item.error);
       }
     });
+    if (this.pruneUnavailableQuickAccess()) {
+      void this.persistSettings(false);
+    }
     this.rebuildSearchIndex();
     entries
       .filter((entry) => entry.kind === "folder")
@@ -430,6 +628,9 @@ export class CommandVaultApplication {
   }
 
   private async openFile(path: string, focus?: FocusTarget): Promise<void> {
+    if (path !== this.activeFilePath) {
+      this.selectionSectionId = null;
+    }
     let file = this.files.get(path);
     if (this.desktopRuntime && this.workspaceRoot) {
       try {
@@ -466,6 +667,9 @@ export class CommandVaultApplication {
     this.activeFile = file ?? null;
     this.selectedFolder = parentDirectory(path) ?? this.selectedFolder;
     this.settings.lastOpenedFile = path;
+    if (file) {
+      this.rememberRecentFile(path);
+    }
     this.renderExplorer();
 
     if (!file) {
@@ -506,6 +710,7 @@ export class CommandVaultApplication {
     const table = createCommandTable(this.activeFile, {
       canUndo: this.fileHistory.canUndo(this.activeFilePath),
       canRedo: this.fileHistory.canRedo(this.activeFilePath),
+      selectionSectionId: this.selectionSectionId,
       expandedSections: expanded,
       sectionStateInitialized,
       expandAllSections: this.stressMode,
@@ -522,6 +727,9 @@ export class CommandVaultApplication {
         onSectionMenu: (anchor, section) => this.openSectionMenu(anchor, section),
         onCommandMenu: (anchor, command) => this.openCommandMenu(anchor, command),
         onCommandCopy: (value, trigger) => void this.copyCommand(value, trigger),
+        onSelectionMode: (sectionId, active) => this.setSelectionMode(sectionId, active),
+        onBulkMove: (sectionId, commandIds) => void this.bulkMoveCommands(sectionId, commandIds),
+        onBulkDelete: (sectionId, commandIds) => void this.bulkDeleteCommands(sectionId, commandIds),
       },
     });
     this.activeTable?.dispose();
@@ -615,6 +823,7 @@ export class CommandVaultApplication {
       const previousActive = this.activeFilePath;
       const renamed = await renameEntry(this.workspaceRoot, entry.path, newName);
       this.fileHistory.remapPrefix(entry.path, renamed.path);
+      this.remapQuickAccessPaths(entry.path, renamed.path);
       await this.refreshWorkspace(false);
       if (previousActive === entry.path) {
         await this.openFile(renamed.path);
@@ -650,6 +859,7 @@ export class CommandVaultApplication {
     try {
       await trashEntry(this.workspaceRoot, entry.path);
       this.fileHistory.deletePrefix(entry.path);
+      this.removeQuickAccessPaths(entry.path);
       if (this.activeFilePath && isSameOrDescendant(entry.path, this.activeFilePath)) {
         this.activeFile = null;
         this.activeFilePath = null;
@@ -690,7 +900,10 @@ export class CommandVaultApplication {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
-    const imported = await openTableImportForm(commandIds(this.activeFile));
+    const imported = await openTableImportForm(
+      commandIds(this.activeFile),
+      this.activeFile.sections.flatMap((section) => section.commands.map((command) => command.command)),
+    );
     if (!imported) {
       return;
     }
@@ -810,18 +1023,36 @@ export class CommandVaultApplication {
     if (!confirmed) {
       return;
     }
-    await this.updateCurrentFile((file) => {
+    const wasSelecting = this.selectionSectionId === sectionId;
+    if (wasSelecting) {
+      this.selectionSectionId = null;
+    }
+    const saved = await this.updateCurrentFile((file) => {
       file.sections = file.sections.filter((candidate) => candidate.id !== sectionId);
     });
+    if (!saved && wasSelecting) {
+      this.selectionSectionId = sectionId;
+    }
   }
 
   private openCommandMenu(anchor: HTMLButtonElement, command: CommandEntry): void {
     const location = this.findCommand(command.id);
-    if (!location || !this.activeFile) {
+    if (!location || !this.activeFile || !this.activeFilePath) {
       return;
     }
+    const filePath = this.activeFilePath;
     openMenu(anchor, [
       { label: "Edit", action: () => this.editCommand(command.id) },
+      {
+        label: this.isCommandFavorite(filePath, command.id)
+          ? "Remove Favorite"
+          : "Add Favorite",
+        action: () => this.toggleFavorite({
+          kind: "command",
+          filePath,
+          commandId: command.id,
+        }),
+      },
       { label: "Duplicate", action: () => this.duplicateCommand(command.id) },
       { label: "Move Up", disabled: location.commandIndex <= 0, action: () => this.moveCommand(command.id, -1) },
       {
@@ -940,18 +1171,18 @@ export class CommandVaultApplication {
     });
   }
 
-  private async updateCurrentFile(mutator: (file: CommandFile) => void): Promise<void> {
+  private async updateCurrentFile(mutator: (file: CommandFile) => void): Promise<boolean> {
     if (!this.activeFile || !this.activeFilePath) {
-      return;
+      return false;
     }
     const path = this.activeFilePath;
     const previous = cloneCommandFile(this.activeFile);
     const next = cloneCommandFile(this.activeFile);
     mutator(next);
     if (serializeCommandFile(next) === serializeCommandFile(previous)) {
-      return;
+      return false;
     }
-    await this.saveCurrentFile(next, () => this.fileHistory.record(path, previous));
+    return this.saveCurrentFile(next, () => this.fileHistory.record(path, previous));
   }
 
   private async undoCurrentFile(): Promise<void> {
@@ -964,7 +1195,15 @@ export class CommandVaultApplication {
     if (!previous) {
       return;
     }
-    await this.saveCurrentFile(previous, () => this.fileHistory.commitUndo(path, current));
+    const selection = this.selectionSectionId;
+    this.selectionSectionId = null;
+    const saved = await this.saveCurrentFile(
+      previous,
+      () => this.fileHistory.commitUndo(path, current),
+    );
+    if (!saved) {
+      this.selectionSectionId = selection;
+    }
   }
 
   private async redoCurrentFile(): Promise<void> {
@@ -977,7 +1216,12 @@ export class CommandVaultApplication {
     if (!next) {
       return;
     }
-    await this.saveCurrentFile(next, () => this.fileHistory.commitRedo(path, current));
+    const selection = this.selectionSectionId;
+    this.selectionSectionId = null;
+    const saved = await this.saveCurrentFile(next, () => this.fileHistory.commitRedo(path, current));
+    if (!saved) {
+      this.selectionSectionId = selection;
+    }
   }
 
   private async saveCurrentFile(next: CommandFile, onCommitted: () => void): Promise<boolean> {
@@ -1001,6 +1245,16 @@ export class CommandVaultApplication {
       onCommitted();
       this.activeFile = next;
       this.files.set(path, next);
+      const hasFavoriteCommands = this.settings.favorites.some(
+        (favorite) => favorite.kind === "command" && favorite.filePath === path,
+      );
+      const prunedFavorites = this.pruneCommandFavorites(path, next);
+      if (hasFavoriteCommands || prunedFavorites) {
+        this.renderExplorer();
+      }
+      if (prunedFavorites) {
+        void this.persistSettings(false);
+      }
       this.rebuildSearchIndex();
       this.renderActiveFile();
       return true;
@@ -1048,6 +1302,75 @@ export class CommandVaultApplication {
       return;
     }
     this.exampleColumnOverrides.set(sectionStateKey(this.activeFilePath, sectionId), visible);
+  }
+
+  private setSelectionMode(sectionId: string, active: boolean): void {
+    this.selectionSectionId = active ? sectionId : null;
+    this.renderActiveFile();
+  }
+
+  private async bulkDeleteCommands(sectionId: string, commandIds: string[]): Promise<void> {
+    if (!this.activeFile || commandIds.length === 0) {
+      return;
+    }
+    const selected = new Set(commandIds);
+    const section = this.activeFile.sections.find((candidate) => candidate.id === sectionId);
+    const count = section?.commands.filter((command) => selected.has(command.id)).length ?? 0;
+    if (count === 0) {
+      return;
+    }
+    const confirmed = await openConfirm({
+      title: "Delete Selected Commands",
+      message: `Delete ${count} selected ${count === 1 ? "command" : "commands"}?`,
+      detail: "The entire batch can be restored with one Undo action during this session.",
+      confirmLabel: "DELETE SELECTED",
+      danger: true,
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.selectionSectionId = null;
+    if (this.activeFilePath) {
+      this.transientExpandedSections.add(sectionStateKey(this.activeFilePath, sectionId));
+    }
+    const saved = await this.updateCurrentFile((file) => {
+      const target = file.sections.find((candidate) => candidate.id === sectionId);
+      if (target) {
+        target.commands = target.commands.filter((command) => !selected.has(command.id));
+      }
+    });
+    if (!saved) {
+      this.selectionSectionId = sectionId;
+    }
+  }
+
+  private async bulkMoveCommands(sectionId: string, commandIds: string[]): Promise<void> {
+    if (!this.activeFile || !this.activeFilePath || commandIds.length === 0) {
+      return;
+    }
+    const targetId = await chooseSection(
+      this.activeFile.sections.filter((section) => section.id !== sectionId),
+    );
+    if (!targetId) {
+      return;
+    }
+    const selected = new Set(commandIds);
+    this.selectionSectionId = null;
+    this.transientExpandedSections.add(sectionStateKey(this.activeFilePath, sectionId));
+    this.transientExpandedSections.add(sectionStateKey(this.activeFilePath, targetId));
+    const saved = await this.updateCurrentFile((file) => {
+      const source = file.sections.find((section) => section.id === sectionId);
+      const target = file.sections.find((section) => section.id === targetId);
+      if (!source || !target) {
+        return;
+      }
+      const moved = source.commands.filter((command) => selected.has(command.id));
+      source.commands = source.commands.filter((command) => !selected.has(command.id));
+      target.commands.push(...moved);
+    });
+    if (!saved) {
+      this.selectionSectionId = sectionId;
+    }
   }
 
   private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
@@ -1610,6 +1933,11 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
 function parentDirectory(path: string): string | null {
   const separator = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
   return separator > 0 ? path.slice(0, separator) : null;
+}
+
+function commandFileLabel(path: string): string {
+  const separator = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return path.slice(separator + 1).replace(/\.cmdnote$/i, "");
 }
 
 function sectionStateKey(filePath: string, sectionId: string): string {

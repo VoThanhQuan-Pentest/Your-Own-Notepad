@@ -207,14 +207,23 @@ pub(crate) async fn rename_entry(
 
 #[tauri::command]
 pub(crate) async fn trash_entry(workspace_root: String, entry_path: String) -> CommandResult<()> {
-    trash_entry_with(&workspace_root, &entry_path, |target| {
-        trash::delete(target).map_err(|error| {
-            CommandError::new(
-                "TRASH_FAILED",
-                format!("Could not move the entry to the system Trash: {error}"),
-            )
+    tauri::async_runtime::spawn_blocking(move || {
+        trash_entry_with(&workspace_root, &entry_path, |target| {
+            trash::delete(target).map_err(|error| {
+                CommandError::new(
+                    "TRASH_FAILED",
+                    format!("Could not move the entry to the system Trash: {error}"),
+                )
+            })
         })
     })
+    .await
+    .map_err(|error| {
+        CommandError::new(
+            "TRASH_TASK_FAILED",
+            format!("The system Trash task could not finish: {error}"),
+        )
+    })?
 }
 
 fn trash_entry_with<F>(

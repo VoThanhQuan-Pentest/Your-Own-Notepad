@@ -17,11 +17,15 @@ export interface CommandTableCallbacks {
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
   onCommandMenu(anchor: HTMLButtonElement, command: CommandEntry): void;
   onCommandCopy(value: string, trigger: HTMLButtonElement): void;
+  onSelectionMode(sectionId: string, active: boolean): void;
+  onBulkMove(sectionId: string, commandIds: string[]): void;
+  onBulkDelete(sectionId: string, commandIds: string[]): void;
 }
 
 interface CommandTableOptions {
   canUndo: boolean;
   canRedo: boolean;
+  selectionSectionId: string | null;
   expandedSections: ReadonlySet<string>;
   sectionStateInitialized?: boolean;
   expandAllSections?: boolean;
@@ -89,7 +93,12 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
         onExampleColumnToggle: options.callbacks.onExampleColumnToggle,
         onAddCommand: options.callbacks.onAddCommand,
         onSectionMenu: options.callbacks.onSectionMenu,
+        onSelectionMode: options.callbacks.onSelectionMode,
+        onBulkMove: options.callbacks.onBulkMove,
+        onBulkDelete: options.callbacks.onBulkDelete,
         showExampleColumn: options.isExampleColumnVisible(section),
+        selectionActive: options.selectionSectionId === section.id,
+        canMoveSelection: file.sections.length > 1,
         rowCallbacks,
         getScrollRoot: () => content,
       });

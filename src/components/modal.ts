@@ -28,6 +28,7 @@ export interface CustomModalHandle {
   body: HTMLElement;
   close(notifyDismissal?: boolean): void;
   setError(message: string | null): void;
+  setActionDisabled(label: string, disabled: boolean): void;
 }
 
 let activeClose: (() => void) | null = null;
@@ -160,12 +161,14 @@ export function openModal(
   content.append(body, error);
 
   const footer = element("footer", "modal-footer");
+  const actionButtons = new Map<string, HTMLButtonElement>();
   actions.forEach((item) => {
     const actionButton = button(
       `modal-button${item.primary ? " primary" : ""}${item.danger ? " danger" : ""}`,
       item.label,
     );
     actionButton.addEventListener("click", () => void item.action());
+    actionButtons.set(item.label, actionButton);
     footer.append(actionButton);
   });
 
@@ -206,6 +209,12 @@ export function openModal(
     setError(message) {
       error.hidden = !message;
       error.textContent = message ?? "";
+    },
+    setActionDisabled(label, disabled) {
+      const action = actionButtons.get(label);
+      if (action) {
+        action.disabled = disabled;
+      }
     },
   };
 }

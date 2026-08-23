@@ -30,6 +30,8 @@ mockIPC((command, rawPayload) => {
       state.settings = structuredClone(payload.settings as AppSettings);
       persist();
       return null;
+    case "plugin:app|version":
+      return "0.7.0-test";
     case "list_directory":
       return buildTree(String(payload.workspaceRoot));
     case "read_command_file":
@@ -81,6 +83,7 @@ function loadState(): MockState {
   };
   if (parameters.get("fixture") === "basic") {
     const path = `${WORKSPACE}/Nmap.cmdnote`;
+    const gitPath = `${WORKSPACE}/Git.cmdnote`;
     initial.files[path] = `${JSON.stringify({
       version: 2,
       title: "Nmap",
@@ -98,12 +101,32 @@ function loadState(): MockState {
               example: "nmap -sn 192.168.1.0/24",
               notes: "Authorized networks only.",
             },
+            {
+              id: "arp-scan",
+              name: "ARP Scan",
+              command: "nmap -PR 192.168.1.0/24",
+              description: "Discover local hosts with ARP.",
+              example: "nmap -PR 192.168.1.0/24",
+              notes: "Local network only.",
+            },
           ],
+        },
+        {
+          id: "archive",
+          title: "Archive",
+          layout: "table",
+          commands: [],
         },
       ],
     }, null, 2)}\n`;
     initial.settings.lastWorkspace = WORKSPACE;
     initial.settings.lastOpenedFile = path;
+    initial.files[gitPath] = `${JSON.stringify({
+      version: 2,
+      title: "Git",
+      description: "Git commands",
+      sections: [],
+    }, null, 2)}\n`;
   }
   return initial;
 }

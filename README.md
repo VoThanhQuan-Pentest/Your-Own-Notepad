@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.6.1</strong>
+  <strong>Current version: 0.7.0</strong>
 </p>
 
 <p align="center">
@@ -40,6 +40,8 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Ranked typo-tolerant in-memory search with `Ctrl+K`.
 - Keyboard Search navigation with Arrow keys, Enter, and accessible NEAR indicators.
 - Session Undo/Redo for command-file edits and recoverable Explorer deletion through System Trash.
+- Section-scoped bulk selection for moving or deleting many commands as one undoable action.
+- Duplicate-aware table import plus persistent Favorite commands/files and Recent Files.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
@@ -47,7 +49,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.6.1 adds bounded per-file Undo/Redo, System Trash deletion, keyboard Search navigation, and automated browser regression tests.
+Version 0.7.0 adds Section-scoped bulk actions, duplicate-aware table import, Favorites, and Recent Files on top of the v0.6.1 safety features.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -61,6 +63,13 @@ Version 0.6.1 adds bounded per-file Undo/Redo, System Trash deletion, keyboard S
 - Search is accent-insensitive, so an unaccented query such as `mat khau` matches `mật khẩu`.
 - Open **Settings → Appearance** to preview Dark or Light with any of the six accent colors.
 - **SAVE** persists the preview; **CANCEL**, `Esc`, or closing Settings restores the previous theme.
+
+### Bulk actions and Quick Access
+
+- Press **SELECT** on a Section or Compact Table to select multiple rows, select all, move, or delete them as one Undo step.
+- Pasted tables skip commands already present in the active file by default; **Include duplicate commands** explicitly keeps them.
+- Add command files and individual commands to **FAVORITES** from their `⋮` menus.
+- **FAVORITES** and the eight most recent files appear above the filesystem tree in Explorer.
 
 ### Compact tables
 
@@ -129,6 +138,7 @@ npm run build
 ### Tests and checks
 
 ```bash
+npx playwright install chromium
 npm run test:model
 npm run test:e2e
 cargo test --manifest-path src-tauri/Cargo.toml
@@ -152,7 +162,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.6.1_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.7.0_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -193,6 +203,8 @@ Minimal `.cmdnote` file:
 
 - Version 1 command files are migrated atomically to version 2 when the workspace opens.
 - Version 2 files require Command Vault 0.5.0 or newer; do not reopen them with 0.4.x.
+- Explorer deletion moves files and folders to the operating system Trash; Command Vault never falls back to permanent deletion.
+- Each edited command file keeps up to 50 Undo/Redo snapshots for the current app session.
 - The AppImage smoke script uses isolated XDG folders and never opens the user's saved workspace.
 - Workspace paths are canonicalized and confined to the selected root.
 - Symbolic links are not traversed or managed.
@@ -224,6 +236,8 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Tìm kiếm toàn workspace có xếp hạng và chịu lỗi chính tả bằng `Ctrl+K`.
 - Điều khiển Search bằng phím mũi tên, Enter và badge NEAR accessible.
 - Undo/Redo trong phiên cho chỉnh sửa file command và xóa Explorer an toàn qua Trash hệ thống.
+- Bulk selection theo từng Section để move hoặc delete nhiều command trong một lần Undo.
+- Import nhận diện duplicate cùng Favorites cho command/file và Recent Files được lưu tự động.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
@@ -231,7 +245,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.6.1 bổ sung Undo/Redo giới hạn theo file, System Trash, keyboard Search và automated browser regression tests.
+Phiên bản 0.7.0 bổ sung bulk actions theo Section, import chống trùng, Favorites và Recent Files trên nền an toàn của v0.6.1.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -245,6 +259,13 @@ Phiên bản 0.6.1 bổ sung Undo/Redo giới hạn theo file, System Trash, key
 - Search không phân biệt dấu tiếng Việt, nên `mat khau` vẫn tìm được `mật khẩu`.
 - Mở **Settings → Appearance** để xem thử Dark hoặc Light với một trong sáu màu accent.
 - **SAVE** lưu lựa chọn; **CANCEL**, `Esc` hoặc đóng Settings sẽ trả về theme trước đó.
+
+### Bulk actions và Quick Access
+
+- Nhấn **SELECT** trên Section hoặc Compact Table để chọn nhiều hàng, chọn tất cả, move hoặc delete trong một lần Undo.
+- Bảng paste mặc định bỏ qua command đã có trong file; bật **Include duplicate commands** nếu muốn giữ lại.
+- Thêm file command hoặc command riêng lẻ vào **FAVORITES** từ menu `⋮`.
+- **FAVORITES** và tám file mở gần nhất hiển thị phía trên cây filesystem trong Explorer.
 
 ### Bảng compact
 
@@ -313,6 +334,7 @@ npm run build
 ### Test và kiểm tra code
 
 ```bash
+npx playwright install chromium
 npm run test:model
 npm run test:e2e
 cargo test --manifest-path src-tauri/Cargo.toml
@@ -336,7 +358,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.6.1_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.7.0_amd64.AppImage
 ```
 
 Output Linux:
@@ -377,6 +399,8 @@ File `.cmdnote` tối thiểu:
 
 - File command version 1 được migration atomically sang version 2 khi workspace mở.
 - File version 2 yêu cầu Command Vault 0.5.0 trở lên; không mở lại bằng bản 0.4.x.
+- Khi xóa trong Explorer, file/folder được chuyển vào Trash hệ thống; Command Vault không fallback sang xóa vĩnh viễn.
+- Mỗi file command đã chỉnh sửa giữ tối đa 50 trạng thái Undo/Redo trong phiên app hiện tại.
 - Script smoke-test AppImage dùng XDG folder cô lập và không mở workspace đã lưu của người dùng.
 - Mọi path được canonicalize và giới hạn trong workspace đã chọn.
 - Không traverse hoặc quản lý symbolic link.

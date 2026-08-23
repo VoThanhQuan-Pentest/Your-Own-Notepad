@@ -36,6 +36,22 @@ pub(crate) enum AccentTheme {
     Pink,
 }
 
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub(crate) enum FavoriteItem {
+    File {
+        path: String,
+    },
+    Command {
+        file_path: String,
+        command_id: String,
+    },
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct AppSettings {
@@ -49,6 +65,8 @@ pub(crate) struct AppSettings {
     pub(crate) ui_scale: u16,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) accent_theme: AccentTheme,
+    pub(crate) favorites: Vec<FavoriteItem>,
+    pub(crate) recent_files: Vec<String>,
     #[serde(default = "default_true")]
     pub(crate) remember_expanded_sections: bool,
     pub(crate) expanded_sections: Vec<String>,
@@ -67,6 +85,8 @@ impl Default for AppSettings {
             ui_scale: default_ui_scale(),
             theme_mode: ThemeMode::default(),
             accent_theme: AccentTheme::default(),
+            favorites: Vec::new(),
+            recent_files: Vec::new(),
             remember_expanded_sections: true,
             expanded_sections: Vec::new(),
             section_state_files: Vec::new(),
@@ -87,13 +107,31 @@ impl AppSettings {
         if !(75..=200).contains(&self.ui_scale) {
             return Err("UI scale must be between 75 and 200 percent.");
         }
+        if self.favorites.len() > 50 {
+            return Err("Favorites cannot contain more than 50 items.");
+        }
+        if self.favorites.iter().any(|item| match item {
+            FavoriteItem::File { path } => path.is_empty(),
+            FavoriteItem::Command {
+                file_path,
+                command_id,
+            } => file_path.is_empty() || command_id.is_empty(),
+        }) {
+            return Err("Favorite paths and command IDs cannot be empty.");
+        }
+        if self.recent_files.len() > 8 {
+            return Err("Recent files cannot contain more than 8 items.");
+        }
+        if self.recent_files.iter().any(|path| path.is_empty()) {
+            return Err("Recent file paths cannot be empty.");
+        }
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{AccentTheme, AppSettings, ThemeMode};
+    use super::{AccentTheme, AppSettings, FavoriteItem, ThemeMode};
 
     #[test]
     fn defaults_are_valid() {
@@ -133,5 +171,26 @@ mod tests {
             serde_json::from_str(source).expect("legacy settings should load");
         assert_eq!(settings.theme_mode, ThemeMode::Dark);
         assert_eq!(settings.accent_theme, AccentTheme::Cyan);
+        assert!(settings.favorites.is_empty());
+        assert!(settings.recent_files.is_empty());
+    }
+
+    #[test]
+    fn favorite_settings_use_camel_case_and_enforce_limits() {
+        let mut settings = AppSettings::default();
+        settings.favorites.push(FavoriteItem::Command {
+            file_path: "/workspace/Nmap.cmdnote".to_string(),
+            command_id: "ping-scan".to_string(),
+        });
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert_eq!(serialized["favorites"][0]["kind"], "command");
+        assert_eq!(
+            serialized["favorites"][0]["filePath"],
+            "/workspace/Nmap.cmdnote"
+        );
+        assert_eq!(serialized["favorites"][0]["commandId"], "ping-scan");
+
+        settings.recent_files = (0..9).map(|index| format!("/file-{index}")).collect();
+        assert!(settings.validate().is_err());
     }
 }
