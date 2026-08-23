@@ -16,6 +16,26 @@ fn default_true() -> bool {
     true
 }
 
+#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum ThemeMode {
+    #[default]
+    Dark,
+    Light,
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum AccentTheme {
+    #[default]
+    Cyan,
+    Blue,
+    Purple,
+    Green,
+    Orange,
+    Pink,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct AppSettings {
@@ -27,6 +47,8 @@ pub(crate) struct AppSettings {
     pub(crate) code_font_size: u8,
     #[serde(default = "default_ui_scale")]
     pub(crate) ui_scale: u16,
+    pub(crate) theme_mode: ThemeMode,
+    pub(crate) accent_theme: AccentTheme,
     #[serde(default = "default_true")]
     pub(crate) remember_expanded_sections: bool,
     pub(crate) expanded_sections: Vec<String>,
@@ -43,6 +65,8 @@ impl Default for AppSettings {
             ui_font_size: default_ui_font_size(),
             code_font_size: default_code_font_size(),
             ui_scale: default_ui_scale(),
+            theme_mode: ThemeMode::default(),
+            accent_theme: AccentTheme::default(),
             remember_expanded_sections: true,
             expanded_sections: Vec::new(),
             section_state_files: Vec::new(),
@@ -69,7 +93,7 @@ impl AppSettings {
 
 #[cfg(test)]
 mod tests {
-    use super::AppSettings;
+    use super::{AccentTheme, AppSettings, ThemeMode};
 
     #[test]
     fn defaults_are_valid() {
@@ -95,5 +119,19 @@ mod tests {
             ..AppSettings::default()
         };
         assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn legacy_settings_default_to_dark_cyan() {
+        let source = r#"{
+          "uiFontSize": 14,
+          "codeFontSize": 13,
+          "uiScale": 100,
+          "rememberExpandedSections": true
+        }"#;
+        let settings: AppSettings =
+            serde_json::from_str(source).expect("legacy settings should load");
+        assert_eq!(settings.theme_mode, ThemeMode::Dark);
+        assert_eq!(settings.accent_theme, AccentTheme::Cyan);
     }
 }

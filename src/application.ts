@@ -14,7 +14,14 @@ import type {
   CommandSectionLayout,
 } from "./models/command-file";
 import type { FilesystemEntry } from "./models/filesystem";
-import { defaultSettings, type AppSettings } from "./models/settings";
+import {
+  accentThemes,
+  defaultSettings,
+  themeModes,
+  type AccentTheme,
+  type AppSettings,
+  type ThemeMode,
+} from "./models/settings";
 import { copyText } from "./services/clipboard";
 import {
   createCommandFile,
@@ -31,6 +38,12 @@ import { chooseWorkspace } from "./services/workspace";
 import { restoreWindowSize } from "./services/window";
 import { button, element } from "./utils/dom";
 import { createId } from "./utils/ids";
+import {
+  createSearchDocument,
+  createSearchTextCache,
+  searchDocuments,
+  type SearchDocument,
+} from "./utils/search";
 import { parseCommandFile, serializeCommandFile } from "./utils/validation";
 
 interface SearchResult {
@@ -41,11 +54,6 @@ interface SearchResult {
   commandId?: string;
   commandName?: string;
   command?: string;
-}
-
-interface SearchIndexRecord {
-  normalized: string;
-  result: SearchResult;
 }
 
 interface FocusTarget {
@@ -86,7 +94,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.5.2";
+  private appVersion = "0.6.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -103,7 +111,7 @@ export class CommandVaultApplication {
   private workspaceLoadGeneration = 0;
   private searchTimer: number | null = null;
   private searchGeneration = 0;
-  private searchIndex: SearchIndexRecord[] = [];
+  private searchIndex: SearchDocument<SearchResult>[] = [];
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -139,7 +147,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.5.2 (development)";
+      this.appVersion = "0.6.0 (development)";
     }
 
     if (!this.desktopRuntime) {
@@ -1043,51 +1051,45 @@ export class CommandVaultApplication {
     if (generation !== this.searchGeneration) {
       return;
     }
-    const normalized = query.trim().toLocaleLowerCase();
-    if (!normalized) {
+    if (!query.trim()) {
       this.toolbar.setResults(null);
       return;
     }
-    const tokens = normalized.split(/\s+/);
-    const results: SearchResult[] = [];
-    for (const record of this.searchIndex) {
-      if (matchesTokens(record.normalized, tokens)) {
-        results.push(record.result);
-      }
-      if (results.length >= 100) {
-        break;
-      }
-    }
-    this.renderSearchResults(results);
+    this.renderSearchResults(searchDocuments(this.searchIndex, query, 100));
   }
 
   private rebuildSearchIndex(): void {
-    const records: SearchIndexRecord[] = [];
+    const records: SearchDocument<SearchResult>[] = [];
+    const textCache = createSearchTextCache();
+    let order = 0;
     this.files.forEach((file, filePath) => {
-      records.push({
-        normalized: `${file.title} ${file.description ?? ""}`.toLocaleLowerCase(),
-        result: { filePath, fileTitle: file.title },
-      });
+      records.push(createSearchDocument(
+        { filePath, fileTitle: file.title },
+        [
+          { text: file.title, priority: 3 },
+          { text: file.description, priority: 1 },
+        ],
+        order++,
+        textCache,
+      ));
       file.sections.forEach((section) => {
-        records.push({
-          normalized: `${section.title} ${file.title}`.toLocaleLowerCase(),
-          result: {
+        records.push(createSearchDocument(
+          {
             filePath,
             fileTitle: file.title,
             sectionId: section.id,
             sectionTitle: section.title,
           },
-        });
+          [
+            { text: section.title, priority: 3 },
+            { text: file.title, priority: 2 },
+          ],
+          order++,
+          textCache,
+        ));
         section.commands.forEach((command) => {
-          records.push({
-            normalized: [
-              command.name,
-              command.command,
-              command.description,
-              command.example,
-              command.notes,
-            ].join(" ").toLocaleLowerCase(),
-            result: {
+          records.push(createSearchDocument(
+            {
               filePath,
               fileTitle: file.title,
               sectionId: section.id,
@@ -1096,7 +1098,18 @@ export class CommandVaultApplication {
               commandName: command.name,
               command: command.command,
             },
-          });
+            [
+              { text: command.name, priority: 3 },
+              { text: command.command, priority: 3 },
+              { text: section.title, priority: 2 },
+              { text: file.title, priority: 2 },
+              { text: command.description, priority: 1 },
+              { text: command.example, priority: 1 },
+              { text: command.notes, priority: 1 },
+            ],
+            order++,
+            textCache,
+          ));
         });
       });
     });
@@ -1135,6 +1148,8 @@ export class CommandVaultApplication {
   }
 
   private openSettings(): void {
+    const originalThemeMode = this.settings.themeMode;
+    const originalAccentTheme = this.settings.accentTheme;
     const form = element("form", "modal-form");
     const workspaceField = element("label", "form-field");
     workspaceField.append(element("span", undefined, "Workspace"));
@@ -1150,6 +1165,12 @@ export class CommandVaultApplication {
     versionField.append(element("code", "settings-version", this.appVersion));
     form.append(versionField);
 
+    const theme = themeField(
+      form,
+      this.settings.themeMode,
+      this.settings.accentTheme,
+      (mode, accent) => this.applyTheme(mode, accent),
+    );
     const sizes = element("div", "form-columns");
     const uiScale = scaleField(form, this.settings.uiScale);
     const uiSize = numberField(sizes, "UI font size", this.settings.uiFontSize, 11, 20);
@@ -1183,6 +1204,8 @@ export class CommandVaultApplication {
         uiFontSize: nextUi,
         codeFontSize: nextCode,
         uiScale: nextScale,
+        themeMode: theme.mode(),
+        accentTheme: theme.accent(),
         rememberExpandedSections: remember.checked,
         ...(!remember.checked ? { expandedSections: [], sectionStateFiles: [] } : {}),
       };
@@ -1196,20 +1219,26 @@ export class CommandVaultApplication {
       }
     };
 
-    const modal = openModal("Settings", form, [
-      { label: "CANCEL", action: () => modal.close() },
-      {
-        label: "SAVE",
-        primary: true,
-        action: save,
-      },
-    ]);
+    const modal = openModal(
+      "Settings",
+      form,
+      [
+        { label: "CANCEL", action: () => modal.close() },
+        {
+          label: "SAVE",
+          primary: true,
+          action: save,
+        },
+      ],
+      false,
+      () => this.applyTheme(originalThemeMode, originalAccentTheme),
+    );
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       void save();
     });
     change.addEventListener("click", () => {
-      modal.close(false);
+      modal.close();
       void this.chooseAndOpenWorkspace();
     });
   }
@@ -1220,6 +1249,12 @@ export class CommandVaultApplication {
     document.documentElement.style.setProperty("--ui-font-size", `${this.settings.uiFontSize}px`);
     document.documentElement.style.setProperty("--code-font-size", `${this.settings.codeFontSize}px`);
     document.documentElement.style.setProperty("--ui-scale-factor", String(scale / 100));
+    this.applyTheme(this.settings.themeMode, this.settings.accentTheme);
+  }
+
+  private applyTheme(mode: ThemeMode, accent: AccentTheme): void {
+    document.documentElement.dataset.theme = mode;
+    document.documentElement.dataset.accent = accent;
   }
 
   private setUiScale(value: number): void {
@@ -1490,10 +1525,6 @@ function replaceSet<T>(target: Set<T>, source: ReadonlySet<T>): void {
   source.forEach((value) => target.add(value));
 }
 
-function matchesTokens(value: string, tokens: string[]): boolean {
-  return tokens.every((token) => value.includes(token));
-}
-
 function formatParseError(message: string, issues: Array<{ path: string; message: string }>): string {
   const details = issues.slice(0, 8).map((issue) => `${issue.path}: ${issue.message}`);
   return [message, ...details].join("\n");
@@ -1651,6 +1682,72 @@ function checkboxField(parent: HTMLElement, labelText: string, checked: boolean)
   label.append(input, element("span", undefined, labelText));
   parent.append(label);
   return input;
+}
+
+function themeField(
+  parent: HTMLElement,
+  initialMode: ThemeMode,
+  initialAccent: AccentTheme,
+  onPreview: (mode: ThemeMode, accent: AccentTheme) => void,
+): { mode(): ThemeMode; accent(): AccentTheme } {
+  const field = element("fieldset", "appearance-field");
+  field.append(element("legend", "form-legend", "Appearance"));
+
+  const modeGroup = element("div", "theme-mode-options");
+  const modeInputs = new Map<ThemeMode, HTMLInputElement>();
+  themeModes.forEach((mode) => {
+    const label = element("label", "theme-mode-option");
+    const input = element("input", "theme-choice-input");
+    input.type = "radio";
+    input.name = "theme-mode";
+    input.value = mode;
+    input.checked = mode === initialMode;
+    const card = element("span", "theme-mode-card");
+    card.append(
+      element("span", `theme-mode-preview ${mode}`),
+      element("span", undefined, mode.toUpperCase()),
+    );
+    input.addEventListener("change", preview);
+    modeInputs.set(mode, input);
+    label.append(input, card);
+    modeGroup.append(label);
+  });
+
+  const accentLabel = element("span", "appearance-subtitle", "Accent color");
+  const accentGroup = element("div", "theme-accent-options");
+  const accentInputs = new Map<AccentTheme, HTMLInputElement>();
+  accentThemes.forEach((accent) => {
+    const label = element("label", "theme-accent-option");
+    const input = element("input", "theme-choice-input");
+    input.type = "radio";
+    input.name = "accent-theme";
+    input.value = accent;
+    input.checked = accent === initialAccent;
+    input.addEventListener("change", preview);
+    accentInputs.set(accent, input);
+    label.append(
+      input,
+      element("span", `theme-accent-swatch ${accent}`),
+      element("span", "theme-accent-name", accent.toUpperCase()),
+    );
+    accentGroup.append(label);
+  });
+
+  field.append(modeGroup, accentLabel, accentGroup);
+  parent.append(field);
+  return { mode: selectedMode, accent: selectedAccent };
+
+  function selectedMode(): ThemeMode {
+    return themeModes.find((mode) => modeInputs.get(mode)?.checked) ?? initialMode;
+  }
+
+  function selectedAccent(): AccentTheme {
+    return accentThemes.find((accent) => accentInputs.get(accent)?.checked) ?? initialAccent;
+  }
+
+  function preview(): void {
+    onPreview(selectedMode(), selectedAccent());
+  }
 }
 
 function chooseSection(sections: CommandSection[]): Promise<string | null> {

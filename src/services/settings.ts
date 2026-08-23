@@ -1,6 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { defaultSettings, type AppSettings } from "../models/settings";
+import {
+  defaultSettings,
+  isAccentTheme,
+  isThemeMode,
+  type AppSettings,
+} from "../models/settings";
 import { isTauriRuntime } from "./runtime";
 
 const DEVELOPMENT_STORAGE_KEY = "command-vault.settings";
@@ -28,6 +33,8 @@ function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     uiFontSize: typeof value.uiFontSize === "number" ? value.uiFontSize : defaultSettings.uiFontSize,
     codeFontSize: typeof value.codeFontSize === "number" ? value.codeFontSize : defaultSettings.codeFontSize,
     uiScale: typeof value.uiScale === "number" ? value.uiScale : defaultSettings.uiScale,
+    themeMode: isThemeMode(value.themeMode) ? value.themeMode : defaultSettings.themeMode,
+    accentTheme: isAccentTheme(value.accentTheme) ? value.accentTheme : defaultSettings.accentTheme,
     rememberExpandedSections:
       typeof value.rememberExpandedSections === "boolean"
         ? value.rememberExpandedSections

@@ -252,6 +252,6 @@
 }
 
 .startup-error p {
-  color: #f5a3aa;
+  color: var(--danger-text);
   overflow-wrap: anywhere;
 }

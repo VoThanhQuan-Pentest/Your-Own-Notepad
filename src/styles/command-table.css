@@ -120,7 +120,7 @@
   padding: 2px 6px;
   border: 1px solid color-mix(in srgb, var(--accent-secondary) 55%, var(--border));
   border-radius: 999px;
-  color: #b9a4ff;
+  color: var(--accent-secondary);
   font-family: var(--font-code);
   font-size: 9px;
   font-weight: 700;
@@ -369,7 +369,7 @@
   overflow-y: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: #0a0f14;
+  background: var(--code-bg);
   white-space: nowrap;
 }
 
@@ -377,7 +377,7 @@
   display: inline-block;
   min-width: 100%;
   padding: 9px 10px;
-  color: #a9e9f4;
+  color: var(--code-text);
   font-family: var(--font-code);
   font-size: var(--code-font-size);
   white-space: pre;
@@ -436,7 +436,7 @@
   overflow-y: hidden;
   border: 0;
   background: color-mix(in srgb, var(--bg-main) 82%, var(--bg-secondary));
-  color: #bdc6d1;
+  color: var(--example-text);
   font-family: var(--font-code);
   font-size: var(--code-font-size);
   line-height: 1.5;
@@ -502,7 +502,7 @@
 }
 
 .detail-group.code-detail p {
-  color: #bdc6d1;
+  color: var(--example-text);
   font-family: var(--font-code);
   font-size: var(--code-font-size);
 }

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.5.2</strong>
+  <strong>Current version: 0.6.0</strong>
 </p>
 
 <p align="center">
@@ -37,21 +37,28 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Paste-to-import GPT tables with automatic Markdown, TSV, and CSV detection plus a validation preview.
 - Example switch for every Section with examples.
 - Copy-only command handling with a smaller, simpler command schema.
-- Global in-memory search with `Ctrl+K`.
+- Ranked typo-tolerant in-memory search with `Ctrl+K`.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
-- Dark cyber-minimal theme with soft neon accents.
+- Dark and Light themes with Cyan, Blue, Purple, Green, Orange, and Pink accents.
 
 ### Interface size and accessibility
 
-Version 0.5.2 keeps commands and COPY visible in standard Section rows and prevents MORE from repeating the Information summary.
+Version 0.6.0 adds typo-tolerant search plus persistent Dark/Light appearance and six accent presets.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
 - Press `Ctrl+-` to decrease scale by 10%.
 - Press `Ctrl+0` to return to 100%.
 - Scale, UI font size, and code font size are persisted between launches.
+
+### Search and appearance
+
+- Search ranks exact matches first, then accepts balanced one- or two-character typos such as `namp` for `nmap`.
+- Search is accent-insensitive, so an unaccented query such as `mat khau` matches `mật khẩu`.
+- Open **Settings → Appearance** to preview Dark or Light with any of the six accent colors.
+- **SAVE** persists the preview; **CANCEL**, `Esc`, or closing Settings restores the previous theme.
 
 ### Compact tables
 
@@ -128,8 +135,8 @@ npm audit --omit=dev
 
 The project includes:
 
-- TypeScript tests for parsing, migration, import validation, IDs, and large-list behavior.
-- Rust tests for workspace confinement, symlink rejection, atomic writes, stale-write protection, filesystem CRUD, and settings.
+- TypeScript tests for parsing, migration, fuzzy ranking, accent normalization, import validation, IDs, and large-list behavior.
+- Rust tests for workspace confinement, symlink rejection, atomic writes, stale-write protection, filesystem CRUD, and backward-compatible settings.
 - A no-dependency Tauri IPC integration harness at `e2e.html`.
 - Frontend stress scenarios at `/?stress=100`, `/?stress=1000`, and `/?stress=5000` during development.
 
@@ -142,7 +149,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.5.2_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.6.0_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -211,21 +218,28 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Paste/import bảng do GPT tạo, tự nhận diện Markdown, TSV và CSV kèm preview kiểm tra dữ liệu.
 - Example switch cho mọi Section có ví dụ.
 - Chỉ giữ thao tác COPY và schema command gọn nhẹ.
-- Tìm kiếm toàn workspace bằng `Ctrl+K`.
+- Tìm kiếm toàn workspace có xếp hạng và chịu lỗi chính tả bằng `Ctrl+K`.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
-- Giao diện dark cyber-minimal với soft neon nhẹ mắt.
+- Theme Dark/Light với sáu accent Cyan, Blue, Purple, Green, Orange và Pink.
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.5.2 giữ command và nút COPY luôn hiển thị trong Section thường, đồng thời ngăn MORE lặp lại phần Information tóm tắt.
+Phiên bản 0.6.0 bổ sung fuzzy search chịu lỗi chính tả cùng Dark/Light và sáu màu accent được lưu tự động.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
 - Nhấn `Ctrl+-` để giảm scale 10%.
 - Nhấn `Ctrl+0` để trở về 100%.
 - UI scale, UI font size và code font size được lưu giữa các lần mở ứng dụng.
+
+### Tìm kiếm và giao diện
+
+- Search ưu tiên kết quả chính xác, sau đó chấp nhận sai một hoặc hai ký tự như `namp` thay cho `nmap`.
+- Search không phân biệt dấu tiếng Việt, nên `mat khau` vẫn tìm được `mật khẩu`.
+- Mở **Settings → Appearance** để xem thử Dark hoặc Light với một trong sáu màu accent.
+- **SAVE** lưu lựa chọn; **CANCEL**, `Esc` hoặc đóng Settings sẽ trả về theme trước đó.
 
 ### Bảng compact
 
@@ -302,8 +316,8 @@ npm audit --omit=dev
 
 Project bao gồm:
 
-- TypeScript tests cho parser, migration, import validation, ID và large-list behavior.
-- Rust tests cho workspace boundary, symlink, atomic write, chống stale write, filesystem CRUD và settings.
+- TypeScript tests cho parser, migration, fuzzy ranking, chuẩn hóa dấu, import validation, ID và large-list behavior.
+- Rust tests cho workspace boundary, symlink, atomic write, chống stale write, filesystem CRUD và settings tương thích ngược.
 - Tauri IPC integration harness không cần dependency bổ sung tại `e2e.html`.
 - Frontend stress scenarios tại `/?stress=100`, `/?stress=1000` và `/?stress=5000` trong development.
 
@@ -316,7 +330,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.5.2_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.6.0_amd64.AppImage
 ```
 
 Output Linux:

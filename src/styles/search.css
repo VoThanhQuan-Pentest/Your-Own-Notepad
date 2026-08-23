@@ -10,7 +10,7 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--bg-panel);
-  box-shadow: 0 16px 48px rgb(0 0 0 / 42%);
+  box-shadow: 0 16px 48px var(--shadow-lg);
 }
 
 .search-result-list {
@@ -63,7 +63,7 @@
 
 .search-result-command {
   margin-top: 2px;
-  color: #a9e9f4;
+  color: var(--code-text);
   font-family: var(--font-code);
   font-size: 10px;
 }

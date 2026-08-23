@@ -1,4 +1,5 @@
 import { createId } from "../utils/ids";
+import { createSearchDocument, normalizeSearchText, searchDocuments } from "../utils/search";
 import { hasTableImportErrors, parseTablePaste } from "../utils/table-import";
 import { parseCommandFile, serializeCommandFile } from "../utils/validation";
 
@@ -155,6 +156,61 @@ test("blocks deprecated imported columns", () => {
   ok(preview.issues.some((issue) => issue.message.includes("deprecated column")));
 });
 
+test("normalizes Vietnamese accents for search", () => {
+  equal(normalizeSearchText("Mật khẩu và đường dẫn"), "mat khau va duong dan");
+});
+
+test("finds a command after a transposed typo", () => {
+  const documents = searchFixture();
+  equal(searchDocuments(documents, "namp")[0], "Nmap service detection");
+});
+
+test("finds commands with missing and extra characters", () => {
+  const documents = searchFixture();
+  equal(searchDocuments(documents, "nmp")[0], "Nmap service detection");
+  equal(searchDocuments(documents, "nmapp")[0], "Nmap service detection");
+});
+
+test("allows two errors for long search tokens", () => {
+  const documents = searchFixture();
+  equal(searchDocuments(documents, "postgrsxl")[0], "PostgreSQL reference");
+});
+
+test("matches unaccented multi-token Vietnamese queries", () => {
+  const documents = searchFixture();
+  equal(searchDocuments(documents, "mat khau")[0], "Password recovery");
+});
+
+test("requires every fuzzy query token to match", () => {
+  const documents = searchFixture();
+  equal(searchDocuments(documents, "namp srvice")[0], "Nmap service detection");
+  equal(searchDocuments(documents, "namp unrelated").length, 0);
+});
+
+test("does not fuzz short tokens", () => {
+  const documents = searchFixture();
+  equal(searchDocuments(documents, "xm").length, 0);
+});
+
+test("ranks exact results above fuzzy results", () => {
+  const documents = [
+    createSearchDocument("Fuzzy Nmap", [{ text: "nmap", priority: 3 }], 0),
+    createSearchDocument("Exact Namp", [{ text: "namp", priority: 1 }], 1),
+  ];
+  equal(searchDocuments(documents, "namp")[0], "Exact Namp");
+  equal(searchDocuments(documents, "namp")[1], "Fuzzy Nmap");
+});
+
+test("keeps fuzzy result limits and insertion order stable", () => {
+  const documents = Array.from({ length: 120 }, (_, index) =>
+    createSearchDocument(index, [{ text: `nmap command ${index}`, priority: 3 }], index),
+  );
+  const results = searchDocuments(documents, "nmap", 100);
+  equal(results.length, 100);
+  equal(results[0], 0);
+  equal(results[99], 99);
+});
+
 let failures = 0;
 for (const current of tests) {
   try {
@@ -185,4 +241,27 @@ function ok(value: boolean): asserts value {
   if (!value) {
     throw new Error("Expected a truthy value.");
   }
+}
+
+function searchFixture() {
+  return [
+    createSearchDocument(
+      "Nmap service detection",
+      [
+        { text: "Nmap service detection", priority: 3 },
+        { text: "Scan services and versions", priority: 1 },
+      ],
+      0,
+    ),
+    createSearchDocument(
+      "PostgreSQL reference",
+      [{ text: "PostgreSQL database commands", priority: 3 }],
+      1,
+    ),
+    createSearchDocument(
+      "Password recovery",
+      [{ text: "Khôi phục mật khẩu bằng wordlist", priority: 3 }],
+      2,
+    ),
+  ];
 }
