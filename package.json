@@ -1,12 +1,13 @@
 {
   "name": "command-vault",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "test:model": "node scripts/run-model-tests.mjs",
+    "smoke:appimage": "bash scripts/smoke-appimage.sh",
     "preview": "vite preview",
     "tauri": "tauri"
   },

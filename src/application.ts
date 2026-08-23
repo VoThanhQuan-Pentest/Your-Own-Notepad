@@ -1,4 +1,5 @@
 import { createCommandTable, type CommandTableHandle } from "./components/command-table";
+import { getVersion } from "@tauri-apps/api/app";
 import { openCommandForm } from "./components/command-form";
 import { createExplorer } from "./components/explorer";
 import { openMenu } from "./components/menu";
@@ -85,6 +86,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
+  private appVersion = "0.5.1";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -129,6 +131,16 @@ export class CommandVaultApplication {
     this.applySettings();
     this.installKeyboardShortcuts();
     await this.installWindowPersistence();
+
+    if (this.desktopRuntime) {
+      try {
+        this.appVersion = await getVersion();
+      } catch (error) {
+        console.warn("Could not read application version", normalizeServiceError(error));
+      }
+    } else {
+      this.appVersion = "0.5.1 (development)";
+    }
 
     if (!this.desktopRuntime) {
       this.loadDevelopmentWorkspace();
@@ -373,7 +385,10 @@ export class CommandVaultApplication {
       void showMessage({
         title: "Command File Migration",
         message: `${migratedPaths.length} file${migratedPaths.length === 1 ? "" : "s"} migrated to version 2.${migrationFailures.length ? ` ${migrationFailures.length} file${migrationFailures.length === 1 ? "" : "s"} could not be migrated.` : ""}`,
-        detail: migrationFailures.length ? migrationFailures.map((item) => item.path).join("\n") : undefined,
+        detail: [
+          migrationFailures.length ? migrationFailures.map((item) => item.path).join("\n") : "",
+          `Migrated files require Command Vault ${this.appVersion} or newer.`,
+        ].filter(Boolean).join("\n\n"),
         kind: migrationFailures.length ? "error" : "info",
       });
     }
@@ -1130,6 +1145,11 @@ export class CommandVaultApplication {
     workspaceField.append(workspaceRow);
     form.append(workspaceField);
 
+    const versionField = element("label", "form-field");
+    versionField.append(element("span", undefined, "Command Vault version"));
+    versionField.append(element("code", "settings-version", this.appVersion));
+    form.append(versionField);
+
     const sizes = element("div", "form-columns");
     const uiScale = scaleField(form, this.settings.uiScale);
     const uiSize = numberField(sizes, "UI font size", this.settings.uiFontSize, 11, 20);
@@ -1325,7 +1345,7 @@ export class CommandVaultApplication {
   private renderFileError(path: string, detail: string): void {
     this.renderEmptyState(
       "Command file could not be loaded",
-      `${path}\n\n${detail}\n\nThe original file was not modified.`,
+      `${path}\n\n${detail}\n\nCurrent Command Vault version: ${this.appVersion}\nInstall a version compatible with this command file format.\n\nThe original file was not modified.`,
       "REFRESH",
       () => void this.refreshWorkspaceFromUi(),
       true,

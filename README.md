@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.5.0</strong>
+  <strong>Current version: 0.5.1</strong>
 </p>
 
 <p align="center">
@@ -45,7 +45,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.5.0 upgrades command files to version 2, removes syntax/action/risk/variables, and adds lazy rendering plus virtual scrolling for large vaults.
+Version 0.5.1 makes the installed app version visible in Settings, clarifies command-format errors, and isolates AppImage smoke tests from user workspaces.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -139,6 +139,12 @@ The project includes:
 npm run tauri build
 ```
 
+Smoke-test an AppImage without reading or writing your real workspace settings:
+
+```bash
+npm run smoke:appimage -- artifacts/CommandVault_0.5.1_amd64.AppImage
+```
+
 Configured Linux outputs:
 
 ```text
@@ -176,6 +182,8 @@ Minimal `.cmdnote` file:
 ### Data safety
 
 - Version 1 command files are migrated atomically to version 2 when the workspace opens.
+- Version 2 files require Command Vault 0.5.0 or newer; do not reopen them with 0.4.x.
+- The AppImage smoke script uses isolated XDG folders and never opens the user's saved workspace.
 - Workspace paths are canonicalized and confined to the selected root.
 - Symbolic links are not traversed or managed.
 - Command files have a 5 MiB safety limit.
@@ -211,7 +219,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.5.0 nâng file command lên version 2, loại bỏ syntax/action/risk/variables và bổ sung lazy rendering cùng virtual scrolling cho kho dữ liệu lớn.
+Phiên bản 0.5.1 hiển thị rõ version app trong Settings, giải thích lỗi command-format và cô lập AppImage smoke-test khỏi workspace thật của người dùng.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -305,6 +313,12 @@ Project bao gồm:
 npm run tauri build
 ```
 
+Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
+
+```bash
+npm run smoke:appimage -- artifacts/CommandVault_0.5.1_amd64.AppImage
+```
+
 Output Linux:
 
 ```text
@@ -342,6 +356,8 @@ File `.cmdnote` tối thiểu:
 ### An toàn dữ liệu
 
 - File command version 1 được migration atomically sang version 2 khi workspace mở.
+- File version 2 yêu cầu Command Vault 0.5.0 trở lên; không mở lại bằng bản 0.4.x.
+- Script smoke-test AppImage dùng XDG folder cô lập và không mở workspace đã lưu của người dùng.
 - Mọi path được canonicalize và giới hạn trong workspace đã chọn.
 - Không traverse hoặc quản lý symbolic link.
 - File command có giới hạn an toàn 5 MiB.
