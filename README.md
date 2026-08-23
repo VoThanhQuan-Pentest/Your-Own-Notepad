@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.5.1</strong>
+  <strong>Current version: 0.5.2</strong>
 </p>
 
 <p align="center">
@@ -45,7 +45,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.5.1 makes the installed app version visible in Settings, clarifies command-format errors, and isolates AppImage smoke tests from user workspaces.
+Version 0.5.2 keeps commands and COPY visible in standard Section rows and prevents MORE from repeating the Information summary.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -142,7 +142,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.5.1_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.5.2_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -219,7 +219,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.5.1 hiển thị rõ version app trong Settings, giải thích lỗi command-format và cô lập AppImage smoke-test khỏi workspace thật của người dùng.
+Phiên bản 0.5.2 giữ command và nút COPY luôn hiển thị trong Section thường, đồng thời ngăn MORE lặp lại phần Information tóm tắt.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -316,7 +316,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.5.1_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.5.2_amd64.AppImage
 ```
 
 Output Linux:

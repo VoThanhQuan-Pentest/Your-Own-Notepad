@@ -86,7 +86,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.5.1";
+  private appVersion = "0.5.2";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -139,7 +139,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.5.1 (development)";
+      this.appVersion = "0.5.2 (development)";
     }
 
     if (!this.desktopRuntime) {
