@@ -1,6 +1,7 @@
 import { createId } from "../utils/ids";
 import { SessionHistory } from "../utils/history";
 import { normalizeSettings } from "../services/settings";
+import { contrastRatio, mixHex } from "../utils/color";
 import {
   createSearchDocument,
   normalizeSearchText,
@@ -10,6 +11,7 @@ import {
 import {
   hasTableImportErrors,
   importableCommands,
+  normalizeExampleBreaks,
   parseTablePaste,
 } from "../utils/table-import";
 import { parseCommandFile, serializeCommandFile } from "../utils/validation";
@@ -190,6 +192,16 @@ test("keeps the first pasted duplicate and compares commands case-sensitively", 
   equal(importableCommands(preview, false).length, 2);
 });
 
+test("converts Markdown Example break tags into real newlines", () => {
+  equal(normalizeExampleBreaks("first<br>second<BR />third<br/>fourth"), "first\nsecond\nthird\nfourth");
+  const preview = parseTablePaste(
+    "| Command | Example |\n|---|---|\n| tool | first<br>second |",
+    "Examples",
+    new Set(),
+  );
+  equal(preview.commands[0]?.example, "first\nsecond");
+});
+
 test("normalizes Vietnamese accents for search", () => {
   equal(normalizeSearchText("Mật khẩu và đường dẫn"), "mat khau va duong dan");
 });
@@ -279,6 +291,7 @@ test("defaults and deduplicates backward-compatible quick access settings", () =
   const legacy = normalizeSettings({});
   equal(legacy.favorites.length, 0);
   equal(legacy.recentFiles.length, 0);
+  equal(legacy.customThemes.dark.background, "#0d1117");
 
   const favorite = { kind: "command", filePath: "/Nmap.cmdnote", commandId: "ping" } as const;
   const normalized = normalizeSettings({
@@ -287,6 +300,38 @@ test("defaults and deduplicates backward-compatible quick access settings", () =
   });
   equal(normalized.favorites.length, 1);
   equal(normalized.recentFiles.length, 1);
+});
+
+test("normalizes custom themes independently for Dark and Light", () => {
+  const normalized = normalizeSettings({
+    customThemes: {
+      dark: { enabled: true, background: "#112233", text: "#DDEEFF", accent: "#00AACC" },
+      light: { enabled: true, background: "invalid", text: "#123456", accent: "#654321" },
+    },
+  });
+  equal(normalized.customThemes.dark.background, "#112233");
+  equal(normalized.customThemes.dark.text, "#ddeeff");
+  equal(normalized.customThemes.light.background, "#f5f7fa");
+  equal(normalized.customThemes.light.text, "#123456");
+});
+
+test("accepts and deduplicates folder favorites independently from files", () => {
+  const normalized = normalizeSettings({
+    favorites: [
+      { kind: "folder", path: "/workspace/Network" },
+      { kind: "folder", path: "/workspace/Network" },
+      { kind: "file", path: "/workspace/Network" },
+    ],
+  });
+  equal(normalized.favorites.length, 2);
+  equal(normalized.favorites[0]?.kind, "folder");
+  equal(normalized.favorites[1]?.kind, "file");
+});
+
+test("calculates deterministic theme contrast ratios", () => {
+  equal(Number(contrastRatio("#000000", "#ffffff").toFixed(1)), 21);
+  ok(contrastRatio("#d8dee9", "#0d1117") > 10);
+  equal(mixHex("#000000", "#ffffff", 0.5), "#808080");
 });
 
 let failures = 0;

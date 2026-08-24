@@ -20,11 +20,14 @@ import type {
 import type { FilesystemEntry } from "./models/filesystem";
 import {
   accentThemes,
+  defaultCustomThemes,
   defaultSettings,
   favoriteKey,
+  isHexColor,
   themeModes,
   type AccentTheme,
   type AppSettings,
+  type CustomThemes,
   type FavoriteItem,
   type ThemeMode,
 } from "./models/settings";
@@ -43,6 +46,7 @@ import { loadSettings, saveSettings } from "./services/settings";
 import { chooseWorkspace } from "./services/workspace";
 import { restoreWindowSize } from "./services/window";
 import { button, element } from "./utils/dom";
+import { contrastRatio, mixHex } from "./utils/color";
 import { SessionHistory } from "./utils/history";
 import { createId } from "./utils/ids";
 import {
@@ -104,7 +108,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.7.0";
+  private appVersion = "0.8.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -160,7 +164,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.7.0 (development)";
+      this.appVersion = "0.8.0 (development)";
     }
 
     if (!this.desktopRuntime) {
@@ -202,6 +206,9 @@ export class CommandVaultApplication {
       favoriteFilePaths: new Set(
         this.settings.favorites.flatMap((item) => item.kind === "file" ? [item.path] : []),
       ),
+      favoriteFolderPaths: new Set(
+        this.settings.favorites.flatMap((item) => item.kind === "folder" ? [item.path] : []),
+      ),
       favoriteItems: this.explorerFavoriteItems(),
       recentFiles: this.explorerRecentFiles(),
       collapsedQuickGroups: this.collapsedQuickGroups,
@@ -213,6 +220,8 @@ export class CommandVaultApplication {
         onRename: (entry) => void this.renameFilesystemEntry(entry),
         onDelete: (entry) => void this.deleteFilesystemEntry(entry),
         onToggleFileFavorite: (path) => this.toggleFavorite({ kind: "file", path }),
+        onToggleFolderFavorite: (path) => this.toggleFavorite({ kind: "folder", path }),
+        onOpenFavoriteFolder: (path) => this.openFavoriteFolder(path),
         onOpenFavoriteCommand: (filePath, commandId) =>
           void this.openFavoriteCommand(filePath, commandId),
         onCopyFavorite: (command, trigger) => void this.copyCommand(command, trigger),
@@ -238,9 +247,15 @@ export class CommandVaultApplication {
       return [];
     }
     return this.settings.favorites.flatMap<ExplorerFavoriteItem>((favorite) => {
-      const filePath = favorite.kind === "file" ? favorite.path : favorite.filePath;
+      const filePath = favorite.kind === "command" ? favorite.filePath : favorite.path;
       if (!isSameOrDescendant(this.workspaceRoot as string, filePath)) {
         return [];
+      }
+      if (favorite.kind === "folder") {
+        const folder = findFilesystemEntry(this.entries, favorite.path);
+        return folder?.kind === "folder"
+          ? [{ favorite, label: folder.name, detail: favorite.path }]
+          : [];
       }
       const file = this.files.get(filePath);
       if (!file) {
@@ -318,6 +333,26 @@ export class CommandVaultApplication {
     await this.openFile(filePath, { sectionId: location.section.id, commandId });
   }
 
+  private openFavoriteFolder(path: string): void {
+    if (!this.workspaceRoot || !isSameOrDescendant(this.workspaceRoot, path)) {
+      return;
+    }
+    let current: string | null = path;
+    while (current && current !== this.workspaceRoot) {
+      this.expandedFolders.add(current);
+      current = parentDirectory(current);
+    }
+    this.selectedFolder = path;
+    this.renderExplorer();
+    queueMicrotask(() => {
+      const row = this.explorer?.querySelector<HTMLElement>(
+        `[data-entry-path="${CSS.escape(path)}"]`,
+      );
+      row?.scrollIntoView({ block: "center" });
+      row?.querySelector<HTMLButtonElement>(".tree-folder")?.focus();
+    });
+  }
+
   private rememberRecentFile(path: string): void {
     this.settings.recentFiles = [path, ...this.settings.recentFiles.filter((item) => item !== path)]
       .slice(0, 8);
@@ -325,7 +360,7 @@ export class CommandVaultApplication {
 
   private remapQuickAccessPaths(oldPath: string, newPath: string): void {
     const remappedFavorites = this.settings.favorites.map((favorite) => {
-      if (favorite.kind === "file") {
+      if (favorite.kind !== "command") {
         return {
           ...favorite,
           path: remapDescendantPath(oldPath, newPath, favorite.path) ?? favorite.path,
@@ -347,7 +382,7 @@ export class CommandVaultApplication {
 
   private removeQuickAccessPaths(path: string): void {
     this.settings.favorites = this.settings.favorites.filter((favorite) => {
-      const filePath = favorite.kind === "file" ? favorite.path : favorite.filePath;
+      const filePath = favorite.kind === "command" ? favorite.filePath : favorite.path;
       return !isSameOrDescendant(path, filePath);
     });
     this.settings.recentFiles = this.settings.recentFiles.filter(
@@ -372,12 +407,16 @@ export class CommandVaultApplication {
       return false;
     }
     const workspaceRoot = this.workspaceRoot;
+    const folderPaths = new Set(flattenFolders(this.entries).map((folder) => folder.path));
     const previousFavorites = this.settings.favorites.length;
     const previousRecent = this.settings.recentFiles.length;
     this.settings.favorites = this.settings.favorites.filter((favorite) => {
-      const filePath = favorite.kind === "file" ? favorite.path : favorite.filePath;
+      const filePath = favorite.kind === "command" ? favorite.filePath : favorite.path;
       if (!isSameOrDescendant(workspaceRoot, filePath) || this.fileErrors.has(filePath)) {
         return true;
+      }
+      if (favorite.kind === "folder") {
+        return folderPaths.has(favorite.path);
       }
       const file = this.files.get(filePath);
       if (!file) {
@@ -1376,6 +1415,11 @@ export class CommandVaultApplication {
   private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
     try {
       await copyText(value);
+      if (trigger.classList.contains("example-copy")) {
+        trigger.classList.add("copied");
+        window.setTimeout(() => trigger.classList.remove("copied"), 1200);
+        return;
+      }
       const previous = trigger.textContent;
       trigger.textContent = "COPIED";
       window.setTimeout(() => {
@@ -1516,6 +1560,7 @@ export class CommandVaultApplication {
   private openSettings(): void {
     const originalThemeMode = this.settings.themeMode;
     const originalAccentTheme = this.settings.accentTheme;
+    const originalCustomThemes = structuredClone(this.settings.customThemes);
     const form = element("form", "modal-form");
     const workspaceField = element("label", "form-field");
     workspaceField.append(element("span", undefined, "Workspace"));
@@ -1535,7 +1580,8 @@ export class CommandVaultApplication {
       form,
       this.settings.themeMode,
       this.settings.accentTheme,
-      (mode, accent) => this.applyTheme(mode, accent),
+      this.settings.customThemes,
+      (mode, accent, customThemes) => this.applyTheme(mode, accent, customThemes),
     );
     const sizes = element("div", "form-columns");
     const uiScale = scaleField(form, this.settings.uiScale);
@@ -1565,6 +1611,10 @@ export class CommandVaultApplication {
         modal.setError("Font sizes or UI scale are outside the supported range.");
         return;
       }
+      if (!theme.valid()) {
+        modal.setError("Custom theme colors must use #RRGGBB format.");
+        return;
+      }
       const next: AppSettings = {
         ...this.settings,
         uiFontSize: nextUi,
@@ -1572,6 +1622,7 @@ export class CommandVaultApplication {
         uiScale: nextScale,
         themeMode: theme.mode(),
         accentTheme: theme.accent(),
+        customThemes: theme.customThemes(),
         rememberExpandedSections: remember.checked,
         ...(!remember.checked ? { expandedSections: [], sectionStateFiles: [] } : {}),
       };
@@ -1597,7 +1648,7 @@ export class CommandVaultApplication {
         },
       ],
       false,
-      () => this.applyTheme(originalThemeMode, originalAccentTheme),
+      () => this.applyTheme(originalThemeMode, originalAccentTheme, originalCustomThemes),
     );
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1615,12 +1666,17 @@ export class CommandVaultApplication {
     document.documentElement.style.setProperty("--ui-font-size", `${this.settings.uiFontSize}px`);
     document.documentElement.style.setProperty("--code-font-size", `${this.settings.codeFontSize}px`);
     document.documentElement.style.setProperty("--ui-scale-factor", String(scale / 100));
-    this.applyTheme(this.settings.themeMode, this.settings.accentTheme);
+    this.applyTheme(this.settings.themeMode, this.settings.accentTheme, this.settings.customThemes);
   }
 
-  private applyTheme(mode: ThemeMode, accent: AccentTheme): void {
+  private applyTheme(mode: ThemeMode, accent: AccentTheme, customThemes: CustomThemes): void {
     document.documentElement.dataset.theme = mode;
     document.documentElement.dataset.accent = accent;
+    const custom = customThemes[mode];
+    document.documentElement.dataset.customTheme = String(custom.enabled);
+    document.documentElement.style.setProperty("--custom-background", custom.background);
+    document.documentElement.style.setProperty("--custom-text", custom.text);
+    document.documentElement.style.setProperty("--custom-accent", custom.accent);
   }
 
   private setUiScale(value: number): void {
@@ -1835,6 +1891,30 @@ function flattenFiles(entries: FilesystemEntry[]): FilesystemEntry[] {
   return entries.flatMap((entry) =>
     entry.kind === "command-file" ? [entry] : flattenFiles(entry.children),
   );
+}
+
+function flattenFolders(entries: FilesystemEntry[]): FilesystemEntry[] {
+  return entries.flatMap((entry) =>
+    entry.kind === "folder" ? [entry, ...flattenFolders(entry.children)] : [],
+  );
+}
+
+function findFilesystemEntry(
+  entries: FilesystemEntry[],
+  path: string,
+): FilesystemEntry | null {
+  for (const entry of entries) {
+    if (entry.path === path) {
+      return entry;
+    }
+    if (entry.kind === "folder") {
+      const nested = findFilesystemEntry(entry.children, path);
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+  return null;
 }
 
 async function mapWithConcurrency<T, R>(
@@ -2080,8 +2160,15 @@ function themeField(
   parent: HTMLElement,
   initialMode: ThemeMode,
   initialAccent: AccentTheme,
-  onPreview: (mode: ThemeMode, accent: AccentTheme) => void,
-): { mode(): ThemeMode; accent(): AccentTheme } {
+  initialCustomThemes: CustomThemes,
+  onPreview: (mode: ThemeMode, accent: AccentTheme, customThemes: CustomThemes) => void,
+): {
+  mode(): ThemeMode;
+  accent(): AccentTheme;
+  customThemes(): CustomThemes;
+  valid(): boolean;
+} {
+  const customThemes = structuredClone(initialCustomThemes);
   const field = element("fieldset", "appearance-field");
   field.append(element("legend", "form-legend", "Appearance"));
 
@@ -2099,7 +2186,10 @@ function themeField(
       element("span", `theme-mode-preview ${mode}`),
       element("span", undefined, mode.toUpperCase()),
     );
-    input.addEventListener("change", preview);
+    input.addEventListener("change", () => {
+      loadCustomMode();
+      preview();
+    });
     modeInputs.set(mode, input);
     label.append(input, card);
     modeGroup.append(label);
@@ -2125,9 +2215,65 @@ function themeField(
     accentGroup.append(label);
   });
 
-  field.append(modeGroup, accentLabel, accentGroup);
+  const customToggle = element("label", "checkbox-field custom-theme-toggle");
+  const customEnabled = element("input");
+  customEnabled.type = "checkbox";
+  customEnabled.addEventListener("change", () => {
+    customThemes[selectedMode()].enabled = customEnabled.checked;
+    refreshCustomState();
+    preview();
+  });
+  customToggle.append(
+    customEnabled,
+    element("span", undefined, "Use custom colors for this mode"),
+  );
+
+  const editor = element("div", "custom-theme-editor");
+  const background = colorControl(editor, "Background");
+  const text = colorControl(editor, "Text");
+  const accent = colorControl(editor, "Accent");
+  const contrast = element("p", "custom-theme-contrast");
+  contrast.setAttribute("role", "status");
+  const previewCard = element("div", "custom-theme-preview");
+  previewCard.append(
+    element("strong", undefined, "COMMAND VAULT PREVIEW"),
+    element("p", undefined, "Information text and active accent"),
+    element("code", undefined, "nmap -sV 192.168.1.10"),
+    element("span", "custom-theme-preview-button", "COPY"),
+  );
+  const reset = button("inline-button custom-theme-reset", "RESET CURRENT MODE");
+  reset.addEventListener("click", () => {
+    customThemes[selectedMode()] = structuredClone(defaultCustomThemes[selectedMode()]);
+    loadCustomMode();
+    preview();
+  });
+
+  [background, text, accent].forEach((control) => {
+    control.color.addEventListener("input", () => {
+      control.hex.value = control.color.value;
+      updateDraft();
+    });
+    control.hex.addEventListener("input", updateDraft);
+  });
+
+  field.append(
+    modeGroup,
+    accentLabel,
+    accentGroup,
+    customToggle,
+    editor,
+    contrast,
+    previewCard,
+    reset,
+  );
   parent.append(field);
-  return { mode: selectedMode, accent: selectedAccent };
+  loadCustomMode();
+  return {
+    mode: selectedMode,
+    accent: selectedAccent,
+    customThemes: () => structuredClone(customThemes),
+    valid: () => themeModes.every((mode) => validColors(customThemes[mode])),
+  };
 
   function selectedMode(): ThemeMode {
     return themeModes.find((mode) => modeInputs.get(mode)?.checked) ?? initialMode;
@@ -2138,8 +2284,109 @@ function themeField(
   }
 
   function preview(): void {
-    onPreview(selectedMode(), selectedAccent());
+    const colors = customThemes[selectedMode()];
+    updateContrast(colors);
+    if (validColors(colors)) {
+      onPreview(selectedMode(), selectedAccent(), structuredClone(customThemes));
+    }
   }
+
+  function updateDraft(): void {
+    const mode = selectedMode();
+    customThemes[mode] = {
+      enabled: customEnabled.checked,
+      background: background.hex.value.trim().toLowerCase(),
+      text: text.hex.value.trim().toLowerCase(),
+      accent: accent.hex.value.trim().toLowerCase(),
+    };
+    refreshInputValidity();
+    preview();
+  }
+
+  function loadCustomMode(): void {
+    const colors = customThemes[selectedMode()];
+    customEnabled.checked = colors.enabled;
+    syncControl(background, colors.background);
+    syncControl(text, colors.text);
+    syncControl(accent, colors.accent);
+    refreshCustomState();
+    refreshInputValidity();
+    updateContrast(colors);
+  }
+
+  function refreshCustomState(): void {
+    const enabled = customEnabled.checked;
+    editor.classList.toggle("disabled", !enabled);
+    [background, text, accent].forEach((control) => {
+      control.color.disabled = !enabled;
+      control.hex.disabled = !enabled;
+    });
+    accentInputs.forEach((input) => {
+      input.disabled = enabled;
+    });
+  }
+
+  function refreshInputValidity(): void {
+    [background, text, accent].forEach((control) => {
+      control.hex.classList.toggle("invalid", !isHexColor(control.hex.value.trim()));
+    });
+  }
+
+  function updateContrast(colors: CustomThemes["dark"]): void {
+    if (!validColors(colors)) {
+      contrast.className = "custom-theme-contrast warning";
+      contrast.textContent = "Enter valid #RRGGBB values to preview this theme.";
+      return;
+    }
+    const panel = mixHex(colors.background, colors.text, 0.94);
+    const textRatio = Math.min(
+      contrastRatio(colors.text, colors.background),
+      contrastRatio(colors.text, panel),
+    );
+    const accentRatio = Math.min(
+      contrastRatio(colors.accent, colors.background),
+      contrastRatio(colors.accent, panel),
+    );
+    const warning = colors.enabled && (textRatio < 4.5 || accentRatio < 4.5);
+    contrast.className = `custom-theme-contrast${warning ? " warning" : ""}`;
+    contrast.textContent = colors.enabled
+      ? `Text ${textRatio.toFixed(2)}:1 · Accent ${accentRatio.toFixed(2)}:1${warning ? " · Low contrast warning" : " · Contrast looks good"}`
+      : "Custom colors are off; the selected preset is active.";
+  }
+}
+
+interface ColorControl {
+  color: HTMLInputElement;
+  hex: HTMLInputElement;
+}
+
+function colorControl(parent: HTMLElement, name: string): ColorControl {
+  const label = element("label", "custom-color-control");
+  label.append(element("span", undefined, name));
+  const inputs = element("span", "custom-color-inputs");
+  const color = element("input");
+  color.type = "color";
+  color.setAttribute("aria-label", `${name} color picker`);
+  const hex = element("input");
+  hex.type = "text";
+  hex.maxLength = 7;
+  hex.spellcheck = false;
+  hex.setAttribute("aria-label", `${name} HEX`);
+  inputs.append(color, hex);
+  label.append(inputs);
+  parent.append(label);
+  return { color, hex };
+}
+
+function syncControl(control: ColorControl, value: string): void {
+  control.hex.value = value;
+  if (isHexColor(value)) {
+    control.color.value = value;
+  }
+}
+
+function validColors(colors: CustomThemes["dark"]): boolean {
+  return isHexColor(colors.background) && isHexColor(colors.text) && isHexColor(colors.accent);
 }
 
 function chooseSection(sections: CommandSection[]): Promise<string | null> {

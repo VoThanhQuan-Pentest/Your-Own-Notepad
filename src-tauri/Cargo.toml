@@ -1,6 +1,6 @@
 [package]
 name = "command-vault"
-version = "0.7.0"
+version = "0.8.0"
 description = "A lightweight local command reference desktop application"
 authors = ["Command Vault contributors"]
 edition = "2021"

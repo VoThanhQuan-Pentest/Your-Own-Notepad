@@ -26,6 +26,8 @@ export function createCommandRow(
   showExampleColumn = false,
   initiallyExpanded = false,
   selection?: CommandRowSelection,
+  exampleExpanded = false,
+  onExampleToggle?: (expanded: boolean) => void,
 ): CommandRowHandle {
   const row = element(
     "article",
@@ -106,7 +108,17 @@ export function createCommandRow(
   }
 
   if (showExampleColumn) {
-    row.append(commandCell, infoCell, createExampleCell(command, callbacks, visibleName));
+    row.append(
+      commandCell,
+      infoCell,
+      createExampleCell(
+        command,
+        callbacks,
+        visibleName,
+        exampleExpanded,
+        onExampleToggle,
+      ),
+    );
   } else {
     row.append(commandCell, infoCell);
   }
@@ -133,15 +145,39 @@ function createExampleCell(
   command: CommandEntry,
   callbacks: CommandRowCallbacks,
   visibleName: string,
+  expanded: boolean,
+  onToggle?: (expanded: boolean) => void,
 ): HTMLElement {
   if (!command.example) {
     return element("div", "example-cell example-empty", "—");
   }
-  const copyExample = button("example-cell example-copy", command.example);
+  const cell = element("div", `example-cell${expanded ? " expanded" : ""}`);
+  const copyExample = button("example-copy", "");
+  const content = element("span", "example-text", command.example);
+  content.id = `example-content-${command.id}`;
+  copyExample.append(content);
   copyExample.title = "Copy example";
   copyExample.setAttribute("aria-label", `Copy example for ${visibleName}`);
   copyExample.addEventListener("click", () => callbacks.onCopy(command.example ?? "", copyExample));
-  return copyExample;
+  cell.append(copyExample);
+  if (onToggle) {
+    const toggle = button("example-toggle", expanded ? "LESS" : "MORE");
+    toggle.hidden = !expanded;
+    toggle.setAttribute(
+      "aria-label",
+      `${expanded ? "Collapse" : "Expand"} example for ${visibleName}`,
+    );
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.setAttribute("aria-controls", content.id);
+    toggle.addEventListener("click", () => onToggle(!expanded));
+    cell.append(toggle);
+    window.requestAnimationFrame(() => {
+      if (cell.isConnected && !expanded && content.scrollHeight > content.clientHeight + 1) {
+        toggle.hidden = false;
+      }
+    });
+  }
+  return cell;
 }
 
 function appendDetail(

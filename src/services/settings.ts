@@ -1,10 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import {
+  defaultCustomThemes,
   defaultSettings,
   isAccentTheme,
   favoriteKey,
   isFavoriteItem,
+  isHexColor,
   isThemeMode,
   type AppSettings,
 } from "../models/settings";
@@ -43,6 +45,7 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     uiScale: typeof value.uiScale === "number" ? value.uiScale : defaultSettings.uiScale,
     themeMode: isThemeMode(value.themeMode) ? value.themeMode : defaultSettings.themeMode,
     accentTheme: isAccentTheme(value.accentTheme) ? value.accentTheme : defaultSettings.accentTheme,
+    customThemes: normalizeCustomThemes(value.customThemes),
     favorites,
     recentFiles,
     rememberExpandedSections:
@@ -53,6 +56,25 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     sectionStateFiles: Array.isArray(value.sectionStateFiles) ? value.sectionStateFiles : [],
     windowWidth: typeof value.windowWidth === "number" ? value.windowWidth : null,
     windowHeight: typeof value.windowHeight === "number" ? value.windowHeight : null,
+  };
+}
+
+function normalizeCustomThemes(value: Partial<AppSettings>["customThemes"]): AppSettings["customThemes"] {
+  return {
+    dark: normalizeCustomTheme(value?.dark, defaultCustomThemes.dark),
+    light: normalizeCustomTheme(value?.light, defaultCustomThemes.light),
+  };
+}
+
+function normalizeCustomTheme(
+  value: Partial<AppSettings["customThemes"]["dark"]> | undefined,
+  fallback: AppSettings["customThemes"]["dark"],
+): AppSettings["customThemes"]["dark"] {
+  return {
+    enabled: typeof value?.enabled === "boolean" ? value.enabled : fallback.enabled,
+    background: isHexColor(value?.background) ? value.background.toLowerCase() : fallback.background,
+    text: isHexColor(value?.text) ? value.text.toLowerCase() : fallback.text,
+    accent: isHexColor(value?.accent) ? value.accent.toLowerCase() : fallback.accent,
   };
 }
 

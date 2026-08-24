@@ -514,6 +514,132 @@
   white-space: nowrap;
 }
 
+.theme-accent-option:has(.theme-choice-input:disabled) {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.custom-theme-toggle {
+  margin-top: 3px;
+}
+
+.custom-theme-editor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  gap: 8px;
+}
+
+.custom-theme-editor.disabled {
+  opacity: 0.48;
+}
+
+.custom-color-control {
+  display: grid;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 10px;
+  gap: 4px;
+}
+
+.custom-color-inputs {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  min-width: 0;
+  gap: 5px;
+}
+
+.custom-color-inputs input[type="color"] {
+  width: 30px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+  cursor: pointer;
+}
+
+.custom-color-inputs input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-code);
+  font-size: 9px;
+}
+
+.custom-color-inputs input.invalid {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+.custom-theme-contrast {
+  min-height: 16px;
+  color: var(--success);
+  font-family: var(--font-code);
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.custom-theme-contrast.warning {
+  color: var(--warning);
+}
+
+.custom-theme-preview {
+  display: grid;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+  color: var(--text-main);
+  gap: 5px;
+}
+
+.custom-theme-preview strong {
+  color: var(--accent-hover);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.custom-theme-preview p {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.custom-theme-preview code {
+  padding: 5px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: var(--font-code);
+  font-size: 10px;
+}
+
+.custom-theme-preview-button {
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent-hover);
+  font-family: var(--font-code);
+  font-size: 9px;
+}
+
+.custom-theme-reset {
+  justify-self: start;
+}
+
+@media (max-width: 420px) {
+  .custom-theme-editor {
+    grid-template-columns: 1fr;
+  }
+}
+
 .scale-field {
   gap: 8px;
 }

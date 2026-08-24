@@ -65,6 +65,9 @@ export function createCommandSection(
     const exampleSwitch = createExampleSwitch(showExampleColumn);
     exampleSwitch.addEventListener("click", () => {
       showExampleColumn = !showExampleColumn;
+      if (!showExampleColumn) {
+        expandedExampleIds.clear();
+      }
       updateExampleSwitch(exampleSwitch, showExampleColumn);
       callbacks.onExampleColumnToggle(section.id, showExampleColumn);
       renderContent();
@@ -88,6 +91,7 @@ export function createCommandSection(
   const content = element("div", "section-content");
   let isExpanded = initiallyExpanded;
   let expandedCommandId: string | null = null;
+  const expandedExampleIds = new Set<string>();
   let virtualRows: VirtualRowsHandle | null = null;
   const selectedCommandIds = new Set<string>();
 
@@ -205,6 +209,13 @@ export function createCommandSection(
                 selectedCommandIds[selected ? "add" : "delete"](command.id);
                 updateSelectionBar();
               },
+            }
+          : undefined,
+        expandedExampleIds.has(command.id),
+        showExampleColumn
+          ? (expanded) => {
+              expandedExampleIds[expanded ? "add" : "delete"](command.id);
+              renderContent();
             }
           : undefined,
       ).element;

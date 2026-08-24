@@ -11,6 +11,8 @@ interface ExplorerCallbacks {
   onRename(entry: FilesystemEntry): void;
   onDelete(entry: FilesystemEntry): void;
   onToggleFileFavorite(path: string): void;
+  onToggleFolderFavorite(path: string): void;
+  onOpenFavoriteFolder(path: string): void;
   onOpenFavoriteCommand(filePath: string, commandId: string): void;
   onCopyFavorite(command: string, trigger: HTMLButtonElement): void;
   onRemoveFavorite(item: FavoriteItem): void;
@@ -37,6 +39,7 @@ interface ExplorerOptions {
   selectedFolder: string | null;
   expandedFolders: ReadonlySet<string>;
   favoriteFilePaths: ReadonlySet<string>;
+  favoriteFolderPaths: ReadonlySet<string>;
   favoriteItems: ExplorerFavoriteItem[];
   recentFiles: ExplorerRecentFile[];
   collapsedQuickGroups: ReadonlySet<string>;
@@ -100,6 +103,7 @@ function createEntry(entry: FilesystemEntry, depth: number, options: ExplorerOpt
     "div",
     `tree-entry-row folder-row${entry.path === options.selectedFolder ? " selected" : ""}`,
   );
+  row.dataset.entryPath = entry.path;
   row.style.paddingLeft = `${4 + depth * 14}px`;
 
   const expanded = options.expandedFolders.has(entry.path);
@@ -149,6 +153,10 @@ function entryMenuButton(entry: FilesystemEntry, options: ExplorerOptions): HTML
       items.push(
         { label: "New Folder", action: () => options.callbacks.onCreateFolder(entry.path) },
         { label: "New Command File", action: () => options.callbacks.onCreateFile(entry.path) },
+        {
+          label: options.favoriteFolderPaths.has(entry.path) ? "Remove Favorite" : "Add Favorite",
+          action: () => options.callbacks.onToggleFolderFavorite(entry.path),
+        },
       );
     }
     items.push({ label: "Rename", action: () => options.callbacks.onRename(entry) });
@@ -172,7 +180,9 @@ function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): vo
         const open = button("quick-access-main", item.label);
         open.title = item.detail;
         open.addEventListener("click", () => {
-          if (item.favorite.kind === "file") {
+          if (item.favorite.kind === "folder") {
+            options.callbacks.onOpenFavoriteFolder(item.favorite.path);
+          } else if (item.favorite.kind === "file") {
             options.callbacks.onOpenFile(item.favorite.path);
           } else {
             options.callbacks.onOpenFavoriteCommand(item.favorite.filePath, item.favorite.commandId);

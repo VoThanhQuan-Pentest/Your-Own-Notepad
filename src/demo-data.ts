@@ -118,9 +118,16 @@ function buildStressCommand(
     name: `Stress Command ${String(ordinal).padStart(4, "0")}`,
     command: `stress-tool --unbroken ${longToken} --target 192.168.1.10 --port 443 --interface eth0`,
     description: longDescription,
-    ...(ordinal % 3 === 0
-      ? {}
-      : { example: "stress-tool --target 192.168.1.10 --port 443" }),
+    ...(ordinal % 10 === 0
+      ? {
+          example: Array.from(
+            { length: 8 },
+            (_, index) => `stress-tool --step ${index + 1} --target 192.168.1.10`,
+          ).join("\n"),
+        }
+      : ordinal % 3 === 0
+        ? {}
+        : { example: "stress-tool --target 192.168.1.10 --port 443" }),
     notes: longDescription,
   };
 }

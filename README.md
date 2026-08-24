@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.7.0</strong>
+  <strong>Current version: 0.8.0</strong>
 </p>
 
 <p align="center">
@@ -41,15 +41,16 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Keyboard Search navigation with Arrow keys, Enter, and accessible NEAR indicators.
 - Session Undo/Redo for command-file edits and recoverable Explorer deletion through System Trash.
 - Section-scoped bulk selection for moving or deleting many commands as one undoable action.
-- Duplicate-aware table import plus persistent Favorite commands/files and Recent Files.
+- Duplicate-aware table import plus persistent Favorite folders/files/commands and Recent Files.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
-- Dark and Light themes with Cyan, Blue, Purple, Green, Orange, and Pink accents.
+- Dark and Light themes with six presets and independent Background/Text/Accent customization.
+- Wrapped multiline Examples with six-line previews, independent MORE/LESS, and exact newline copying.
 
 ### Interface size and accessibility
 
-Version 0.7.0 adds Section-scoped bulk actions, duplicate-aware table import, Favorites, and Recent Files on top of the v0.6.1 safety features.
+Version 0.8.0 adds per-mode Custom Themes, nested Folder Favorites, and wrapped multiline Examples with independent expansion.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -62,13 +63,16 @@ Version 0.7.0 adds Section-scoped bulk actions, duplicate-aware table import, Fa
 - Search ranks exact matches first, then accepts balanced one- or two-character typos such as `namp` for `nmap`.
 - Search is accent-insensitive, so an unaccented query such as `mat khau` matches `mật khẩu`.
 - Open **Settings → Appearance** to preview Dark or Light with any of the six accent colors.
+- Enable **Use custom colors for this mode** to edit Background, Text, and Accent separately for Dark and Light.
+- Low contrast is reported with live ratios but does not block SAVE; invalid HEX values do.
 - **SAVE** persists the preview; **CANCEL**, `Esc`, or closing Settings restores the previous theme.
 
 ### Bulk actions and Quick Access
 
 - Press **SELECT** on a Section or Compact Table to select multiple rows, select all, move, or delete them as one Undo step.
 - Pasted tables skip commands already present in the active file by default; **Include duplicate commands** explicitly keeps them.
-- Add command files and individual commands to **FAVORITES** from their `⋮` menus.
+- Add folders, command files, and individual commands to **FAVORITES** from their `⋮` menus.
+- Opening a folder Favorite expands its ancestors, selects it, and scrolls it into view.
 - **FAVORITES** and the eight most recent files appear above the filesystem tree in Explorer.
 
 ### Compact tables
@@ -86,7 +90,9 @@ Use **+ ADD TABLE** when many related commands or values should be scanned as on
 When any Section contains at least one Example, its **EXAMPLES** switch is available in the section header and the third column appears automatically. Toggle the switch to hide or show that column for the current app session.
 
 - The visible layout is **35% Command / 35% Information / 30% Example**.
-- Click an Example cell to copy its exact text; an empty Example displays `—`.
+- Example text preserves newlines, wraps without horizontal scrolling, and previews up to six lines.
+- Use Example MORE/LESS to expand any number of rows independently from Information MORE.
+- Click the Example content to copy its exact text and newlines; an empty Example displays `—`.
 - When the column is visible, Example is not duplicated inside MORE. Hide the column to see it in MORE again.
 
 ### Paste a GPT table
@@ -99,6 +105,7 @@ Ask GPT for this output format:
 
 ```text
 Return only a Markdown table with the columns: Command, Service, Description, Example, Notes.
+When one Example contains multiple commands, separate them with <br> inside the same cell.
 ```
 
 ### Technology
@@ -111,7 +118,7 @@ CSS
 Rust
 ```
 
-Only one functional Tauri plugin is used: the official dialog plugin for the native folder picker.
+Only one functional Tauri plugin is used: the official dialog plugin for the native folder picker. System Trash integration uses the focused Rust `trash` crate.
 
 ### Kali/Debian prerequisites
 
@@ -162,7 +169,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.7.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.8.0_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -237,15 +244,16 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Điều khiển Search bằng phím mũi tên, Enter và badge NEAR accessible.
 - Undo/Redo trong phiên cho chỉnh sửa file command và xóa Explorer an toàn qua Trash hệ thống.
 - Bulk selection theo từng Section để move hoặc delete nhiều command trong một lần Undo.
-- Import nhận diện duplicate cùng Favorites cho command/file và Recent Files được lưu tự động.
+- Import nhận diện duplicate cùng Favorites cho folder/file/command và Recent Files được lưu tự động.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
-- Theme Dark/Light với sáu accent Cyan, Blue, Purple, Green, Orange và Pink.
+- Theme Dark/Light với sáu preset và tùy chỉnh Background/Text/Accent riêng cho từng mode.
+- Example nhiều dòng tự wrap, preview sáu dòng, MORE/LESS độc lập và copy đúng newline.
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.7.0 bổ sung bulk actions theo Section, import chống trùng, Favorites và Recent Files trên nền an toàn của v0.6.1.
+Phiên bản 0.8.0 bổ sung Custom Theme theo từng mode, Favorite folder lồng nhau và Example nhiều dòng có expansion riêng.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -258,13 +266,16 @@ Phiên bản 0.7.0 bổ sung bulk actions theo Section, import chống trùng, F
 - Search ưu tiên kết quả chính xác, sau đó chấp nhận sai một hoặc hai ký tự như `namp` thay cho `nmap`.
 - Search không phân biệt dấu tiếng Việt, nên `mat khau` vẫn tìm được `mật khẩu`.
 - Mở **Settings → Appearance** để xem thử Dark hoặc Light với một trong sáu màu accent.
+- Bật **Use custom colors for this mode** để chỉnh Background, Text và Accent riêng cho Dark/Light.
+- Tương phản thấp chỉ cảnh báo bằng ratio; HEX sai định dạng mới bị chặn SAVE.
 - **SAVE** lưu lựa chọn; **CANCEL**, `Esc` hoặc đóng Settings sẽ trả về theme trước đó.
 
 ### Bulk actions và Quick Access
 
 - Nhấn **SELECT** trên Section hoặc Compact Table để chọn nhiều hàng, chọn tất cả, move hoặc delete trong một lần Undo.
 - Bảng paste mặc định bỏ qua command đã có trong file; bật **Include duplicate commands** nếu muốn giữ lại.
-- Thêm file command hoặc command riêng lẻ vào **FAVORITES** từ menu `⋮`.
+- Thêm folder, file command hoặc command riêng lẻ vào **FAVORITES** từ menu `⋮`.
+- Mở folder Favorite sẽ expand các folder cha, chọn và cuộn tới folder đó.
 - **FAVORITES** và tám file mở gần nhất hiển thị phía trên cây filesystem trong Explorer.
 
 ### Bảng compact
@@ -282,7 +293,9 @@ Sử dụng **+ ADD TABLE** khi cần xem nhiều command hoặc giá trị liê
 Khi một Section có ít nhất một Example, switch **EXAMPLES** xuất hiện ở section header và cột thứ ba tự hiển thị. Bật/tắt switch để đổi trạng thái trong phiên ứng dụng hiện tại.
 
 - Bố cục khi hiện là **35% Command / 35% Information / 30% Example**.
-- Nhấn trực tiếp vào ô Example để copy đúng nội dung; Example trống hiển thị `—`.
+- Example giữ newline, tự wrap không có thanh cuộn ngang và preview tối đa sáu dòng.
+- MORE/LESS của Example cho phép mở nhiều hàng, độc lập với MORE của Information.
+- Nhấn vùng nội dung Example để copy chính xác cả newline; Example trống hiển thị `—`.
 - Khi cột đang hiện, Example không lặp lại trong MORE; ẩn cột để xem Example trong MORE trở lại.
 
 ### Paste bảng từ GPT
@@ -295,6 +308,7 @@ Bạn có thể yêu cầu GPT theo mẫu sau:
 
 ```text
 Chỉ trả về một bảng Markdown với các cột: Command, Service, Description, Example, Notes.
+Nếu một Example có nhiều command, phân cách chúng bằng <br> trong cùng một ô.
 ```
 
 ### Công nghệ
@@ -307,7 +321,7 @@ CSS
 Rust
 ```
 
-Chỉ sử dụng một plugin chức năng của Tauri: dialog plugin chính thức để mở native folder picker.
+Chỉ sử dụng một plugin chức năng của Tauri: dialog plugin chính thức cho native folder picker. Tích hợp Trash hệ thống dùng Rust crate `trash` chuyên biệt.
 
 ### Dependency cho Kali/Debian
 
@@ -358,7 +372,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.7.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.8.0_amd64.AppImage
 ```
 
 Output Linux:

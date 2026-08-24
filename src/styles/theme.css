@@ -145,3 +145,22 @@
   --accent-secondary: #7c3aed;
   --accent-bright: #9d174d;
 }
+
+:root[data-custom-theme="true"] {
+  --bg-main: var(--custom-background);
+  --bg-panel: color-mix(in srgb, var(--custom-background) 94%, var(--custom-text) 6%);
+  --bg-secondary: color-mix(in srgb, var(--custom-background) 88%, var(--custom-text) 12%);
+  --bg-hover: color-mix(in srgb, var(--custom-background) 82%, var(--custom-text) 18%);
+  --border: color-mix(in srgb, var(--custom-background) 76%, var(--custom-text) 24%);
+  --border-strong: color-mix(in srgb, var(--custom-background) 66%, var(--custom-text) 34%);
+  --text-main: var(--custom-text);
+  --text-secondary: color-mix(in srgb, var(--custom-text) 72%, var(--custom-background) 28%);
+  --text-muted: color-mix(in srgb, var(--custom-text) 55%, var(--custom-background) 45%);
+  --accent: var(--custom-accent);
+  --accent-hover: color-mix(in srgb, var(--custom-accent) 80%, var(--custom-text) 20%);
+  --accent-secondary: color-mix(in srgb, var(--custom-accent) 65%, var(--custom-text) 35%);
+  --accent-bright: color-mix(in srgb, var(--custom-accent) 82%, var(--custom-text) 18%);
+  --code-bg: color-mix(in srgb, var(--custom-background) 96%, var(--custom-text) 4%);
+  --code-text: color-mix(in srgb, var(--custom-accent) 70%, var(--custom-text) 30%);
+  --example-text: color-mix(in srgb, var(--custom-text) 84%, var(--custom-background) 16%);
+}

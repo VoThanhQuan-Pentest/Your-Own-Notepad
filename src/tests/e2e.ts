@@ -31,7 +31,7 @@ mockIPC((command, rawPayload) => {
       persist();
       return null;
     case "plugin:app|version":
-      return "0.7.0-test";
+      return "0.8.0-test";
     case "list_directory":
       return buildTree(String(payload.workspaceRoot));
     case "read_command_file":
@@ -84,6 +84,7 @@ function loadState(): MockState {
   if (parameters.get("fixture") === "basic") {
     const path = `${WORKSPACE}/Nmap.cmdnote`;
     const gitPath = `${WORKSPACE}/Git.cmdnote`;
+    initial.folders.push(`${WORKSPACE}/References`, `${WORKSPACE}/References/Nested`);
     initial.files[path] = `${JSON.stringify({
       version: 2,
       title: "Nmap",
@@ -98,7 +99,16 @@ function loadState(): MockState {
               name: "Ping Scan",
               command: "nmap -sn 192.168.1.0/24",
               description: "Discover active hosts.",
-              example: "nmap -sn 192.168.1.0/24",
+              example: [
+                "nmap -sn 192.168.1.0/24",
+                "nmap -sV 192.168.1.10",
+                "nmap -p 22,80,443 192.168.1.10",
+                "nmap --script banner 192.168.1.10",
+                "nmap -O 192.168.1.10",
+                "nmap -A 192.168.1.10",
+                "nmap --reason 192.168.1.10",
+                "nmap --traceroute 192.168.1.10",
+              ].join("\n"),
               notes: "Authorized networks only.",
             },
             {
@@ -106,7 +116,15 @@ function loadState(): MockState {
               name: "ARP Scan",
               command: "nmap -PR 192.168.1.0/24",
               description: "Discover local hosts with ARP.",
-              example: "nmap -PR 192.168.1.0/24",
+              example: [
+                "nmap -PR 192.168.1.0/24",
+                "arp-scan --localnet",
+                "ip neigh show",
+                "arp -an",
+                "nmap -sn --send-eth 192.168.1.0/24",
+                "nmap --packet-trace -PR 192.168.1.10",
+                "nmap --reason -PR 192.168.1.10",
+              ].join("\n"),
               notes: "Local network only.",
             },
           ],
@@ -125,7 +143,49 @@ function loadState(): MockState {
       version: 2,
       title: "Git",
       description: "Git commands",
-      sections: [],
+      sections: [
+        {
+          id: "example-cases",
+          title: "Example Cases",
+          commands: [
+            {
+              id: "example-one-line",
+              name: "One Line Example",
+              command: "echo one",
+              description: "One line.",
+              example: "echo one",
+            },
+            {
+              id: "example-six-lines",
+              name: "Six Line Example",
+              command: "echo six",
+              description: "Exactly six lines.",
+              example: Array.from({ length: 6 }, (_, index) => `echo line-${index + 1}`).join("\n"),
+            },
+            {
+              id: "example-fifty-lines",
+              name: "Fifty Line Example",
+              command: "echo fifty",
+              description: "Fifty lines.",
+              example: Array.from({ length: 50 }, (_, index) => `echo line-${String(index + 1).padStart(2, "0")}`).join("\n"),
+            },
+          ],
+        },
+        {
+          id: "table-example-cases",
+          title: "Table Example Cases",
+          layout: "table",
+          commands: [
+            {
+              id: "table-multiline-example",
+              name: "Table Row 1",
+              command: "git log --oneline",
+              description: "Compact multiline example.",
+              example: Array.from({ length: 8 }, (_, index) => `git show commit-${index + 1}`).join("\n"),
+            },
+          ],
+        },
+      ],
     }, null, 2)}\n`;
   }
   return initial;

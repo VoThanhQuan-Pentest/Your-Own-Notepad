@@ -167,7 +167,8 @@ export function parseTablePaste(
     const values = new Map<ColumnTarget, string>();
     const unknownValues: Array<{ header: string; value: string }> = [];
     columns.forEach((column) => {
-      const value = (row.cells[column.index] ?? "").trim();
+      const rawValue = (row.cells[column.index] ?? "").trim();
+      const value = column.target === "example" ? normalizeExampleBreaks(rawValue) : rawValue;
       if (column.target) {
         values.set(column.target, value);
       } else if (value) {
@@ -249,6 +250,10 @@ export function importableCommands(
 
 export function normalizeDuplicateCommand(value: string): string {
   return value.trim().replace(/\s+/g, " ");
+}
+
+export function normalizeExampleBreaks(value: string): string {
+  return value.replace(/<br\s*\/?\s*>/gi, "\n");
 }
 
 function normalizeSource(source: string): string {

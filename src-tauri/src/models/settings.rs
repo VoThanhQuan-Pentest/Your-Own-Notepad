@@ -36,6 +36,47 @@ pub(crate) enum AccentTheme {
     Pink,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default, rename_all = "camelCase")]
+pub(crate) struct CustomThemeColors {
+    pub(crate) enabled: bool,
+    pub(crate) background: String,
+    pub(crate) text: String,
+    pub(crate) accent: String,
+}
+
+impl Default for CustomThemeColors {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            background: "#0d1117".to_string(),
+            text: "#d8dee9".to_string(),
+            accent: "#00c8e8".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default, rename_all = "camelCase")]
+pub(crate) struct CustomThemes {
+    pub(crate) dark: CustomThemeColors,
+    pub(crate) light: CustomThemeColors,
+}
+
+impl Default for CustomThemes {
+    fn default() -> Self {
+        Self {
+            dark: CustomThemeColors::default(),
+            light: CustomThemeColors {
+                background: "#f5f7fa".to_string(),
+                text: "#1f2937".to_string(),
+                accent: "#087f9a".to_string(),
+                ..CustomThemeColors::default()
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
 #[serde(
     tag = "kind",
@@ -43,6 +84,9 @@ pub(crate) enum AccentTheme {
     rename_all_fields = "camelCase"
 )]
 pub(crate) enum FavoriteItem {
+    Folder {
+        path: String,
+    },
     File {
         path: String,
     },
@@ -65,6 +109,7 @@ pub(crate) struct AppSettings {
     pub(crate) ui_scale: u16,
     pub(crate) theme_mode: ThemeMode,
     pub(crate) accent_theme: AccentTheme,
+    pub(crate) custom_themes: CustomThemes,
     pub(crate) favorites: Vec<FavoriteItem>,
     pub(crate) recent_files: Vec<String>,
     #[serde(default = "default_true")]
@@ -85,6 +130,7 @@ impl Default for AppSettings {
             ui_scale: default_ui_scale(),
             theme_mode: ThemeMode::default(),
             accent_theme: AccentTheme::default(),
+            custom_themes: CustomThemes::default(),
             favorites: Vec::new(),
             recent_files: Vec::new(),
             remember_expanded_sections: true,
@@ -107,11 +153,19 @@ impl AppSettings {
         if !(75..=200).contains(&self.ui_scale) {
             return Err("UI scale must be between 75 and 200 percent.");
         }
+        for colors in [&self.custom_themes.dark, &self.custom_themes.light] {
+            if !is_hex_color(&colors.background)
+                || !is_hex_color(&colors.text)
+                || !is_hex_color(&colors.accent)
+            {
+                return Err("Custom theme colors must use #RRGGBB format.");
+            }
+        }
         if self.favorites.len() > 50 {
             return Err("Favorites cannot contain more than 50 items.");
         }
         if self.favorites.iter().any(|item| match item {
-            FavoriteItem::File { path } => path.is_empty(),
+            FavoriteItem::Folder { path } | FavoriteItem::File { path } => path.is_empty(),
             FavoriteItem::Command {
                 file_path,
                 command_id,
@@ -127,6 +181,14 @@ impl AppSettings {
         }
         Ok(())
     }
+}
+
+fn is_hex_color(value: &str) -> bool {
+    value.len() == 7
+        && value.starts_with('#')
+        && value[1..]
+            .bytes()
+            .all(|character| character.is_ascii_hexdigit())
 }
 
 #[cfg(test)]
@@ -171,6 +233,8 @@ mod tests {
             serde_json::from_str(source).expect("legacy settings should load");
         assert_eq!(settings.theme_mode, ThemeMode::Dark);
         assert_eq!(settings.accent_theme, AccentTheme::Cyan);
+        assert!(!settings.custom_themes.dark.enabled);
+        assert_eq!(settings.custom_themes.light.background, "#f5f7fa");
         assert!(settings.favorites.is_empty());
         assert!(settings.recent_files.is_empty());
     }
@@ -178,19 +242,33 @@ mod tests {
     #[test]
     fn favorite_settings_use_camel_case_and_enforce_limits() {
         let mut settings = AppSettings::default();
+        settings.favorites.push(FavoriteItem::Folder {
+            path: "/workspace/Network".to_string(),
+        });
         settings.favorites.push(FavoriteItem::Command {
             file_path: "/workspace/Nmap.cmdnote".to_string(),
             command_id: "ping-scan".to_string(),
         });
         let serialized = serde_json::to_value(&settings).expect("settings must serialize");
-        assert_eq!(serialized["favorites"][0]["kind"], "command");
+        assert_eq!(serialized["favorites"][0]["kind"], "folder");
+        assert_eq!(serialized["favorites"][0]["path"], "/workspace/Network");
+        assert_eq!(serialized["favorites"][1]["kind"], "command");
         assert_eq!(
-            serialized["favorites"][0]["filePath"],
+            serialized["favorites"][1]["filePath"],
             "/workspace/Nmap.cmdnote"
         );
-        assert_eq!(serialized["favorites"][0]["commandId"], "ping-scan");
+        assert_eq!(serialized["favorites"][1]["commandId"], "ping-scan");
 
         settings.recent_files = (0..9).map(|index| format!("/file-{index}")).collect();
         assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_custom_theme_hex_values() {
+        let mut settings = AppSettings::default();
+        settings.custom_themes.dark.background = "not-a-color".to_string();
+        assert!(settings.validate().is_err());
+        settings.custom_themes.dark.background = "#123abc".to_string();
+        assert!(settings.validate().is_ok());
     }
 }
