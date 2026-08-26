@@ -7,6 +7,7 @@ pub(crate) struct FilesystemEntry {
     pub(crate) path: String,
     pub(crate) kind: EntryKind,
     pub(crate) children: Vec<FilesystemEntry>,
+    pub(crate) revision: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

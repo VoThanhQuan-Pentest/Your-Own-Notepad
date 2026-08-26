@@ -17,6 +17,14 @@ export interface CommandRowSelection {
   onToggle(selected: boolean): void;
 }
 
+export interface CommandRowReorder {
+  index: number;
+  count: number;
+  sectionElement(): HTMLElement | null;
+  scrollRoot(): HTMLElement | null;
+  onMove(targetIndex: number): void;
+}
+
 export function createCommandRow(
   command: CommandEntry,
   requestExpansion: (row: CommandRowHandle) => void,
@@ -28,6 +36,7 @@ export function createCommandRow(
   selection?: CommandRowSelection,
   exampleExpanded = false,
   onExampleToggle?: (expanded: boolean) => void,
+  reorder?: CommandRowReorder,
 ): CommandRowHandle {
   const row = element(
     "article",
@@ -35,6 +44,9 @@ export function createCommandRow(
   );
   row.id = `command-${command.id}`;
   row.dataset.commandId = command.id;
+  if (reorder) {
+    row.dataset.rowIndex = String(reorder.index);
+  }
 
   const commandCell = element("div", "command-cell");
   const commandHeader = element("div", "command-name-row");
@@ -55,6 +67,9 @@ export function createCommandRow(
     selectionLabel.append(checkbox);
     commandHeader.append(selectionLabel);
     row.setAttribute("aria-selected", String(selection.selected));
+  }
+  if (reorder) {
+    commandHeader.append(createReorderHandle(row, visibleName, reorder));
   }
   commandHeader.append(
     element(
@@ -138,6 +153,144 @@ export function createCommandRow(
   };
   moreButton?.addEventListener("click", () => requestExpansion(handle));
   handle.setExpanded(initiallyExpanded);
+  return handle;
+}
+
+function createReorderHandle(
+  row: HTMLElement,
+  visibleName: string,
+  reorder: CommandRowReorder,
+): HTMLButtonElement {
+  const handle = button("row-drag-handle", "⠿");
+  handle.title = `Move table row ${visibleName}`;
+  handle.setAttribute("aria-label", `Move table row ${visibleName}`);
+  const live = element("span", "visually-hidden");
+  live.setAttribute("aria-live", "polite");
+  handle.append(live);
+  let keyboardTarget: number | null = null;
+
+  handle.addEventListener("keydown", (event) => {
+    if (keyboardTarget === null && (event.key === " " || event.key === "Enter")) {
+      event.preventDefault();
+      keyboardTarget = reorder.index;
+      row.classList.add("keyboard-reordering");
+      handle.setAttribute("aria-pressed", "true");
+      live.textContent = `Reordering row ${reorder.index + 1} of ${reorder.count}. Use arrow keys, Home or End, then Enter to move.`;
+      return;
+    }
+    if (keyboardTarget === null) {
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      keyboardTarget = null;
+      row.classList.remove("keyboard-reordering");
+      handle.removeAttribute("aria-pressed");
+      live.textContent = "Reorder cancelled.";
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      const target = keyboardTarget;
+      keyboardTarget = null;
+      row.classList.remove("keyboard-reordering");
+      handle.removeAttribute("aria-pressed");
+      if (target !== reorder.index) {
+        reorder.onMove(target);
+      }
+      return;
+    }
+    const previous = keyboardTarget;
+    if (event.key === "ArrowUp") keyboardTarget = Math.max(0, keyboardTarget - 1);
+    else if (event.key === "ArrowDown") keyboardTarget = Math.min(reorder.count - 1, keyboardTarget + 1);
+    else if (event.key === "Home") keyboardTarget = 0;
+    else if (event.key === "End") keyboardTarget = reorder.count - 1;
+    else return;
+    event.preventDefault();
+    if (keyboardTarget !== previous) {
+      live.textContent = `Target position ${keyboardTarget + 1} of ${reorder.count}.`;
+    }
+  });
+
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const section = reorder.sectionElement();
+    const scrollRoot = reorder.scrollRoot();
+    if (!section || !scrollRoot) return;
+    const ghost = element("div", "row-drag-ghost", `ROW ${String(reorder.index + 1).padStart(2, "0")}`);
+    document.body.append(ghost);
+    row.classList.add("dragging-row");
+    let targetIndex = reorder.index;
+    let targetRow: HTMLElement | null = null;
+    let lastX = event.clientX;
+    let lastY = event.clientY;
+    let frame: number | null = null;
+
+    const clearTarget = () => {
+      targetRow?.classList.remove("drop-before", "drop-after");
+      targetRow = null;
+    };
+    const updateTarget = () => {
+      ghost.style.transform = `translate(${lastX + 14}px, ${lastY + 12}px)`;
+      const rootRect = scrollRoot.getBoundingClientRect();
+      if (lastY < rootRect.top + 52) scrollRoot.scrollTop -= 18;
+      else if (lastY > rootRect.bottom - 52) scrollRoot.scrollTop += 18;
+      const hit = document.elementFromPoint(lastX, lastY)?.closest<HTMLElement>(".command-row");
+      if (!hit || !section.contains(hit)) {
+        clearTarget();
+        return;
+      }
+      const hitIndex = Number(hit.dataset.rowIndex);
+      if (!Number.isInteger(hitIndex)) return;
+      const before = lastY < hit.getBoundingClientRect().top + hit.getBoundingClientRect().height / 2;
+      const boundary = hitIndex + (before ? 0 : 1);
+      targetIndex = Math.max(0, Math.min(reorder.count - 1, boundary > reorder.index ? boundary - 1 : boundary));
+      if (targetRow !== hit) clearTarget();
+      targetRow = hit;
+      hit.classList.toggle("drop-before", before);
+      hit.classList.toggle("drop-after", !before);
+    };
+    const tick = () => {
+      frame = null;
+      updateTarget();
+      const rootRect = scrollRoot.getBoundingClientRect();
+      if (lastY < rootRect.top + 52 || lastY > rootRect.bottom - 52) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    };
+    const schedule = () => {
+      if (frame === null) frame = window.requestAnimationFrame(tick);
+    };
+    const onMove = (moveEvent: PointerEvent) => {
+      lastX = moveEvent.clientX;
+      lastY = moveEvent.clientY;
+      schedule();
+    };
+    const cleanup = () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onCancel);
+      document.removeEventListener("keydown", onKeyDown);
+      clearTarget();
+      ghost.remove();
+      row.classList.remove("dragging-row");
+    };
+    const onUp = () => {
+      cleanup();
+      if (targetIndex !== reorder.index) reorder.onMove(targetIndex);
+    };
+    const onCancel = () => cleanup();
+    const onKeyDown = (keyEvent: KeyboardEvent) => {
+      if (keyEvent.key === "Escape") cleanup();
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp, { once: true });
+    document.addEventListener("pointercancel", onCancel, { once: true });
+    document.addEventListener("keydown", onKeyDown);
+    updateTarget();
+  });
   return handle;
 }
 

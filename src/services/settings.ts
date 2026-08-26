@@ -34,10 +34,8 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
   const favorites = Array.isArray(value.favorites)
     ? uniqueBy(value.favorites.filter(isFavoriteItem), favoriteKey).slice(0, 50)
     : [];
-  const recentFiles = Array.isArray(value.recentFiles)
-    ? [...new Set(value.recentFiles.filter((path): path is string => typeof path === "string" && path.length > 0))].slice(0, 8)
-    : [];
   return {
+    displayName: normalizeDisplayName(value.displayName),
     lastWorkspace: typeof value.lastWorkspace === "string" ? value.lastWorkspace : null,
     lastOpenedFile: typeof value.lastOpenedFile === "string" ? value.lastOpenedFile : null,
     uiFontSize: typeof value.uiFontSize === "number" ? value.uiFontSize : defaultSettings.uiFontSize,
@@ -47,7 +45,6 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     accentTheme: isAccentTheme(value.accentTheme) ? value.accentTheme : defaultSettings.accentTheme,
     customThemes: normalizeCustomThemes(value.customThemes),
     favorites,
-    recentFiles,
     rememberExpandedSections:
       typeof value.rememberExpandedSections === "boolean"
         ? value.rememberExpandedSections
@@ -57,6 +54,14 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     windowWidth: typeof value.windowWidth === "number" ? value.windowWidth : null,
     windowHeight: typeof value.windowHeight === "number" ? value.windowHeight : null,
   };
+}
+
+export function normalizeDisplayName(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim().replace(/\s+/g, " ");
+  return normalized.length >= 1 && [...normalized].length <= 32 ? normalized : null;
 }
 
 function normalizeCustomThemes(value: Partial<AppSettings>["customThemes"]): AppSettings["customThemes"] {

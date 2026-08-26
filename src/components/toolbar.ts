@@ -2,6 +2,7 @@ import { button, element } from "../utils/dom";
 
 interface ToolbarCallbacks {
   onSearch(query: string): void;
+  onHome(): void;
   onSettings(): void;
 }
 
@@ -11,14 +12,18 @@ export interface ToolbarHandle {
   focusSearch(): void;
   clearSearch(): void;
   setResults(content: HTMLElement | null): void;
+  setProfileName(name: string | null): void;
 }
 
 export function createToolbar(callbacks: ToolbarCallbacks): ToolbarHandle {
   const header = element("header", "app-header");
-  const brand = element("div", "brand");
+  const brand = button("brand", "");
+  brand.title = "Open Home dashboard";
+  brand.setAttribute("aria-label", "Open Home dashboard");
   const mark = element("span", "brand-mark");
   mark.setAttribute("aria-hidden", "true");
   brand.append(mark, element("span", "brand-title", "COMMAND VAULT"));
+  brand.addEventListener("click", callbacks.onHome);
 
   const actions = element("div", "header-actions");
   const searchWrapper = element("div", "search-wrapper");
@@ -44,6 +49,14 @@ export function createToolbar(callbacks: ToolbarCallbacks): ToolbarHandle {
   let resultButtons: HTMLButtonElement[] = [];
   let activeResult = -1;
   searchWrapper.append(search, results);
+
+  const profile = button("profile-chip", "");
+  profile.title = "Edit local profile";
+  profile.setAttribute("aria-label", "Edit local profile");
+  profile.addEventListener("click", callbacks.onSettings);
+  const profileMark = element("span", "profile-avatar", "?");
+  const profileName = element("span", "profile-name", "LOCAL");
+  profile.append(profileMark, profileName);
 
   const settings = button("icon-button", "⚙");
   settings.title = "Settings";
@@ -73,7 +86,7 @@ export function createToolbar(callbacks: ToolbarCallbacks): ToolbarHandle {
     }
   });
 
-  actions.append(searchWrapper, settings);
+  actions.append(searchWrapper, profile, settings);
   header.append(brand, actions);
 
   return {
@@ -106,6 +119,12 @@ export function createToolbar(callbacks: ToolbarCallbacks): ToolbarHandle {
           result.addEventListener("focus", () => setActiveResult(index));
         });
       }
+    },
+    setProfileName(name) {
+      const normalized = name?.trim() || "LOCAL";
+      profileName.textContent = normalized;
+      profileMark.textContent = [...normalized][0]?.toUpperCase() ?? "?";
+      profile.setAttribute("aria-label", `Edit local profile for ${normalized}`);
     },
   };
 

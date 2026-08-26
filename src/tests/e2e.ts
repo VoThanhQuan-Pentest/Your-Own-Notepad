@@ -31,7 +31,7 @@ mockIPC((command, rawPayload) => {
       persist();
       return null;
     case "plugin:app|version":
-      return "0.8.0-test";
+      return "0.9.0-test";
     case "list_directory":
       return buildTree(String(payload.workspaceRoot));
     case "read_command_file":
@@ -82,6 +82,7 @@ function loadState(): MockState {
     calls: [],
   };
   if (parameters.get("fixture") === "basic") {
+    initial.settings.displayName = "Tester";
     const path = `${WORKSPACE}/Nmap.cmdnote`;
     const gitPath = `${WORKSPACE}/Git.cmdnote`;
     initial.folders.push(`${WORKSPACE}/References`, `${WORKSPACE}/References/Nested`);
@@ -134,6 +135,16 @@ function loadState(): MockState {
           title: "Archive",
           layout: "table",
           commands: [],
+        },
+        {
+          id: "reorder-table",
+          title: "Reorder Table",
+          layout: "table",
+          commands: [
+            { id: "table-alpha", name: "Alpha", command: "echo alpha", description: "Alpha row." },
+            { id: "table-beta", name: "Beta", command: "echo beta", description: "Beta row." },
+            { id: "table-gamma", name: "Gamma", command: "echo gamma", description: "Gamma row." },
+          ],
         },
       ],
     }, null, 2)}\n`;
@@ -220,6 +231,7 @@ function childrenOf(parent: string): FilesystemEntry[] {
       path,
       kind: "folder" as const,
       children: childrenOf(path),
+      revision: null,
     }));
   const files = Object.keys(state.files)
     .filter((path) => parentPath(path) === parent)
@@ -228,11 +240,22 @@ function childrenOf(parent: string): FilesystemEntry[] {
       path,
       kind: "command-file" as const,
       children: [],
+      revision: revisionFor(path),
     }));
   return [...folders, ...files].sort((left, right) => {
     if (left.kind !== right.kind) return left.kind === "folder" ? -1 : 1;
     return left.name.localeCompare(right.name, undefined, { sensitivity: "base" });
   });
+}
+
+function revisionFor(path: string): string {
+  const source = state.files[path] ?? "";
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${source.length}:${hash >>> 0}`;
 }
 
 function readFile(path: string): string {

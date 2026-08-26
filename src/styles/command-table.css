@@ -435,6 +435,72 @@
   cursor: pointer;
 }
 
+.row-drag-handle {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.row-drag-handle:hover,
+.row-drag-handle[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--bg-hover);
+  color: var(--accent-hover);
+}
+
+.row-drag-handle:active {
+  cursor: grabbing;
+}
+
+.command-row.dragging-row {
+  opacity: 0.45;
+}
+
+.command-row.keyboard-reordering {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 72%, transparent);
+}
+
+.command-row.drop-before::after,
+.command-row.drop-after::after {
+  position: absolute;
+  right: 8px;
+  left: 8px;
+  z-index: 4;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
+  content: "";
+}
+
+.command-row.drop-before::after { top: -1px; }
+.command-row.drop-after::after { bottom: -1px; }
+
+.row-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  padding: 7px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: var(--bg-panel);
+  color: var(--accent-hover);
+  box-shadow: 0 12px 28px var(--shadow-menu);
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .row-menu:hover {
   border-color: var(--border);
   background: var(--bg-hover);
@@ -671,7 +737,7 @@
 .command-row.compact-table-row .command-cell {
   display: grid;
   grid-template-areas: "name code actions";
-  grid-template-columns: minmax(72px, 0.35fr) minmax(0, 1.65fr) auto;
+  grid-template-columns: minmax(108px, 0.5fr) minmax(0, 1.5fr) auto;
   min-height: 82px;
   padding: 11px 14px;
   align-content: center;

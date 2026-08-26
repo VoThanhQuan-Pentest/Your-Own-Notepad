@@ -1,6 +1,7 @@
 import { createId } from "../utils/ids";
 import { SessionHistory } from "../utils/history";
 import { normalizeSettings } from "../services/settings";
+import type { AppSettings } from "../models/settings";
 import { contrastRatio, mixHex } from "../utils/color";
 import {
   createSearchDocument,
@@ -287,19 +288,19 @@ test("clears redo after a new mutation and remaps file history", () => {
   equal(history.canUndo("/workspace/new/file.cmdnote"), false);
 });
 
-test("defaults and deduplicates backward-compatible quick access settings", () => {
-  const legacy = normalizeSettings({});
+test("defaults profile settings and ignores removed Recent data", () => {
+  const legacy = normalizeSettings({ recentFiles: ["/Nmap.cmdnote"] } as Partial<AppSettings>);
   equal(legacy.favorites.length, 0);
-  equal(legacy.recentFiles.length, 0);
+  equal(legacy.displayName, null);
   equal(legacy.customThemes.dark.background, "#0d1117");
 
   const favorite = { kind: "command", filePath: "/Nmap.cmdnote", commandId: "ping" } as const;
   const normalized = normalizeSettings({
     favorites: [favorite, favorite],
-    recentFiles: ["/Nmap.cmdnote", "/Nmap.cmdnote"],
+    displayName: "  Quan   Tester  ",
   });
   equal(normalized.favorites.length, 1);
-  equal(normalized.recentFiles.length, 1);
+  equal(normalized.displayName, "Quan Tester");
 });
 
 test("normalizes custom themes independently for Dark and Light", () => {

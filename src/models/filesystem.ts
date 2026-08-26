@@ -5,6 +5,7 @@ export interface FilesystemEntry {
   path: string;
   kind: FilesystemEntryKind;
   children: FilesystemEntry[];
+  revision: string | null;
 }
 
 export interface PathResult {

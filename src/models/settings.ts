@@ -27,6 +27,7 @@ export type FavoriteItem =
   | { kind: "command"; filePath: string; commandId: string };
 
 export interface AppSettings {
+  displayName: string | null;
   lastWorkspace: string | null;
   lastOpenedFile: string | null;
   uiFontSize: number;
@@ -36,7 +37,6 @@ export interface AppSettings {
   accentTheme: AccentTheme;
   customThemes: CustomThemes;
   favorites: FavoriteItem[];
-  recentFiles: string[];
   rememberExpandedSections: boolean;
   expandedSections: string[];
   sectionStateFiles: string[];
@@ -45,6 +45,7 @@ export interface AppSettings {
 }
 
 export const defaultSettings: AppSettings = {
+  displayName: null,
   lastWorkspace: null,
   lastOpenedFile: null,
   uiFontSize: 14,
@@ -54,7 +55,6 @@ export const defaultSettings: AppSettings = {
   accentTheme: "cyan",
   customThemes: structuredClone(defaultCustomThemes),
   favorites: [],
-  recentFiles: [],
   rememberExpandedSections: true,
   expandedSections: [],
   sectionStateFiles: [],

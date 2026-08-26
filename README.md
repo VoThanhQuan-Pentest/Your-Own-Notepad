@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.8.0</strong>
+  <strong>Current version: 0.9.0</strong>
 </p>
 
 <p align="center">
@@ -41,7 +41,10 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Keyboard Search navigation with Arrow keys, Enter, and accessible NEAR indicators.
 - Session Undo/Redo for command-file edits and recoverable Explorer deletion through System Trash.
 - Section-scoped bulk selection for moving or deleting many commands as one undoable action.
-- Duplicate-aware table import plus persistent Favorite folders/files/commands and Recent Files.
+- Duplicate-aware table import plus persistent Favorite folders, files, and commands.
+- Local profile onboarding and a lightweight Welcome Dashboard with workspace statistics and Continue.
+- Drag, keyboard, and precise menu-based row reordering inside Compact Tables.
+- Automatic layout and virtual-row recovery after suspend or power-saving throttling.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
@@ -50,7 +53,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.8.0 adds per-mode Custom Themes, nested Folder Favorites, and wrapped multiline Examples with independent expansion.
+Version 0.9.0 adds the local Welcome Dashboard, movable Table rows, and automatic recovery after suspend while removing the unused Recent Files list.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -73,7 +76,7 @@ Version 0.8.0 adds per-mode Custom Themes, nested Folder Favorites, and wrapped 
 - Pasted tables skip commands already present in the active file by default; **Include duplicate commands** explicitly keeps them.
 - Add folders, command files, and individual commands to **FAVORITES** from their `⋮` menus.
 - Opening a folder Favorite expands its ancestors, selects it, and scrolls it into view.
-- **FAVORITES** and the eight most recent files appear above the filesystem tree in Explorer.
+- **FAVORITES** appears above the filesystem tree in Explorer; the former Recent Files group has been removed.
 
 ### Compact tables
 
@@ -84,6 +87,7 @@ Use **+ ADD TABLE** when many related commands or values should be scanned as on
 - The Information column contains Description and MORE/LESS details for Notes and hidden Examples.
 - Existing sections can switch between **Use Compact Table** and **Use Standard Rows** from the section menu without losing data.
 - Add, edit, duplicate, reorder, move, delete, search, and copy behavior are shared with regular commands.
+- Drag a Table row by its handle, use keyboard reorder mode, or choose Move to Top/Bottom/Position from its menu. Every move is one Undo step.
 
 ### Example column
 
@@ -169,7 +173,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.8.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.9.0_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -244,7 +248,10 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Điều khiển Search bằng phím mũi tên, Enter và badge NEAR accessible.
 - Undo/Redo trong phiên cho chỉnh sửa file command và xóa Explorer an toàn qua Trash hệ thống.
 - Bulk selection theo từng Section để move hoặc delete nhiều command trong một lần Undo.
-- Import nhận diện duplicate cùng Favorites cho folder/file/command và Recent Files được lưu tự động.
+- Import nhận diện duplicate cùng Favorites cho folder/file/command được lưu tự động.
+- Hồ sơ local và Welcome Dashboard nhẹ với lời chào, thống kê workspace và nút Continue.
+- Kéo thả, bàn phím hoặc menu chính xác để đổi vị trí hàng trong Compact Table.
+- Tự phục hồi layout và virtual rows sau khi máy sleep hoặc chuyển sang tiết kiệm điện.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
@@ -253,7 +260,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.8.0 bổ sung Custom Theme theo từng mode, Favorite folder lồng nhau và Example nhiều dòng có expansion riêng.
+Phiên bản 0.9.0 bổ sung Welcome Dashboard local, di chuyển hàng Table và tự phục hồi sau sleep, đồng thời xóa danh sách Recent Files không còn cần thiết.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -276,7 +283,7 @@ Phiên bản 0.8.0 bổ sung Custom Theme theo từng mode, Favorite folder lồ
 - Bảng paste mặc định bỏ qua command đã có trong file; bật **Include duplicate commands** nếu muốn giữ lại.
 - Thêm folder, file command hoặc command riêng lẻ vào **FAVORITES** từ menu `⋮`.
 - Mở folder Favorite sẽ expand các folder cha, chọn và cuộn tới folder đó.
-- **FAVORITES** và tám file mở gần nhất hiển thị phía trên cây filesystem trong Explorer.
+- **FAVORITES** hiển thị phía trên cây filesystem trong Explorer; nhóm Recent Files cũ đã được xóa.
 
 ### Bảng compact
 
@@ -372,7 +379,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.8.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.9.0_amd64.AppImage
 ```
 
 Output Linux:

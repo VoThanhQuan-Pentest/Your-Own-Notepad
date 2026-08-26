@@ -3,6 +3,7 @@ export interface VirtualRowsHandle {
   destroy(): void;
   ensureVisible(index: number): void;
   refresh(): void;
+  reconnect(): void;
 }
 
 interface VirtualRowsOptions {
@@ -182,6 +183,34 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
       });
     },
     refresh,
+    reconnect() {
+      if (disposed) {
+        return;
+      }
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+      }
+      scrollRoot?.removeEventListener("scroll", onScroll);
+      scrollRoot = options.getScrollRoot();
+      if (!scrollRoot) {
+        return;
+      }
+      active = true;
+      scrollRoot.addEventListener("scroll", onScroll, { passive: true });
+      visibilityObserver?.disconnect();
+      visibilityObserver?.observe(element);
+      rangeStart = -1;
+      rangeEnd = -1;
+      refresh();
+      window.requestAnimationFrame(() => {
+        if (!disposed) {
+          rangeStart = -1;
+          rangeEnd = -1;
+          refresh();
+        }
+      });
+    },
   };
 }
 

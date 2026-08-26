@@ -16,8 +16,12 @@ const MAX_DIRECTORY_DEPTH: usize = 64;
 
 #[tauri::command]
 pub(crate) async fn list_directory(workspace_root: String) -> CommandResult<Vec<FilesystemEntry>> {
-    let root = canonical_workspace(&workspace_root)?;
-    read_directory(&root, &root, 0)
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = canonical_workspace(&workspace_root)?;
+        read_directory(&root, &root, 0)
+    })
+    .await
+    .map_err(|error| CommandError::new("TASK_FAILED", format!("Workspace scan failed: {error}")))?
 }
 
 #[tauri::command]
@@ -25,29 +29,33 @@ pub(crate) async fn read_command_file(
     workspace_root: String,
     file_path: String,
 ) -> CommandResult<String> {
-    let (_, file) = canonical_existing_path(&workspace_root, &file_path)?;
-    ensure_command_file(&file)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let (_, file) = canonical_existing_path(&workspace_root, &file_path)?;
+        ensure_command_file(&file)?;
 
-    let metadata = fs::metadata(&file)
-        .map_err(|error| CommandError::from_io(error, "Could not inspect command file"))?;
-    if !metadata.is_file() {
-        return Err(CommandError::new(
-            "NOT_A_FILE",
-            "The selected path is not a command file.",
-        ));
-    }
-    if metadata.len() > MAX_COMMAND_FILE_BYTES {
-        return Err(CommandError::new(
-            "FILE_TOO_LARGE",
-            "The command file is larger than the 5 MiB safety limit.",
-        ));
-    }
+        let metadata = fs::metadata(&file)
+            .map_err(|error| CommandError::from_io(error, "Could not inspect command file"))?;
+        if !metadata.is_file() {
+            return Err(CommandError::new(
+                "NOT_A_FILE",
+                "The selected path is not a command file.",
+            ));
+        }
+        if metadata.len() > MAX_COMMAND_FILE_BYTES {
+            return Err(CommandError::new(
+                "FILE_TOO_LARGE",
+                "The command file is larger than the 5 MiB safety limit.",
+            ));
+        }
 
-    let mut source = String::new();
-    File::open(&file)
-        .and_then(|mut handle| handle.read_to_string(&mut source))
-        .map_err(|error| CommandError::from_io(error, "Could not read command file"))?;
-    Ok(source)
+        let mut source = String::new();
+        File::open(&file)
+            .and_then(|mut handle| handle.read_to_string(&mut source))
+            .map_err(|error| CommandError::from_io(error, "Could not read command file"))?;
+        Ok(source)
+    })
+    .await
+    .map_err(|error| CommandError::new("TASK_FAILED", format!("File read failed: {error}")))?
 }
 
 #[tauri::command]
@@ -359,19 +367,34 @@ fn read_directory(
                 path: path.to_string_lossy().into_owned(),
                 kind: EntryKind::Folder,
                 children: read_directory(root, &path, depth + 1)?,
+                revision: None,
             });
         } else if file_type.is_file() && has_command_extension(&path) {
+            let metadata = item
+                .metadata()
+                .map_err(|error| CommandError::from_io(error, "Could not inspect command file"))?;
             entries.push(FilesystemEntry {
                 name,
                 path: path.to_string_lossy().into_owned(),
                 kind: EntryKind::CommandFile,
                 children: Vec::new(),
+                revision: file_revision(&metadata),
             });
         }
     }
 
     entries.sort_by(compare_entries);
     Ok(entries)
+}
+
+fn file_revision(metadata: &fs::Metadata) -> Option<String> {
+    let modified = metadata.modified().ok()?.duration_since(UNIX_EPOCH).ok()?;
+    Some(format!(
+        "{}:{}:{}",
+        metadata.len(),
+        modified.as_secs(),
+        modified.subsec_nanos()
+    ))
 }
 
 fn compare_entries(left: &FilesystemEntry, right: &FilesystemEntry) -> Ordering {
@@ -611,6 +634,29 @@ mod tests {
             .map(|entry| entry.name.as_str())
             .collect::<Vec<_>>();
         assert_eq!(names, ["A-folder", "z-folder", "A.cmdnote", "b.cmdnote"]);
+    }
+
+    #[test]
+    fn command_file_revision_changes_with_file_contents() {
+        let workspace = TestDirectory::new("revision");
+        let file = workspace.path.join("Nmap.cmdnote");
+        fs::write(&file, "{}").expect("file must be created");
+        let first =
+            read_directory(&workspace.path, &workspace.path, 0).expect("workspace must be listed");
+        let first_revision = first[0]
+            .revision
+            .clone()
+            .expect("file must have a revision");
+        fs::write(&file, "{\"version\":2}").expect("file must be changed");
+        let second =
+            read_directory(&workspace.path, &workspace.path, 0).expect("workspace must be listed");
+        assert_ne!(
+            first_revision,
+            second[0]
+                .revision
+                .clone()
+                .expect("file must have a revision")
+        );
     }
 
     #[test]

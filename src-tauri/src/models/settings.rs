@@ -99,6 +99,7 @@ pub(crate) enum FavoriteItem {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct AppSettings {
+    pub(crate) display_name: Option<String>,
     pub(crate) last_workspace: Option<String>,
     pub(crate) last_opened_file: Option<String>,
     #[serde(default = "default_ui_font_size")]
@@ -111,7 +112,6 @@ pub(crate) struct AppSettings {
     pub(crate) accent_theme: AccentTheme,
     pub(crate) custom_themes: CustomThemes,
     pub(crate) favorites: Vec<FavoriteItem>,
-    pub(crate) recent_files: Vec<String>,
     #[serde(default = "default_true")]
     pub(crate) remember_expanded_sections: bool,
     pub(crate) expanded_sections: Vec<String>,
@@ -123,6 +123,7 @@ pub(crate) struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
+            display_name: None,
             last_workspace: None,
             last_opened_file: None,
             ui_font_size: default_ui_font_size(),
@@ -132,7 +133,6 @@ impl Default for AppSettings {
             accent_theme: AccentTheme::default(),
             custom_themes: CustomThemes::default(),
             favorites: Vec::new(),
-            recent_files: Vec::new(),
             remember_expanded_sections: true,
             expanded_sections: Vec::new(),
             section_state_files: Vec::new(),
@@ -173,11 +173,13 @@ impl AppSettings {
         }) {
             return Err("Favorite paths and command IDs cannot be empty.");
         }
-        if self.recent_files.len() > 8 {
-            return Err("Recent files cannot contain more than 8 items.");
-        }
-        if self.recent_files.iter().any(|path| path.is_empty()) {
-            return Err("Recent file paths cannot be empty.");
+        if self.display_name.as_ref().is_some_and(|name| {
+            let normalized = name.trim();
+            normalized.is_empty()
+                || normalized.chars().count() > 32
+                || normalized.split_whitespace().collect::<Vec<_>>().join(" ") != normalized
+        }) {
+            return Err("Display name must be 1 to 32 characters with normalized whitespace.");
         }
         Ok(())
     }
@@ -227,7 +229,8 @@ mod tests {
           "uiFontSize": 14,
           "codeFontSize": 13,
           "uiScale": 100,
-          "rememberExpandedSections": true
+          "rememberExpandedSections": true,
+          "recentFiles": ["/old.cmdnote"]
         }"#;
         let settings: AppSettings =
             serde_json::from_str(source).expect("legacy settings should load");
@@ -236,7 +239,9 @@ mod tests {
         assert!(!settings.custom_themes.dark.enabled);
         assert_eq!(settings.custom_themes.light.background, "#f5f7fa");
         assert!(settings.favorites.is_empty());
-        assert!(settings.recent_files.is_empty());
+        assert!(settings.display_name.is_none());
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert!(serialized.get("recentFiles").is_none());
     }
 
     #[test]
@@ -259,8 +264,8 @@ mod tests {
         );
         assert_eq!(serialized["favorites"][1]["commandId"], "ping-scan");
 
-        settings.recent_files = (0..9).map(|index| format!("/file-{index}")).collect();
-        assert!(settings.validate().is_err());
+        settings.display_name = Some("Quan".to_string());
+        assert!(settings.validate().is_ok());
     }
 
     #[test]
@@ -270,5 +275,16 @@ mod tests {
         assert!(settings.validate().is_err());
         settings.custom_themes.dark.background = "#123abc".to_string();
         assert!(settings.validate().is_ok());
+    }
+
+    #[test]
+    fn validates_normalized_local_profile_names() {
+        let mut settings = AppSettings::default();
+        settings.display_name = Some("Quan Tester".to_string());
+        assert!(settings.validate().is_ok());
+        settings.display_name = Some(" Quan  Tester ".to_string());
+        assert!(settings.validate().is_err());
+        settings.display_name = Some("x".repeat(33));
+        assert!(settings.validate().is_err());
     }
 }

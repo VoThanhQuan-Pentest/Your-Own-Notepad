@@ -27,11 +27,6 @@ export interface ExplorerFavoriteItem {
   command?: string;
 }
 
-export interface ExplorerRecentFile {
-  path: string;
-  label: string;
-}
-
 interface ExplorerOptions {
   workspaceRoot: string | null;
   entries: FilesystemEntry[];
@@ -41,7 +36,6 @@ interface ExplorerOptions {
   favoriteFilePaths: ReadonlySet<string>;
   favoriteFolderPaths: ReadonlySet<string>;
   favoriteItems: ExplorerFavoriteItem[];
-  recentFiles: ExplorerRecentFile[];
   collapsedQuickGroups: ReadonlySet<string>;
   callbacks: ExplorerCallbacks;
 }
@@ -206,18 +200,6 @@ function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): vo
     );
   }
 
-  if (options.recentFiles.length > 0) {
-    container.append(
-      quickGroup("recent", "RECENT", options.recentFiles.map((item) => {
-        const row = element("div", "quick-access-row");
-        const open = button("quick-access-main", item.label);
-        open.title = item.path;
-        open.addEventListener("click", () => options.callbacks.onOpenFile(item.path));
-        row.append(open);
-        return row;
-      }), options),
-    );
-  }
 }
 
 function quickGroup(

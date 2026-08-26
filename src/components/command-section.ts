@@ -6,6 +6,7 @@ import { createVirtualRows, type VirtualRowsHandle } from "./virtual-rows";
 export interface CommandSectionHandle {
   element: HTMLElement;
   ensureCommandVisible(commandId?: string): void;
+  refreshLayout(): void;
   dispose(): void;
 }
 
@@ -17,6 +18,7 @@ interface CommandSectionCallbacks {
   onSelectionMode(sectionId: string, active: boolean): void;
   onBulkMove(sectionId: string, commandIds: string[]): void;
   onBulkDelete(sectionId: string, commandIds: string[]): void;
+  onCommandReorder(sectionId: string, commandId: string, targetIndex: number): void;
   rowCallbacks: CommandRowCallbacks;
   showExampleColumn: boolean;
   selectionActive: boolean;
@@ -218,6 +220,16 @@ export function createCommandSection(
               renderContent();
             }
           : undefined,
+        section.layout === "table" && !callbacks.selectionActive
+          ? {
+              index,
+              count: section.commands.length,
+              sectionElement: () => wrapper,
+              scrollRoot: callbacks.getScrollRoot,
+              onMove: (targetIndex: number) =>
+                callbacks.onCommandReorder(section.id, command.id, targetIndex),
+            }
+          : undefined,
       ).element;
     };
 
@@ -258,6 +270,9 @@ export function createCommandSection(
         const row = wrapper.querySelector<HTMLElement>(`[data-command-id="${CSS.escape(commandId ?? "")}"]`);
         (row ?? wrapper).scrollIntoView({ block: "center" });
       });
+    },
+    refreshLayout() {
+      virtualRows?.reconnect();
     },
     dispose() {
       virtualRows?.destroy();

@@ -20,6 +20,7 @@ export interface CommandTableCallbacks {
   onSelectionMode(sectionId: string, active: boolean): void;
   onBulkMove(sectionId: string, commandIds: string[]): void;
   onBulkDelete(sectionId: string, commandIds: string[]): void;
+  onCommandReorder(sectionId: string, commandId: string, targetIndex: number): void;
 }
 
 interface CommandTableOptions {
@@ -36,6 +37,7 @@ interface CommandTableOptions {
 export interface CommandTableHandle {
   element: HTMLElement;
   ensureVisible(sectionId?: string, commandId?: string): void;
+  refreshLayout(): void;
   dispose(): void;
 }
 
@@ -96,6 +98,7 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
         onSelectionMode: options.callbacks.onSelectionMode,
         onBulkMove: options.callbacks.onBulkMove,
         onBulkDelete: options.callbacks.onBulkDelete,
+        onCommandReorder: options.callbacks.onCommandReorder,
         showExampleColumn: options.isExampleColumnVisible(section),
         selectionActive: options.selectionSectionId === section.id,
         canMoveSelection: file.sections.length > 1,
@@ -115,6 +118,9 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
         return;
       }
       sectionHandles.get(sectionId)?.ensureCommandVisible(commandId);
+    },
+    refreshLayout() {
+      sectionHandles.forEach((handle) => handle.refreshLayout());
     },
     dispose() {
       sectionHandles.forEach((handle) => handle.dispose());

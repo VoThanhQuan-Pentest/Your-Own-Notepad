@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const FIXTURE_URL = "/e2e.html?reset&fixture=basic";
+const FIXTURE_URL = "/e2e.html?reset&fixture=basic&skip-welcome";
 
 test("undo and redo a command edit", async ({ page }) => {
   await page.goto(FIXTURE_URL);
@@ -58,7 +58,7 @@ test("moves Explorer entries through the trash command", async ({ page }) => {
   const state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
   expect(state.calls).toContain("trash_entry");
   expect(state.settings.favorites).toEqual([]);
-  expect(state.settings.recentFiles).toEqual([]);
+  expect(state.settings.recentFiles).toBeUndefined();
 });
 
 test("keeps MORE and theme cancellation regressions fixed", async ({ page }) => {
@@ -105,7 +105,7 @@ test("moves and deletes selected rows as single undoable batches", async ({ page
     "ARP Scan",
   ]);
 
-  await page.getByRole("button", { name: "SELECT", exact: true }).click();
+  await page.getByRole("button", { name: "SELECT", exact: true }).first().click();
   await page.getByRole("checkbox", { name: "Select Ping Scan" }).check();
   await page.getByRole("checkbox", { name: "Select ARP Scan" }).check();
   await page.getByRole("button", { name: "DELETE", exact: true }).click();
@@ -116,7 +116,7 @@ test("moves and deletes selected rows as single undoable batches", async ({ page
   await expect(page.locator("[data-command-id='arp-scan']")).toBeVisible();
 });
 
-test("persists file and command favorites with recent files", async ({ page }) => {
+test("persists file and command favorites without Recent files", async ({ page }) => {
   await page.goto(FIXTURE_URL);
   await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
   await page.getByRole("menuitem", { name: "Add Favorite" }).click();
@@ -131,14 +131,14 @@ test("persists file and command favorites with recent files", async ({ page }) =
   await expect(copyFavorite).toHaveText("COPIED");
   await favorites.getByRole("button", { name: "Ping Scan", exact: true }).click();
   await expect(page.locator("[data-command-id='ping-scan']")).toHaveClass(/search-highlight/);
-  await expect(page.locator(".quick-access-group").filter({ hasText: "RECENT" })).toContainText("Nmap");
+  await expect(page.getByText("RECENT", { exact: true })).toHaveCount(0);
   const favoritesToggle = favorites.getByRole("button", { name: /^FAVORITES/ });
   await favoritesToggle.click();
   await expect(favoritesToggle).toHaveAttribute("aria-expanded", "false");
   await favoritesToggle.click();
   await expect(favoritesToggle).toHaveAttribute("aria-expanded", "true");
 
-  await page.goto("/e2e.html?fixture=basic");
+  await page.goto("/e2e.html?fixture=basic&skip-welcome");
   await expect(page.locator(".quick-access-group").filter({ hasText: "FAVORITES" })).toContainText("Ping Scan");
   await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
   await page.getByRole("menuitem", { name: "Rename" }).click();
@@ -153,7 +153,7 @@ test("persists file and command favorites with recent files", async ({ page }) =
   expect(renamedState.settings.favorites.every(
     (item: { path?: string; filePath?: string }) => (item.path ?? item.filePath).endsWith("Recon.cmdnote"),
   )).toBe(true);
-  expect(renamedState.settings.recentFiles[0]).toContain("Recon.cmdnote");
+  expect(renamedState.settings.recentFiles).toBeUndefined();
   await page.getByRole("button", { name: "Remove favorite Ping Scan" }).click();
   await expect(page.getByRole("button", { name: "Remove favorite Ping Scan" })).toHaveCount(0);
 });
@@ -180,7 +180,7 @@ test("skips existing commands in pasted table by default", async ({ page }) => {
 
 test("keeps bulk selection stable across virtualized rows", async ({ page }) => {
   test.setTimeout(60_000);
-  await page.goto("/?stress=5000");
+  await page.goto("/?stress=5000&skip-welcome");
   await expect(page.locator(".command-section")).toHaveCount(50);
   await expect(page.locator(".command-row")).not.toHaveCount(5_000);
   await page.getByRole("button", { name: "SELECT", exact: true }).first().click();
@@ -196,18 +196,18 @@ test("keeps bulk selection stable across virtualized rows", async ({ page }) => 
 
 test("exits Selection Mode when its Section collapses", async ({ page }) => {
   await page.goto(FIXTURE_URL);
-  await page.getByRole("button", { name: "SELECT", exact: true }).click();
+  await page.getByRole("button", { name: "SELECT", exact: true }).first().click();
   await page.getByRole("checkbox", { name: "Select Ping Scan" }).check();
   await page.getByRole("button", { name: "Discovery", exact: true }).click();
   await expect(page.getByText("1 SELECTED")).toHaveCount(0);
   await page.getByRole("button", { name: "Discovery", exact: true }).click();
   await expect(page.getByRole("checkbox", { name: "Select Ping Scan" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "SELECT", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "SELECT", exact: true }).first()).toBeVisible();
 });
 
 test("clears Selection Mode when switching files", async ({ page }) => {
   await page.goto(FIXTURE_URL);
-  await page.getByRole("button", { name: "SELECT", exact: true }).click();
+  await page.getByRole("button", { name: "SELECT", exact: true }).first().click();
   await page.getByRole("checkbox", { name: "Select Ping Scan" }).check();
   await page.getByRole("button", { name: "Git", exact: true }).click();
   await page.getByRole("button", { name: "Nmap", exact: true }).last().click();
@@ -313,7 +313,7 @@ test("persists independent custom Dark and Light theme colors", async ({ page })
   await page.getByRole("textbox", { name: "Background HEX" }).fill("#111111");
   await page.getByRole("button", { name: "SAVE", exact: true }).click();
 
-  await page.goto("/e2e.html?fixture=basic");
+  await page.goto("/e2e.html?fixture=basic&skip-welcome");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("html")).toHaveAttribute("data-custom-theme", "true");
   const customBackground = await page.locator("html").evaluate((root) =>
@@ -356,7 +356,7 @@ test("only offers Example expansion beyond six visual lines", async ({ page }) =
 
 test("remeasures expanded multiline Examples inside a 5,000-row virtual list", async ({ page }) => {
   test.setTimeout(60_000);
-  await page.goto("/?stress=5000");
+  await page.goto("/?stress=5000&skip-welcome");
   const row = page.locator("[data-command-id='stress-command-10']");
   await expect(row).toBeVisible();
   const collapsedHeight = await row.evaluate((element) => element.getBoundingClientRect().height);
@@ -366,4 +366,91 @@ test("remeasures expanded multiline Examples inside a 5,000-row virtual list", a
     () => row.evaluate((element) => element.getBoundingClientRect().height),
   ).toBeGreaterThan(collapsedHeight);
   expect(await page.locator(".command-row").count()).toBeLessThan(50);
+});
+
+test("creates a local profile and opens the Welcome dashboard", async ({ page }) => {
+  await page.goto("/e2e.html?reset");
+  await expect(page.getByRole("heading", { name: "Who’s using Command Vault?" })).toBeVisible();
+  await page.getByLabel("DISPLAY NAME").fill("  Quan   Tester  ");
+  await page.getByRole("button", { name: "ENTER VAULT" }).click();
+  await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening), Quan Tester/ }))
+    .toBeVisible();
+  await expect(page.getByText("No workspace selected", { exact: true })).toBeVisible();
+  const state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.settings.displayName).toBe("Quan Tester");
+
+  await page.goto("/e2e.html?reset&fixture=basic");
+  await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening), Tester/ }))
+    .toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nmap" })).toBeVisible();
+  await page.getByRole("button", { name: "OPEN FILE" }).click();
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+});
+
+test("reorders Compact Table rows with menus, keyboard and pointer drag", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  const table = page.locator("[data-section-id='reorder-table']");
+  await table.getByRole("button", { name: "Reorder Table TABLE" }).click();
+
+  await table.locator("[data-command-id='table-beta']")
+    .getByRole("button", { name: "Actions for table row 02" }).click();
+  await page.getByRole("menuitem", { name: "Move to Top" }).click();
+  await expect(table.locator(".command-code code")).toHaveText(["echo beta", "echo alpha", "echo gamma"]);
+  await page.getByRole("button", { name: "UNDO" }).click();
+
+  await table.locator("[data-command-id='table-gamma']")
+    .getByRole("button", { name: "Actions for table row 03" }).click();
+  await page.getByRole("menuitem", { name: "Move to Position…" }).click();
+  await page.getByLabel("Position (1–3)").fill("1");
+  await page.getByRole("button", { name: "MOVE", exact: true }).click();
+  await expect(table.locator(".command-code code")).toHaveText(["echo gamma", "echo alpha", "echo beta"]);
+  await page.getByRole("button", { name: "UNDO" }).click();
+
+  const alphaHandle = table.locator("[data-command-id='table-alpha']")
+    .getByRole("button", { name: "Move table row 01" });
+  await alphaHandle.focus();
+  await alphaHandle.press("Space");
+  await alphaHandle.press("End");
+  await alphaHandle.press("Enter");
+  await expect(table.locator(".command-code code")).toHaveText(["echo beta", "echo gamma", "echo alpha"]);
+  await page.getByRole("button", { name: "UNDO" }).click();
+
+  const source = table.locator("[data-command-id='table-gamma'] .row-drag-handle");
+  const target = table.locator("[data-command-id='table-alpha']");
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  expect(sourceBox).not.toBeNull();
+  expect(targetBox).not.toBeNull();
+  await page.mouse.move(sourceBox!.x + sourceBox!.width / 2, sourceBox!.y + sourceBox!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(targetBox!.x + 30, targetBox!.y + 3, { steps: 8 });
+  await page.mouse.up();
+  await expect(table.locator(".command-code code")).toHaveText(["echo gamma", "echo alpha", "echo beta"]);
+});
+
+test("recovers after a simulated wake without rereading unchanged files or losing a modal draft", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  const before = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  const readsBefore = before.calls.filter((call: string) => call === "read_command_file").length;
+  const listsBefore = before.calls.filter((call: string) => call === "list_directory").length;
+
+  await page.getByRole("button", { name: "Open settings" }).click();
+  const profile = page.getByLabel("Local profile name");
+  await profile.fill("Unsaved Draft");
+  await page.evaluate(() => {
+    (window as unknown as { __COMMAND_VAULT_TRIGGER_RECOVERY__: () => void })
+      .__COMMAND_VAULT_TRIGGER_RECOVERY__();
+  });
+  await page.waitForTimeout(900);
+  await expect(profile).toHaveValue("Unsaved Draft");
+  await page.getByRole("button", { name: "CANCEL" }).click();
+
+  await expect.poll(async () => {
+    const current = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+    return current.calls.filter((call: string) => call === "list_directory").length;
+  }).toBeGreaterThan(listsBefore);
+  const after = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(after.calls.filter((call: string) => call === "read_command_file").length).toBe(readsBefore);
+  await expect(page.locator("[data-command-id='ping-scan']")).toBeVisible();
 });
