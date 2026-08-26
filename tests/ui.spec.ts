@@ -10,6 +10,7 @@ test("undo and redo a command edit", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Edit" }).click();
   await page.getByLabel("Description").fill("Updated discovery description.");
   await page.getByRole("button", { name: "SAVE" }).click();
+  await expect(page.locator(".file-view-outgoing, .file-view-incoming")).toHaveCount(0);
   const pingRow = page.locator("[data-command-id='ping-scan']");
   await expect(pingRow.locator(".command-description")).toHaveText("Updated discovery description.");
 
@@ -20,6 +21,7 @@ test("undo and redo a command edit", async ({ page }) => {
   const redo = page.getByRole("button", { name: "REDO" });
   await expect(undo).toBeEnabled();
   await undo.click();
+  await expect(page.locator(".file-view-outgoing, .file-view-incoming")).toHaveCount(0);
   await expect(pingRow.locator(".command-description")).toHaveText("Discover active hosts.");
   await expect(redo).toBeEnabled();
   await redo.click();
@@ -47,8 +49,7 @@ test("navigates fuzzy search results with the keyboard", async ({ page }) => {
 
 test("moves Explorer entries through the trash command", async ({ page }) => {
   await page.goto(FIXTURE_URL);
-  await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
-  await page.getByRole("menuitem", { name: "Add Favorite" }).click();
+  await page.getByRole("button", { name: "Add Nmap.cmdnote to Favorites" }).click();
   await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
   await page.getByRole("menuitem", { name: "Delete" }).click();
   await expect(page.getByRole("dialog", { name: "Move Command File to Trash" })).toBeVisible();
@@ -118,8 +119,11 @@ test("moves and deletes selected rows as single undoable batches", async ({ page
 
 test("persists file and command favorites without Recent files", async ({ page }) => {
   await page.goto(FIXTURE_URL);
-  await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
-  await page.getByRole("menuitem", { name: "Add Favorite" }).click();
+  const nmapHeart = page.getByRole("button", { name: "Add Nmap.cmdnote to Favorites" });
+  await expect(nmapHeart).toHaveAttribute("aria-pressed", "false");
+  await nmapHeart.click();
+  await expect(page.getByRole("button", { name: "Remove Nmap.cmdnote from Favorites" }))
+    .toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Actions for Ping Scan" }).click();
   await page.getByRole("menuitem", { name: "Add Favorite" }).click();
 
@@ -140,6 +144,8 @@ test("persists file and command favorites without Recent files", async ({ page }
 
   await page.goto("/e2e.html?fixture=basic&skip-welcome");
   await expect(page.locator(".quick-access-group").filter({ hasText: "FAVORITES" })).toContainText("Ping Scan");
+  await expect(page.getByRole("button", { name: "Remove Nmap.cmdnote from Favorites" }))
+    .toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
   await page.getByRole("menuitem", { name: "Rename" }).click();
   await page.getByRole("dialog", { name: "Rename Command File" })
@@ -229,8 +235,7 @@ test("disables an all-duplicate import until duplicates are included", async ({ 
 
 test("favorites a nested folder and restores its Explorer ancestors", async ({ page }) => {
   await page.goto(FIXTURE_URL);
-  await page.getByRole("button", { name: "Actions for Nested" }).click();
-  await page.getByRole("menuitem", { name: "Add Favorite" }).click();
+  await page.getByRole("button", { name: "Add Nested to Favorites" }).click();
   await page.getByRole("button", { name: "References", exact: true }).click();
   await expect(page.getByRole("button", { name: "Nested", exact: true })).toHaveCount(1);
   const favoriteNested = page.locator(".quick-access-group").filter({ hasText: "FAVORITES" })
@@ -453,4 +458,73 @@ test("recovers after a simulated wake without rereading unchanged files or losin
   const after = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
   expect(after.calls.filter((call: string) => call === "read_command_file").length).toBe(readsBefore);
   await expect(page.locator("[data-command-id='ping-scan']")).toBeVisible();
+});
+
+test("animates file changes and removes the visual snapshot after the transition", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  await page.locator(".tree-file").filter({ hasText: "Git" }).click();
+  const outgoing = page.locator(".file-view-outgoing");
+  const incoming = page.locator(".file-view-incoming");
+  await expect(outgoing).toHaveCount(1);
+  await expect(outgoing).toHaveAttribute("aria-hidden", "true");
+  await expect(outgoing).toHaveAttribute("inert", "");
+  await expect(outgoing.locator("[id]")).toHaveCount(0);
+  await expect(incoming.getByRole("heading", { name: "GIT" })).toBeVisible();
+  await expect.poll(() => outgoing.count()).toBe(0);
+  await expect(page.locator(".workspace")).not.toHaveClass(/file-transitioning/);
+  await expect(page.locator(".file-view")).toHaveCount(1);
+});
+
+test("uses instant file replacement when reduced motion is requested", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(FIXTURE_URL);
+  await page.locator(".tree-file").filter({ hasText: "Git" }).click();
+  await expect(page.getByRole("heading", { name: "GIT" })).toBeVisible();
+  await expect(page.locator(".file-view-outgoing, .file-view-incoming")).toHaveCount(0);
+});
+
+test("keeps the newest file request when earlier reads finish late", async ({ page }) => {
+  await page.goto(`${FIXTURE_URL}&slow-files`);
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  await page.locator(".tree-file").filter({ hasText: "Git" }).click();
+  await expect(page.getByRole("button", { name: "Git", exact: true }))
+    .toHaveAttribute("aria-busy", "true");
+  await page.locator(".tree-file").filter({ hasText: "Nmap" }).click();
+  await page.waitForTimeout(260);
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "GIT" })).toHaveCount(0);
+  await expect(page.locator(".file-view")).toHaveCount(1);
+});
+
+test("uses persistent heart controls and SVG disclosures in Explorer", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 600 });
+  await page.goto(FIXTURE_URL);
+  const nmapHeart = page.getByRole("button", { name: "Add Nmap.cmdnote to Favorites" });
+  await expect(nmapHeart.locator("svg.icon-heart")).toBeVisible();
+  await nmapHeart.click();
+  await expect(page.locator(".quick-access-heading .icon-heart")).toBeVisible();
+  await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
+  await expect(page.getByRole("menuitem", { name: /Favorite/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  const nested = page.getByRole("button", { name: "Nested", exact: true });
+  const disclosure = nested.locator("svg.tree-disclosure");
+  await expect(disclosure).not.toHaveClass(/expanded/);
+  await nested.focus();
+  await nested.press("Space");
+  await expect(disclosure).toHaveClass(/expanded/);
+  await page.getByRole("button", { name: "Actions for Nested" }).click();
+  await expect(page.getByRole("menuitem", { name: /Favorite/ })).toHaveCount(0);
+  const layout = await page.locator(".app-shell").evaluate((shell) => ({
+    horizontalOverflow: shell.scrollWidth > shell.clientWidth,
+  }));
+  expect(layout.horizontalOverflow).toBe(false);
+});
+
+test("uses readable Welcome dashboard microcopy", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic");
+  await expect(page.locator(".welcome-eyebrow")).toHaveCSS("font-size", "12px");
+  await expect(page.locator(".dashboard-card-label").first()).toHaveCSS("font-size", "11px");
+  await expect(page.locator(".dashboard-stat span").first()).toHaveCSS("font-size", "10px");
+  await expect(page.locator(".welcome-subtitle")).toHaveCSS("font-size", "15px");
 });

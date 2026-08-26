@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.9.0</strong>
+  <strong>Current version: 0.10.0</strong>
 </p>
 
 <p align="center">
@@ -45,6 +45,8 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Local profile onboarding and a lightweight Welcome Dashboard with workspace statistics and Continue.
 - Drag, keyboard, and precise menu-based row reordering inside Compact Tables.
 - Automatic layout and virtual-row recovery after suspend or power-saving throttling.
+- Lightweight horizontal file transitions with rapid-click race protection and Reduced Motion support.
+- Always-visible Heart Favorites plus polished SVG folder, file, and disclosure icons.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
@@ -53,7 +55,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.9.0 adds the local Welcome Dashboard, movable Table rows, and automatic recovery after suspend while removing the unused Recent Files list.
+Version 0.10.0 adds animated file navigation, direct Heart Favorites, polished Explorer icons, and more readable Welcome Dashboard labels.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -74,9 +76,10 @@ Version 0.9.0 adds the local Welcome Dashboard, movable Table rows, and automati
 
 - Press **SELECT** on a Section or Compact Table to select multiple rows, select all, move, or delete them as one Undo step.
 - Pasted tables skip commands already present in the active file by default; **Include duplicate commands** explicitly keeps them.
-- Add folders, command files, and individual commands to **FAVORITES** from their `⋮` menus.
+- Favorite folders and command files directly with their heart buttons; command Favorites remain in the `⋮` menu.
 - Opening a folder Favorite expands its ancestors, selects it, and scrolls it into view.
-- **FAVORITES** appears above the filesystem tree in Explorer; the former Recent Files group has been removed.
+- **FAVORITES** has its own rose styling and heart indicators above the filesystem tree.
+- Switching files slides the previous view left and the next view in from the right; Reduced Motion replaces it instantly.
 
 ### Compact tables
 
@@ -173,7 +176,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.9.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.10.0_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -252,6 +255,8 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Hồ sơ local và Welcome Dashboard nhẹ với lời chào, thống kê workspace và nút Continue.
 - Kéo thả, bàn phím hoặc menu chính xác để đổi vị trí hàng trong Compact Table.
 - Tự phục hồi layout và virtual rows sau khi máy sleep hoặc chuyển sang tiết kiệm điện.
+- Chuyển file bằng hiệu ứng trượt ngang nhẹ, chống click nhanh trả kết quả sai và hỗ trợ Reduced Motion.
+- Heart Favorite luôn hiển thị cùng icon SVG folder, file và mũi tên cây thư mục mới.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
@@ -260,7 +265,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.9.0 bổ sung Welcome Dashboard local, di chuyển hàng Table và tự phục hồi sau sleep, đồng thời xóa danh sách Recent Files không còn cần thiết.
+Phiên bản 0.10.0 bổ sung chuyển file động, Heart Favorite trực tiếp, icon Explorer mới và chữ trong Welcome Dashboard dễ đọc hơn.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -281,9 +286,10 @@ Phiên bản 0.9.0 bổ sung Welcome Dashboard local, di chuyển hàng Table v�
 
 - Nhấn **SELECT** trên Section hoặc Compact Table để chọn nhiều hàng, chọn tất cả, move hoặc delete trong một lần Undo.
 - Bảng paste mặc định bỏ qua command đã có trong file; bật **Include duplicate commands** nếu muốn giữ lại.
-- Thêm folder, file command hoặc command riêng lẻ vào **FAVORITES** từ menu `⋮`.
+- Favorite folder và file command trực tiếp bằng nút trái tim; Favorite command vẫn nằm trong menu `⋮`.
 - Mở folder Favorite sẽ expand các folder cha, chọn và cuộn tới folder đó.
-- **FAVORITES** hiển thị phía trên cây filesystem trong Explorer; nhóm Recent Files cũ đã được xóa.
+- **FAVORITES** có màu rose và icon trái tim riêng phía trên cây filesystem.
+- Khi đổi file, file cũ trượt sang trái và file mới đi từ phải vào; Reduced Motion sẽ thay view tức thời.
 
 ### Bảng compact
 
@@ -379,7 +385,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.9.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.10.0_amd64.AppImage
 ```
 
 Output Linux:

@@ -76,6 +76,24 @@ p {
   border: 0;
 }
 
+.ui-icon {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-heart path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

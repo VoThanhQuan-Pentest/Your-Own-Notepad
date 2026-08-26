@@ -1,4 +1,5 @@
 import { button, element } from "../utils/dom";
+import { createIcon } from "./icons";
 
 export interface DashboardFavorite {
   label: string;
@@ -73,7 +74,9 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   workspace.append(workspaceAction);
 
   const favorites = element("section", "dashboard-card dashboard-favorites");
-  favorites.append(element("span", "dashboard-card-label", "FAVORITES"));
+  const favoriteLabel = element("span", "dashboard-card-label dashboard-favorite-label");
+  favoriteLabel.append(createIcon("heart"), document.createTextNode("FAVORITES"));
+  favorites.append(favoriteLabel);
   if (options.favorites.length === 0) {
     favorites.append(element("p", "dashboard-empty", "Favorite folders, files and commands will appear here."));
   } else {
@@ -81,7 +84,9 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
     options.favorites.slice(0, 6).forEach((favorite) => {
       const item = button("dashboard-favorite", "");
       item.title = favorite.detail;
-      item.append(element("strong", undefined, favorite.label), element("span", undefined, favorite.detail));
+      const copy = element("span", "dashboard-favorite-copy");
+      copy.append(element("strong", undefined, favorite.label), element("span", undefined, favorite.detail));
+      item.append(createIcon("heart", "dashboard-favorite-icon"), copy);
       item.addEventListener("click", favorite.onOpen);
       list.append(item);
     });

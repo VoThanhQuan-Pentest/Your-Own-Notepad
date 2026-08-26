@@ -17,6 +17,9 @@
   --danger-text: #f5a3aa;
   --success: #78dba9;
   --warning: #f1c15a;
+  --favorite: #f472b6;
+  --favorite-hover: #f9a8d4;
+  --favorite-soft: rgb(244 114 182 / 10%);
   --code-bg: #0a0f14;
   --code-text: #a9e9f4;
   --example-text: #bdc6d1;
@@ -24,8 +27,8 @@
   --shadow-lg: rgb(0 0 0 / 42%);
   --shadow-menu: rgb(0 0 0 / 45%);
   --header-height: 52px;
-  --sidebar-width: clamp(200px, 19vw, 240px);
-  --sidebar-min-width: 200px;
+  --sidebar-width: clamp(220px, 20vw, 260px);
+  --sidebar-min-width: 220px;
   --sidebar-max-width: 340px;
   --section-height: 46px;
   --cell-padding: 18px;
@@ -103,6 +106,9 @@
   --danger-text: #a61b29;
   --success: #047857;
   --warning: #a16207;
+  --favorite: #be185d;
+  --favorite-hover: #9d174d;
+  --favorite-soft: rgb(190 24 93 / 9%);
   --code-bg: #e8eef4;
   --code-text: #075985;
   --example-text: #334155;

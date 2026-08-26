@@ -31,11 +31,11 @@ mockIPC((command, rawPayload) => {
       persist();
       return null;
     case "plugin:app|version":
-      return "0.9.0-test";
+      return "0.10.0-test";
     case "list_directory":
       return buildTree(String(payload.workspaceRoot));
     case "read_command_file":
-      return readFile(String(payload.filePath));
+      return readFileForIpc(String(payload.filePath));
     case "write_command_file":
       return writeFile(
         String(payload.filePath),
@@ -262,6 +262,14 @@ function readFile(path: string): string {
   const source = state.files[path];
   if (source === undefined) throw { code: "NOT_FOUND", message: "File not found." };
   return source;
+}
+
+function readFileForIpc(path: string): string | Promise<string> {
+  if (!parameters.has("slow-files")) {
+    return readFile(path);
+  }
+  const delay = path.endsWith("Git.cmdnote") ? 180 : 15;
+  return new Promise((resolve) => window.setTimeout(() => resolve(readFile(path)), delay));
 }
 
 function writeFile(path: string, source: string, expected: string): string {

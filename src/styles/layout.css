@@ -272,6 +272,49 @@
   background-size: 28px 28px;
 }
 
+.workspace.file-transitioning {
+  display: block;
+  isolation: isolate;
+}
+
+.workspace-view-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform, opacity;
+}
+
+.file-view-outgoing {
+  z-index: 1;
+  pointer-events: none;
+  animation: file-view-slide-out 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.file-view-incoming {
+  z-index: 2;
+  animation: file-view-slide-in 240ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.workspace-view-fade-in {
+  animation: workspace-view-fade-in 160ms ease-out both;
+}
+
+@keyframes file-view-slide-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-5%); }
+}
+
+@keyframes file-view-slide-in {
+  from { opacity: 0; transform: translateX(5%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes workspace-view-fade-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .empty-state {
   width: min(460px, calc(100% - 48px));
   max-height: calc(100% - 48px);
@@ -329,9 +372,18 @@
 .dashboard-card-label {
   color: var(--accent-hover);
   font-family: var(--font-code);
-  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
+}
+
+.welcome-eyebrow {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dashboard-card-label {
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .profile-onboarding-panel h1 {
@@ -403,6 +455,7 @@
 .welcome-subtitle {
   margin-top: 7px;
   color: var(--text-secondary);
+  font-size: 15px;
 }
 
 .dashboard-grid {
@@ -474,7 +527,7 @@
 .dashboard-stat span {
   margin-top: 3px;
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -494,8 +547,20 @@
   gap: 7px;
 }
 
+.dashboard-favorite-label {
+  display: flex;
+  align-items: center;
+  color: var(--favorite);
+  gap: 7px;
+}
+
+.dashboard-favorite-label .ui-icon {
+  width: 13px;
+  height: 13px;
+}
+
 .dashboard-favorite {
-  display: grid;
+  display: flex;
   min-width: 0;
   padding: 9px 11px;
   border: 1px solid transparent;
@@ -504,14 +569,28 @@
   color: var(--text-main);
   text-align: left;
   cursor: pointer;
+  align-items: center;
+  gap: 9px;
 }
 
 .dashboard-favorite:hover {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-color: color-mix(in srgb, var(--favorite) 40%, var(--border));
   background: var(--bg-hover);
 }
 
-.dashboard-favorite span {
+.dashboard-favorite-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--favorite);
+}
+
+.dashboard-favorite-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.dashboard-favorite-copy > span {
   overflow: hidden;
   color: var(--text-muted);
   font-size: 11px;
@@ -538,6 +617,10 @@
   .profile-onboarding-panel,
   .welcome-hero,
   .dashboard-card { animation: none; }
+
+  .file-view-outgoing,
+  .file-view-incoming,
+  .workspace-view-fade-in { animation: none; }
 }
 
 .empty-state-icon {

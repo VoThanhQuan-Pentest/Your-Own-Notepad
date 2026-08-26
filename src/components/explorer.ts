@@ -2,6 +2,7 @@ import type { FilesystemEntry } from "../models/filesystem";
 import type { FavoriteItem } from "../models/settings";
 import { button, element } from "../utils/dom";
 import { openMenu } from "./menu";
+import { createIcon } from "./icons";
 
 interface ExplorerCallbacks {
   onOpenFile(path: string): void;
@@ -31,6 +32,7 @@ interface ExplorerOptions {
   workspaceRoot: string | null;
   entries: FilesystemEntry[];
   activeFile: string | null;
+  pendingFile: string | null;
   selectedFolder: string | null;
   expandedFolders: ReadonlySet<string>;
   favoriteFilePaths: ReadonlySet<string>;
@@ -103,13 +105,24 @@ function createEntry(entry: FilesystemEntry, depth: number, options: ExplorerOpt
   const expanded = options.expandedFolders.has(entry.path);
   const folderButton = button("tree-folder", "");
   folderButton.setAttribute("aria-expanded", String(expanded));
-  const chevron = element("span", "tree-chevron", expanded ? "▾" : "▸");
-  chevron.setAttribute("aria-hidden", "true");
-  folderButton.append(chevron, element("span", "tree-label", entry.name));
+  const chevron = createIcon("chevron", `tree-disclosure${expanded ? " expanded" : ""}`);
+  folderButton.append(
+    chevron,
+    createIcon(expanded ? "folder-open" : "folder", "tree-kind-icon"),
+    element("span", "tree-label", entry.name),
+  );
   folderButton.addEventListener("click", () => options.callbacks.onSelectFolder(entry.path));
 
   const menuButton = entryMenuButton(entry, options);
-  row.append(folderButton, menuButton);
+  row.append(
+    folderButton,
+    favoriteToggle(
+      entry.name,
+      options.favoriteFolderPaths.has(entry.path),
+      () => options.callbacks.onToggleFolderFavorite(entry.path),
+    ),
+    menuButton,
+  );
   group.append(row);
 
   if (expanded) {
@@ -123,17 +136,30 @@ function createEntry(entry: FilesystemEntry, depth: number, options: ExplorerOpt
 function createFile(entry: FilesystemEntry, depth: number, options: ExplorerOptions): HTMLElement {
   const row = element(
     "div",
-    `tree-entry-row file-row${entry.path === options.activeFile ? " active" : ""}`,
+    `tree-entry-row file-row${entry.path === options.activeFile ? " active" : ""}${entry.path === options.pendingFile ? " loading" : ""}`,
   );
   row.style.paddingLeft = `${22 + depth * 14}px`;
 
   const label = entry.name.replace(/\.cmdnote$/i, "");
-  const fileButton = button("tree-file", label);
+  const fileButton = button("tree-file", "");
+  fileButton.append(createIcon("command-file", "tree-kind-icon"), element("span", "tree-label", label));
   if (entry.path === options.activeFile) {
     fileButton.setAttribute("aria-current", "page");
   }
+  if (entry.path === options.pendingFile) {
+    fileButton.setAttribute("aria-busy", "true");
+    fileButton.append(element("span", "tree-file-loading"));
+  }
   fileButton.addEventListener("click", () => options.callbacks.onOpenFile(entry.path));
-  row.append(fileButton, entryMenuButton(entry, options));
+  row.append(
+    fileButton,
+    favoriteToggle(
+      entry.name,
+      options.favoriteFilePaths.has(entry.path),
+      () => options.callbacks.onToggleFileFavorite(entry.path),
+    ),
+    entryMenuButton(entry, options),
+  );
   return row;
 }
 
@@ -147,19 +173,9 @@ function entryMenuButton(entry: FilesystemEntry, options: ExplorerOptions): HTML
       items.push(
         { label: "New Folder", action: () => options.callbacks.onCreateFolder(entry.path) },
         { label: "New Command File", action: () => options.callbacks.onCreateFile(entry.path) },
-        {
-          label: options.favoriteFolderPaths.has(entry.path) ? "Remove Favorite" : "Add Favorite",
-          action: () => options.callbacks.onToggleFolderFavorite(entry.path),
-        },
       );
     }
     items.push({ label: "Rename", action: () => options.callbacks.onRename(entry) });
-    if (entry.kind === "command-file") {
-      items.push({
-        label: options.favoriteFilePaths.has(entry.path) ? "Remove Favorite" : "Add Favorite",
-        action: () => options.callbacks.onToggleFileFavorite(entry.path),
-      });
-    }
     items.push({ label: "Delete", danger: true, action: () => options.callbacks.onDelete(entry) });
     openMenu(menu, items);
   });
@@ -171,7 +187,8 @@ function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): vo
     container.append(
       quickGroup("favorites", "FAVORITES", options.favoriteItems.map((item) => {
         const row = element("div", "quick-access-row");
-        const open = button("quick-access-main", item.label);
+        const open = button("quick-access-main", "");
+        open.append(createIcon("heart", "quick-favorite-icon"), element("span", undefined, item.label));
         open.title = item.detail;
         open.addEventListener("click", () => {
           if (item.favorite.kind === "folder") {
@@ -190,7 +207,8 @@ function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): vo
           copy.addEventListener("click", () => options.callbacks.onCopyFavorite(item.command as string, copy));
           row.append(copy);
         }
-        const remove = button("quick-access-remove", "×");
+        const remove = button("quick-access-remove favorite-remove", "");
+        remove.append(createIcon("heart"));
         remove.title = `Remove ${item.label} from Favorites`;
         remove.setAttribute("aria-label", `Remove favorite ${item.label}`);
         remove.addEventListener("click", () => options.callbacks.onRemoveFavorite(item.favorite));
@@ -212,10 +230,10 @@ function quickGroup(
   const expanded = !options.collapsedQuickGroups.has(id);
   const toggle = button("quick-access-heading", "");
   toggle.setAttribute("aria-expanded", String(expanded));
-  const chevron = element("span", "tree-chevron", expanded ? "▾" : "▸");
-  chevron.setAttribute("aria-hidden", "true");
+  const chevron = createIcon("chevron", `tree-disclosure${expanded ? " expanded" : ""}`);
   toggle.append(
     chevron,
+    ...(id === "favorites" ? [createIcon("heart", "quick-heading-icon")] : []),
     element("span", undefined, label),
     element("span", "quick-access-count", String(rows.length)),
   );
@@ -225,4 +243,22 @@ function quickGroup(
   toggle.addEventListener("click", () => options.callbacks.onToggleQuickGroup(id, !expanded));
   group.append(toggle, content);
   return group;
+}
+
+function favoriteToggle(
+  label: string,
+  selected: boolean,
+  onToggle: () => void,
+): HTMLButtonElement {
+  const control = button("tree-favorite-toggle", "");
+  control.append(createIcon("heart"));
+  control.classList.toggle("selected", selected);
+  control.setAttribute("aria-pressed", String(selected));
+  control.setAttribute(
+    "aria-label",
+    selected ? `Remove ${label} from Favorites` : `Add ${label} to Favorites`,
+  );
+  control.title = selected ? "Remove from Favorites" : "Add to Favorites";
+  control.addEventListener("click", onToggle);
+  return control;
 }

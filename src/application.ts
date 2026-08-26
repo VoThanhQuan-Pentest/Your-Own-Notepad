@@ -111,7 +111,7 @@ export class CommandVaultApplication {
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.9.0";
+  private appVersion = "0.10.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -133,6 +133,10 @@ export class CommandVaultApplication {
   private searchTimer: number | null = null;
   private searchGeneration = 0;
   private searchIndex: SearchDocument<SearchResult>[] = [];
+  private pendingFilePath: string | null = null;
+  private fileOpenGeneration = 0;
+  private viewTransitionGeneration = 0;
+  private viewTransitionTimer: number | null = null;
   private showingDashboard = false;
   private lifecycleTimer: number | null = null;
   private lifecycleLastTick = Date.now();
@@ -177,7 +181,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.9.0 (development)";
+      this.appVersion = "0.10.0 (development)";
     }
 
     if (!this.settings.displayName && this.skipWelcome) {
@@ -221,6 +225,7 @@ export class CommandVaultApplication {
       workspaceRoot: this.workspaceRoot,
       entries: this.entries,
       activeFile: this.activeFilePath,
+      pendingFile: this.pendingFilePath,
       selectedFolder: this.selectedFolder,
       expandedFolders: this.expandedFolders,
       favoriteFilePaths: new Set(
@@ -489,6 +494,8 @@ export class CommandVaultApplication {
   }
 
   private async openWorkspace(path: string, restoreLastFile: boolean): Promise<void> {
+    this.fileOpenGeneration += 1;
+    this.pendingFilePath = null;
     const workspaceChanged = this.settings.lastWorkspace !== path;
     this.workspaceRoot = path;
     this.selectedFolder = path;
@@ -697,13 +704,27 @@ export class CommandVaultApplication {
   }
 
   private async openFile(path: string, focus?: FocusTarget, useCached = false): Promise<void> {
-    if (path !== this.activeFilePath) {
+    const generation = ++this.fileOpenGeneration;
+    const previousPath = this.activeFilePath;
+    const animateTransition = Boolean(previousPath && previousPath !== path && this.activeTable);
+    if (path !== previousPath) {
       this.selectionSectionId = null;
     }
+    if (!useCached) {
+      const nextPending = path !== previousPath ? path : null;
+      if (nextPending !== this.pendingFilePath) {
+        this.pendingFilePath = nextPending;
+        this.renderExplorer();
+      }
+    }
+
     let file = this.files.get(path);
     if (!useCached && this.desktopRuntime && this.workspaceRoot) {
       try {
         const source = await readCommandFile(this.workspaceRoot, path);
+        if (generation !== this.fileOpenGeneration) {
+          return;
+        }
         const parsed = parseCommandFile(source);
         if (parsed.ok) {
           const normalizedSource = parsed.needsMigration
@@ -714,6 +735,9 @@ export class CommandVaultApplication {
                 source,
               )
             : source;
+          if (generation !== this.fileOpenGeneration) {
+            return;
+          }
           file = parsed.data;
           this.files.set(path, file);
           this.fileSources.set(path, normalizedSource);
@@ -726,12 +750,20 @@ export class CommandVaultApplication {
           this.fileErrors.set(path, formatParseError(parsed.error.message, parsed.error.issues));
         }
       } catch (error) {
+        if (generation !== this.fileOpenGeneration) {
+          return;
+        }
         file = undefined;
         this.files.delete(path);
         this.fileSources.delete(path);
         this.fileErrors.set(path, normalizeServiceError(error).message);
       }
     }
+    if (generation !== this.fileOpenGeneration) {
+      return;
+    }
+
+    this.pendingFilePath = null;
     this.activeFilePath = path;
     this.activeFile = file ?? null;
     this.selectedFolder = parentDirectory(path) ?? this.selectedFolder;
@@ -746,11 +778,11 @@ export class CommandVaultApplication {
     if (focus?.sectionId) {
       this.transientExpandedSections.add(sectionStateKey(path, focus.sectionId));
     }
-    this.renderActiveFile(focus);
+    this.renderActiveFile(focus, animateTransition);
     await this.persistSettings(false);
   }
 
-  private renderActiveFile(focus?: FocusTarget): void {
+  private renderActiveFile(focus?: FocusTarget, animateTransition = false): void {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
@@ -801,9 +833,18 @@ export class CommandVaultApplication {
           void this.reorderTableCommand(sectionId, commandId, targetIndex),
       },
     });
-    this.activeTable?.dispose();
+    const previousTable = this.activeTable;
     this.activeTable = table;
-    this.workspace.replaceChildren(table.element);
+    if (animateTransition && previousTable && !prefersReducedMotion()) {
+      this.transitionFileView(previousTable, table.element);
+    } else {
+      this.cancelFileTransition();
+      previousTable?.dispose();
+      if (!previousTable && !prefersReducedMotion()) {
+        addOneShotClass(table.element, "workspace-view-fade-in");
+      }
+      this.workspace.replaceChildren(table.element);
+    }
 
     if (focus?.commandId || focus?.sectionId) {
       queueMicrotask(() => {
@@ -811,13 +852,73 @@ export class CommandVaultApplication {
         const selector = focus.commandId
           ? `[data-command-id="${CSS.escape(focus.commandId)}"]`
           : `[data-section-id="${CSS.escape(focus.sectionId as string)}"]`;
-        const target = this.workspace.querySelector<HTMLElement>(selector);
+        const target = table.element.querySelector<HTMLElement>(selector);
         target?.scrollIntoView({ block: "center" });
         if (focus.commandId) {
           target?.classList.add("search-highlight");
         }
       });
     }
+  }
+
+  private transitionFileView(
+    previousTable: CommandTableHandle,
+    nextElement: HTMLElement,
+  ): void {
+    this.cancelFileTransition();
+    const previousElement = previousTable.element;
+    if (!previousElement.isConnected) {
+      previousTable.dispose();
+      this.workspace.replaceChildren(nextElement);
+      return;
+    }
+
+    const snapshot = cloneViewSnapshot(previousElement);
+    previousTable.dispose();
+    const generation = ++this.viewTransitionGeneration;
+    snapshot.classList.add("workspace-view-layer", "file-view-outgoing");
+    snapshot.setAttribute("aria-hidden", "true");
+    snapshot.setAttribute("inert", "");
+    nextElement.classList.add("workspace-view-layer", "file-view-incoming");
+    this.workspace.classList.add("file-transitioning");
+    this.workspace.replaceChildren(snapshot, nextElement);
+
+    const finish = (): void => {
+      if (generation !== this.viewTransitionGeneration) {
+        return;
+      }
+      if (this.viewTransitionTimer !== null) {
+        window.clearTimeout(this.viewTransitionTimer);
+        this.viewTransitionTimer = null;
+      }
+      snapshot.remove();
+      nextElement.classList.remove("workspace-view-layer", "file-view-incoming");
+      this.workspace.classList.remove("file-transitioning");
+    };
+    const onAnimationEnd = (event: AnimationEvent): void => {
+      if (event.target === nextElement) {
+        nextElement.removeEventListener("animationend", onAnimationEnd);
+        finish();
+      }
+    };
+    nextElement.addEventListener("animationend", onAnimationEnd);
+    this.viewTransitionTimer = window.setTimeout(() => {
+      nextElement.removeEventListener("animationend", onAnimationEnd);
+      finish();
+    }, 320);
+  }
+
+  private cancelFileTransition(): void {
+    this.viewTransitionGeneration += 1;
+    if (this.viewTransitionTimer !== null) {
+      window.clearTimeout(this.viewTransitionTimer);
+      this.viewTransitionTimer = null;
+    }
+    this.workspace.querySelectorAll(".file-view-outgoing").forEach((view) => view.remove());
+    this.workspace.querySelectorAll<HTMLElement>(".file-view-incoming").forEach((view) => {
+      view.classList.remove("workspace-view-layer", "file-view-incoming");
+    });
+    this.workspace.classList.remove("file-transitioning");
   }
 
   private selectFolder(path: string): void {
@@ -2172,6 +2273,9 @@ export class CommandVaultApplication {
     this.showingDashboard = false;
     this.clearActiveTable();
     const state = element("section", `empty-state${error ? " error-state" : ""}`);
+    if (!prefersReducedMotion()) {
+      addOneShotClass(state, "workspace-view-fade-in");
+    }
     const icon = element("div", "empty-state-icon", error ? "!" : ">_");
     icon.setAttribute("aria-hidden", "true");
     state.append(icon, element("h1", undefined, title), element("p", undefined, message));
@@ -2182,6 +2286,7 @@ export class CommandVaultApplication {
   }
 
   private clearActiveTable(): void {
+    this.cancelFileTransition();
     this.activeTable?.dispose();
     this.activeTable = null;
   }
@@ -2366,6 +2471,37 @@ function stressRowCountFromLocation(): number {
     return 100;
   }
   return Math.min(5_000, Math.max(1, Math.floor(parsed)));
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function cloneViewSnapshot(source: HTMLElement): HTMLElement {
+  const snapshot = source.cloneNode(true) as HTMLElement;
+  const sourceElements = [source, ...source.querySelectorAll<HTMLElement>("*")];
+  const snapshotElements = [snapshot, ...snapshot.querySelectorAll<HTMLElement>("*")];
+  sourceElements.forEach((element, index) => {
+    const copy = snapshotElements[index];
+    if (!copy) {
+      return;
+    }
+    if (element.scrollTop !== 0) copy.scrollTop = element.scrollTop;
+    if (element.scrollLeft !== 0) copy.scrollLeft = element.scrollLeft;
+  });
+  snapshot.querySelectorAll<HTMLElement>("[id]").forEach((element) => element.removeAttribute("id"));
+  snapshot.querySelectorAll<HTMLElement>("[aria-controls], [aria-labelledby]").forEach((element) => {
+    element.removeAttribute("aria-controls");
+    element.removeAttribute("aria-labelledby");
+  });
+  return snapshot;
+}
+
+function addOneShotClass(element: HTMLElement, className: string): void {
+  element.classList.add(className);
+  const remove = (): void => element.classList.remove(className);
+  element.addEventListener("animationend", remove, { once: true });
+  window.setTimeout(remove, 220);
 }
 
 function demoFilesystemEntries(): FilesystemEntry[] {
