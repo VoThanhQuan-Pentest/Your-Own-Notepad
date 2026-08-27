@@ -1,5 +1,5 @@
 import type { FilesystemEntry } from "../models/filesystem";
-import type { FavoriteItem } from "../models/settings";
+import { favoriteKey, type FavoriteItem } from "../models/settings";
 import { button, element } from "../utils/dom";
 import { openMenu } from "./menu";
 import { createIcon } from "./icons";
@@ -26,6 +26,15 @@ export interface ExplorerFavoriteItem {
   label: string;
   detail: string;
   command?: string;
+}
+
+export interface ExplorerViewportState {
+  scrollTop: number;
+  scrollLeft: number;
+  anchorKey: string | null;
+  anchorOffset: number;
+  focusAnchorKey: string | null;
+  focusControl: string | null;
 }
 
 interface ExplorerOptions {
@@ -100,10 +109,12 @@ function createEntry(entry: FilesystemEntry, depth: number, options: ExplorerOpt
     `tree-entry-row folder-row${entry.path === options.selectedFolder ? " selected" : ""}`,
   );
   row.dataset.entryPath = entry.path;
+  row.dataset.explorerAnchor = `entry:${entry.path}`;
   row.style.paddingLeft = `${4 + depth * 14}px`;
 
   const expanded = options.expandedFolders.has(entry.path);
   const folderButton = button("tree-folder", "");
+  folderButton.dataset.explorerControl = "folder";
   folderButton.setAttribute("aria-expanded", String(expanded));
   const chevron = createIcon("chevron", `tree-disclosure${expanded ? " expanded" : ""}`);
   folderButton.append(
@@ -138,10 +149,13 @@ function createFile(entry: FilesystemEntry, depth: number, options: ExplorerOpti
     "div",
     `tree-entry-row file-row${entry.path === options.activeFile ? " active" : ""}${entry.path === options.pendingFile ? " loading" : ""}`,
   );
+  row.dataset.entryPath = entry.path;
+  row.dataset.explorerAnchor = `entry:${entry.path}`;
   row.style.paddingLeft = `${22 + depth * 14}px`;
 
   const label = entry.name.replace(/\.cmdnote$/i, "");
   const fileButton = button("tree-file", "");
+  fileButton.dataset.explorerControl = "file";
   fileButton.append(createIcon("command-file", "tree-kind-icon"), element("span", "tree-label", label));
   if (entry.path === options.activeFile) {
     fileButton.setAttribute("aria-current", "page");
@@ -165,6 +179,7 @@ function createFile(entry: FilesystemEntry, depth: number, options: ExplorerOpti
 
 function entryMenuButton(entry: FilesystemEntry, options: ExplorerOptions): HTMLButtonElement {
   const menu = button("tree-entry-menu", "⋮");
+  menu.dataset.explorerControl = "menu";
   menu.title = `Actions for ${entry.name}`;
   menu.setAttribute("aria-label", `Actions for ${entry.name}`);
   menu.addEventListener("click", () => {
@@ -187,7 +202,9 @@ function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): vo
     container.append(
       quickGroup("favorites", "FAVORITES", options.favoriteItems.map((item) => {
         const row = element("div", "quick-access-row");
+        row.dataset.explorerAnchor = `favorite:${favoriteKey(item.favorite)}`;
         const open = button("quick-access-main", "");
+        open.dataset.explorerControl = "favorite-main";
         open.append(createIcon("heart", "quick-favorite-icon"), element("span", undefined, item.label));
         open.title = item.detail;
         open.addEventListener("click", () => {
@@ -202,12 +219,14 @@ function appendQuickAccess(container: HTMLElement, options: ExplorerOptions): vo
         row.append(open);
         if (item.command) {
           const copy = button("quick-access-action", "COPY");
+          copy.dataset.explorerControl = "favorite-copy";
           copy.title = `Copy ${item.label}`;
           copy.setAttribute("aria-label", `Copy favorite ${item.label}`);
           copy.addEventListener("click", () => options.callbacks.onCopyFavorite(item.command as string, copy));
           row.append(copy);
         }
         const remove = button("quick-access-remove favorite-remove", "");
+        remove.dataset.explorerControl = "favorite-remove";
         remove.append(createIcon("heart"));
         remove.title = `Remove ${item.label} from Favorites`;
         remove.setAttribute("aria-label", `Remove favorite ${item.label}`);
@@ -227,8 +246,10 @@ function quickGroup(
   options: ExplorerOptions,
 ): HTMLElement {
   const group = element("section", "quick-access-group");
+  group.dataset.explorerAnchor = `quick:${id}`;
   const expanded = !options.collapsedQuickGroups.has(id);
   const toggle = button("quick-access-heading", "");
+  toggle.dataset.explorerControl = "quick-toggle";
   toggle.setAttribute("aria-expanded", String(expanded));
   const chevron = createIcon("chevron", `tree-disclosure${expanded ? " expanded" : ""}`);
   toggle.append(
@@ -251,6 +272,7 @@ function favoriteToggle(
   onToggle: () => void,
 ): HTMLButtonElement {
   const control = button("tree-favorite-toggle", "");
+  control.dataset.explorerControl = "favorite";
   control.append(createIcon("heart"));
   control.classList.toggle("selected", selected);
   control.setAttribute("aria-pressed", String(selected));
@@ -261,4 +283,63 @@ function favoriteToggle(
   control.title = selected ? "Remove from Favorites" : "Add to Favorites";
   control.addEventListener("click", onToggle);
   return control;
+}
+
+export function captureExplorerViewport(explorer: HTMLElement): ExplorerViewportState | null {
+  const content = explorer.querySelector<HTMLElement>(".explorer-content");
+  if (!content) {
+    return null;
+  }
+  const contentRect = content.getBoundingClientRect();
+  const anchor = [...content.querySelectorAll<HTMLElement>("[data-explorer-anchor]")]
+    .find((candidate) => {
+      const rect = candidate.getBoundingClientRect();
+      return rect.bottom > contentRect.top && rect.top < contentRect.bottom;
+    }) ?? null;
+  const active = document.activeElement instanceof HTMLElement && explorer.contains(document.activeElement)
+    ? document.activeElement
+    : null;
+  const focusAnchor = active?.closest<HTMLElement>("[data-explorer-anchor]") ?? null;
+  return {
+    scrollTop: content.scrollTop,
+    scrollLeft: content.scrollLeft,
+    anchorKey: anchor?.dataset.explorerAnchor ?? null,
+    anchorOffset: anchor ? anchor.getBoundingClientRect().top - contentRect.top : 0,
+    focusAnchorKey: focusAnchor?.dataset.explorerAnchor ?? null,
+    focusControl: active?.dataset.explorerControl ?? null,
+  };
+}
+
+export function restoreExplorerViewport(
+  explorer: HTMLElement,
+  state: ExplorerViewportState | null,
+  revealPath?: string,
+): void {
+  const content = explorer.querySelector<HTMLElement>(".explorer-content");
+  if (!content) {
+    return;
+  }
+  if (state) {
+    content.scrollTop = state.scrollTop;
+    content.scrollLeft = state.scrollLeft;
+    if (state.anchorKey) {
+      const anchor = content.querySelector<HTMLElement>(
+        `[data-explorer-anchor="${CSS.escape(state.anchorKey)}"]`,
+      );
+      if (anchor) {
+        const contentTop = content.getBoundingClientRect().top;
+        content.scrollTop += anchor.getBoundingClientRect().top - contentTop - state.anchorOffset;
+      }
+    }
+    if (state.focusAnchorKey && state.focusControl) {
+      content.querySelector<HTMLElement>(
+        `[data-explorer-anchor="${CSS.escape(state.focusAnchorKey)}"] ` +
+          `[data-explorer-control="${CSS.escape(state.focusControl)}"]`,
+      )?.focus({ preventScroll: true });
+    }
+  }
+  if (revealPath) {
+    content.querySelector<HTMLElement>(`[data-entry-path="${CSS.escape(revealPath)}"]`)
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
 }

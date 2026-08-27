@@ -7,6 +7,8 @@ import {
   favoriteKey,
   isFavoriteItem,
   isHexColor,
+  isSectionHighlight,
+  sectionHighlightKey,
   isThemeMode,
   type AppSettings,
 } from "../models/settings";
@@ -34,6 +36,9 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
   const favorites = Array.isArray(value.favorites)
     ? uniqueBy(value.favorites.filter(isFavoriteItem), favoriteKey).slice(0, 50)
     : [];
+  const sectionHighlights = Array.isArray(value.sectionHighlights)
+    ? uniqueBy(value.sectionHighlights.filter(isSectionHighlight), sectionHighlightKey).slice(0, 1_000)
+    : [];
   return {
     displayName: normalizeDisplayName(value.displayName),
     lastWorkspace: typeof value.lastWorkspace === "string" ? value.lastWorkspace : null,
@@ -45,6 +50,7 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     accentTheme: isAccentTheme(value.accentTheme) ? value.accentTheme : defaultSettings.accentTheme,
     customThemes: normalizeCustomThemes(value.customThemes),
     favorites,
+    sectionHighlights,
     rememberExpandedSections:
       typeof value.rememberExpandedSections === "boolean"
         ? value.rememberExpandedSections

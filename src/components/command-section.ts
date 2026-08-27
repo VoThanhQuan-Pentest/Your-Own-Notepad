@@ -2,6 +2,8 @@ import type { CommandEntry, CommandSection } from "../models/command-file";
 import { button, element } from "../utils/dom";
 import { createCommandRow, type CommandRowCallbacks } from "./command-row";
 import { createVirtualRows, type VirtualRowsHandle } from "./virtual-rows";
+import { createIcon } from "./icons";
+import type { SectionHighlightLevel } from "../models/settings";
 
 export interface CommandSectionHandle {
   element: HTMLElement;
@@ -13,6 +15,7 @@ export interface CommandSectionHandle {
 interface CommandSectionCallbacks {
   onToggle(sectionId: string, expanded: boolean): void;
   onExampleColumnToggle(sectionId: string, visible: boolean): void;
+  onSectionHighlightToggle(sectionId: string, level: SectionHighlightLevel | null): void;
   onAddCommand(sectionId: string): void;
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
   onSelectionMode(sectionId: string, active: boolean): void;
@@ -21,6 +24,7 @@ interface CommandSectionCallbacks {
   onCommandReorder(sectionId: string, commandId: string, targetIndex: number): void;
   rowCallbacks: CommandRowCallbacks;
   showExampleColumn: boolean;
+  highlightLevel: SectionHighlightLevel | null;
   selectionActive: boolean;
   canMoveSelection: boolean;
   getScrollRoot(): HTMLElement | null;
@@ -47,6 +51,17 @@ export function createCommandSection(
   const count = element("span", "section-count", String(section.commands.length));
   count.title = `${section.commands.length} ${section.commands.length === 1 ? "command" : "commands"}`;
   header.append(toggle, count);
+
+  let highlightLevel = callbacks.highlightLevel;
+  const highlight = button("section-highlight", "");
+  highlight.append(createIcon("star"), element("span", "section-highlight-badge"));
+  updateSectionHighlight(wrapper, highlight, section.title, highlightLevel);
+  highlight.addEventListener("click", () => {
+    highlightLevel = nextHighlightLevel(highlightLevel);
+    updateSectionHighlight(wrapper, highlight, section.title, highlightLevel);
+    callbacks.onSectionHighlightToggle(section.id, highlightLevel);
+  });
+  header.append(highlight);
 
   if (section.commands.length > 0) {
     const select = button(
@@ -96,19 +111,46 @@ export function createCommandSection(
   const expandedExampleIds = new Set<string>();
   let virtualRows: VirtualRowsHandle | null = null;
   const selectedCommandIds = new Set<string>();
+  let animationGeneration = 0;
+  let animationTimer: number | null = null;
+  let animationEndHandler: ((event: AnimationEvent) => void) | null = null;
 
   function setSectionExpanded(next: boolean, notify: boolean): void {
-    if (!next && callbacks.selectionActive) {
-      callbacks.onSelectionMode(section.id, false);
-    }
+    const exitSelectionAfterClose = !next && callbacks.selectionActive;
     isExpanded = next;
     toggle.setAttribute("aria-expanded", String(next));
     chevron.textContent = next ? "▾" : "▸";
-    content.hidden = !next;
     if (notify) {
       callbacks.onToggle(section.id, next);
     }
-    renderContent();
+    if (next) {
+      cancelSectionAnimation();
+      content.hidden = false;
+      content.removeAttribute("inert");
+      renderContent();
+      if (prefersReducedMotion()) {
+        virtualRows?.reconnect();
+        return;
+      }
+      queueMicrotask(() => virtualRows?.reconnect());
+      animateSectionContent("opening", 180, () => virtualRows?.reconnect());
+      return;
+    }
+    if (prefersReducedMotion()) {
+      cancelSectionAnimation();
+      disposeContent();
+      if (exitSelectionAfterClose) {
+        callbacks.onSelectionMode(section.id, false);
+      }
+      return;
+    }
+    content.setAttribute("inert", "");
+    animateSectionContent("closing", 140, () => {
+      disposeContent();
+      if (exitSelectionAfterClose) {
+        callbacks.onSelectionMode(section.id, false);
+      }
+    });
   }
 
   function renderContent(): void {
@@ -248,6 +290,67 @@ export function createCommandSection(
     }
   }
 
+  function disposeContent(): void {
+    virtualRows?.destroy();
+    virtualRows = null;
+    content.replaceChildren();
+    content.hidden = true;
+    content.removeAttribute("inert");
+  }
+
+  function cancelSectionAnimation(): void {
+    animationGeneration += 1;
+    if (animationTimer !== null) {
+      window.clearTimeout(animationTimer);
+      animationTimer = null;
+    }
+    if (animationEndHandler) {
+      content.removeEventListener("animationend", animationEndHandler);
+      animationEndHandler = null;
+    }
+    content.classList.remove("section-content-opening", "section-content-closing");
+    content.removeAttribute("inert");
+  }
+
+  function animateSectionContent(
+    direction: "opening" | "closing",
+    duration: number,
+    onComplete: () => void,
+  ): void {
+    cancelSectionAnimation();
+    const generation = ++animationGeneration;
+    const className = direction === "opening"
+      ? "section-content-opening"
+      : "section-content-closing";
+    if (direction === "closing") {
+      content.setAttribute("inert", "");
+    }
+    content.classList.add(className);
+    const finish = (): void => {
+      if (generation !== animationGeneration) {
+        return;
+      }
+      if (animationTimer !== null) {
+        window.clearTimeout(animationTimer);
+        animationTimer = null;
+      }
+      if (animationEndHandler) {
+        content.removeEventListener("animationend", animationEndHandler);
+        animationEndHandler = null;
+      }
+      content.classList.remove(className);
+      content.removeAttribute("inert");
+      onComplete();
+    };
+    animationEndHandler = (event) => {
+      if (event.target === content) {
+        finish();
+      }
+    };
+    content.addEventListener("animationend", animationEndHandler);
+    animationTimer = window.setTimeout(finish, duration + 40);
+  }
+
   toggle.addEventListener("click", () => setSectionExpanded(!isExpanded, true));
   wrapper.append(header, content);
   renderContent();
@@ -275,6 +378,7 @@ export function createCommandSection(
       virtualRows?.reconnect();
     },
     dispose() {
+      cancelSectionAnimation();
       virtualRows?.destroy();
       virtualRows = null;
     },
@@ -297,4 +401,44 @@ function updateExampleSwitch(control: HTMLButtonElement, checked: boolean): void
   control.setAttribute("aria-checked", String(checked));
   control.title = checked ? "Hide Example column" : "Show Example column";
   control.setAttribute("aria-label", checked ? "Hide Example column" : "Show Example column");
+}
+
+function nextHighlightLevel(level: SectionHighlightLevel | null): SectionHighlightLevel | null {
+  if (level === null) return "gold";
+  if (level === "gold") return "orange";
+  if (level === "orange") return "red";
+  return null;
+}
+
+function updateSectionHighlight(
+  wrapper: HTMLElement,
+  control: HTMLButtonElement,
+  sectionTitle: string,
+  level: SectionHighlightLevel | null,
+): void {
+  wrapper.classList.toggle("section-highlighted", level !== null);
+  wrapper.dataset.highlightLevel = level ?? "none";
+  control.dataset.level = level ?? "none";
+  control.setAttribute("aria-pressed", String(level !== null));
+  const names: Record<SectionHighlightLevel, string> = {
+    gold: "Gold H1",
+    orange: "Orange H2",
+    red: "Red H3",
+  };
+  const next = nextHighlightLevel(level);
+  const currentLabel = level ? names[level] : "Off";
+  const nextLabel = next ? names[next] : "Off";
+  control.title = `Highlight: ${currentLabel}. Next: ${nextLabel}`;
+  control.setAttribute(
+    "aria-label",
+    `Highlight ${sectionTitle}: ${currentLabel}. Activate for ${nextLabel}.`,
+  );
+  const badge = control.querySelector<HTMLElement>(".section-highlight-badge");
+  if (badge) {
+    badge.textContent = level === "gold" ? "H1" : level === "orange" ? "H2" : level === "red" ? "H3" : "";
+  }
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

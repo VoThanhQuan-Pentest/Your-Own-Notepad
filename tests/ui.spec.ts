@@ -528,3 +528,181 @@ test("uses readable Welcome dashboard microcopy", async ({ page }) => {
   await expect(page.locator(".dashboard-stat span").first()).toHaveCSS("font-size", "10px");
   await expect(page.locator(".welcome-subtitle")).toHaveCSS("font-size", "15px");
 });
+
+test("preserves Explorer scroll anchors and focus across tree and file renders", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 600 });
+  await page.goto(`${FIXTURE_URL}&large-tree`);
+  const explorer = page.locator(".explorer-content");
+  const folderRow = page.locator("[data-entry-path$='/Long Folder 20']");
+  const folder = folderRow.getByRole("button", { name: "Long Folder 20", exact: true });
+  await folder.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const folderTop = await folderRow.evaluate((row) => row.getBoundingClientRect().top);
+  await folder.click();
+  await expect(folder).toHaveAttribute("aria-expanded", "false");
+  await expect(folder).toBeFocused();
+  await expect.poll(async () => Math.abs(
+    (await folderRow.evaluate((row) => row.getBoundingClientRect().top)) - folderTop,
+  )).toBeLessThan(2);
+
+  await folder.click();
+  await expect(folder).toHaveAttribute("aria-expanded", "true");
+  const fileRow = page.locator("[data-entry-path$='/Long Folder 20/Long File 20.cmdnote']");
+  const file = fileRow.getByRole("button", { name: "Long File 20", exact: true });
+  await file.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  const fileTop = await fileRow.evaluate((row) => row.getBoundingClientRect().top);
+  await file.click();
+  await expect(page.getByRole("heading", { name: "LONG FILE 20" })).toBeVisible();
+  await expect(file).toBeFocused();
+  await expect.poll(async () => Math.abs(
+    (await fileRow.evaluate((row) => row.getBoundingClientRect().top)) - fileTop,
+  )).toBeLessThan(2);
+
+  const scrollBeforeFavorite = await explorer.evaluate((element) => element.scrollTop);
+  const heart = fileRow.getByRole("button", { name: "Add Long File 20.cmdnote to Favorites" });
+  await heart.click();
+  await expect(fileRow.getByRole("button", { name: "Remove Long File 20.cmdnote from Favorites" }))
+    .toBeFocused();
+  await expect.poll(async () => Math.abs(
+    (await fileRow.evaluate((row) => row.getBoundingClientRect().top)) - fileTop,
+  )).toBeLessThan(2);
+  expect(await explorer.evaluate((element) => element.scrollTop)).toBeGreaterThan(scrollBeforeFavorite);
+
+  const search = page.getByRole("combobox", { name: "Search commands" });
+  const scrollBeforeSearch = await explorer.evaluate((element) => element.scrollTop);
+  await search.fill("Long File 21");
+  await expect(page.getByRole("option").first()).toBeVisible();
+  await search.press("Enter");
+  await expect(search).toBeFocused();
+  await expect.poll(() => explorer.evaluate((element) => element.scrollTop))
+    .toBeCloseTo(scrollBeforeSearch, 0);
+
+  await page.goto("/e2e.html?fixture=basic&skip-welcome&large-tree");
+  const restartedExplorer = page.locator(".explorer-content");
+  await expect(page.getByRole("heading", { name: /LONG FILE|NMAP/ })).toBeVisible();
+  await expect.poll(() => restartedExplorer.evaluate((element) => element.scrollTop)).toBe(0);
+});
+
+test("animates Section and Table opening and closing with bounded cleanup", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  await expect(page.locator("[data-section-id='discovery'] .section-content"))
+    .not.toHaveClass(/section-content-opening|section-content-closing/);
+  const archive = page.locator("[data-section-id='archive']");
+  const toggle = archive.getByRole("button", { name: "Archive TABLE" });
+  const content = archive.locator(".section-content");
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(content).toHaveClass(/section-content-opening/);
+  await expect(content).toHaveCSS("animation-duration", "0.18s");
+  await expect.poll(async () => content.getAttribute("class"))
+    .not.toContain("section-content-opening");
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(content).toHaveClass(/section-content-closing/);
+  await expect(content).toHaveAttribute("inert", "");
+  await expect(content).toHaveCSS("animation-duration", "0.14s");
+  await expect(content).toBeHidden();
+  await expect(content).not.toHaveAttribute("inert", "");
+
+  await toggle.evaluate((button) => {
+    for (let index = 0; index < 20; index += 1) (button as HTMLButtonElement).click();
+  });
+  await page.waitForTimeout(250);
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(content).toBeHidden();
+  await expect(content).not.toHaveClass(/section-content-opening|section-content-closing/);
+  await expect(content).not.toHaveAttribute("inert", "");
+});
+
+test("skips Section motion when Reduced Motion is enabled", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(FIXTURE_URL);
+  const archive = page.locator("[data-section-id='archive']");
+  const toggle = archive.getByRole("button", { name: "Archive TABLE" });
+  const content = archive.locator(".section-content");
+  await toggle.click();
+  await expect(content).toBeVisible();
+  await expect(content).not.toHaveClass(/section-content-opening/);
+  await toggle.click();
+  await expect(content).toBeHidden();
+  await expect(content).not.toHaveClass(/section-content-closing/);
+});
+
+test("cycles and persists three local Section Highlight levels without changing cmdnote", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  const discovery = page.locator("[data-section-id='discovery']");
+  const star = discovery.getByRole("button", { name: /Highlight Discovery/ });
+  await expect(page.locator(".section-title")).toHaveCount(3);
+  const sectionOrder = await page.locator(".section-title").allTextContents();
+
+  await star.click();
+  await expect(discovery).toHaveAttribute("data-highlight-level", "gold");
+  await expect(star).toHaveAttribute("aria-pressed", "true");
+  await expect(star.locator(".section-highlight-badge")).toHaveText("H1");
+  await star.click();
+  await expect(discovery).toHaveAttribute("data-highlight-level", "orange");
+  await expect(star.locator(".section-highlight-badge")).toHaveText("H2");
+  await star.click();
+  await expect(discovery).toHaveAttribute("data-highlight-level", "red");
+  await expect(star.locator(".section-highlight-badge")).toHaveText("H3");
+  await star.click();
+  await expect(discovery).toHaveAttribute("data-highlight-level", "none");
+  await expect(star).toHaveAttribute("aria-pressed", "false");
+  expect(await page.locator(".section-title").allTextContents()).toEqual(sectionOrder);
+
+  await star.click();
+  await star.click();
+  let state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.settings.sectionHighlights).toEqual([{
+    filePath: "/e2e/CommandVault/Nmap.cmdnote",
+    sectionId: "discovery",
+    level: "orange",
+  }]);
+  expect(state.files["/e2e/CommandVault/Nmap.cmdnote"]).not.toContain("sectionHighlights");
+  expect(state.files["/e2e/CommandVault/Nmap.cmdnote"]).not.toContain("highlightLevel");
+
+  await page.goto("/e2e.html?fixture=basic&skip-welcome");
+  await expect(page.locator("[data-section-id='discovery']"))
+    .toHaveAttribute("data-highlight-level", "orange");
+  await page.getByRole("button", { name: "Actions for Nmap.cmdnote" }).click();
+  await page.getByRole("menuitem", { name: "Rename" }).click();
+  await page.getByRole("dialog", { name: "Rename Command File" })
+    .getByRole("textbox", { name: "Name" }).fill("Recon");
+  await page.getByRole("button", { name: "RENAME" }).click();
+  state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.settings.sectionHighlights[0].filePath).toContain("Recon.cmdnote");
+
+  const archive = page.locator("[data-section-id='archive']");
+  await archive.getByRole("button", { name: /Highlight Archive/ }).click();
+  await archive.getByRole("button", { name: "Actions for Archive" }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
+  await page.getByRole("dialog", { name: "Delete Section" })
+    .getByRole("button", { name: "DELETE" }).click();
+  state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.settings.sectionHighlights.some(
+    (highlight: { sectionId: string }) => highlight.sectionId === "archive",
+  )).toBe(false);
+});
+
+test("keeps virtual Section motion stable through 100 rapid toggles", async ({ page }) => {
+  test.setTimeout(60_000);
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") runtimeErrors.push(message.text());
+  });
+  await page.goto("/?stress=5000&skip-welcome");
+  const first = page.locator(".command-section").first();
+  const toggle = first.locator(".section-toggle");
+  await toggle.evaluate((button) => {
+    for (let index = 0; index < 100; index += 1) (button as HTMLButtonElement).click();
+  });
+  await page.waitForTimeout(260);
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(first.locator(".section-content")).not
+    .toHaveClass(/section-content-opening|section-content-closing/);
+  await expect(first.locator(".section-content")).not.toHaveAttribute("inert", "");
+  expect(await page.locator(".command-row").count()).toBeLessThan(50);
+  expect(runtimeErrors).toEqual([]);
+});

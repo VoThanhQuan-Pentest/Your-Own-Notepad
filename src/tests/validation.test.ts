@@ -292,6 +292,7 @@ test("defaults profile settings and ignores removed Recent data", () => {
   const legacy = normalizeSettings({ recentFiles: ["/Nmap.cmdnote"] } as Partial<AppSettings>);
   equal(legacy.favorites.length, 0);
   equal(legacy.displayName, null);
+  equal(legacy.sectionHighlights.length, 0);
   equal(legacy.customThemes.dark.background, "#0d1117");
 
   const favorite = { kind: "command", filePath: "/Nmap.cmdnote", commandId: "ping" } as const;
@@ -301,6 +302,28 @@ test("defaults profile settings and ignores removed Recent data", () => {
   });
   equal(normalized.favorites.length, 1);
   equal(normalized.displayName, "Quan Tester");
+});
+
+test("normalizes and bounds local Section highlights", () => {
+  const valid = { filePath: "/Nmap.cmdnote", sectionId: "discovery", level: "gold" } as const;
+  const normalized = normalizeSettings({
+    sectionHighlights: [
+      valid,
+      valid,
+      { filePath: "/Nmap.cmdnote", sectionId: "invalid", level: "blue" },
+    ],
+  } as Partial<AppSettings>);
+  equal(normalized.sectionHighlights.length, 1);
+  equal(normalized.sectionHighlights[0]?.level, "gold");
+
+  const bounded = normalizeSettings({
+    sectionHighlights: Array.from({ length: 1_010 }, (_, index) => ({
+      filePath: `/file-${index}.cmdnote`,
+      sectionId: `section-${index}`,
+      level: "red" as const,
+    })),
+  });
+  equal(bounded.sectionHighlights.length, 1_000);
 });
 
 test("normalizes custom themes independently for Dark and Light", () => {

@@ -26,6 +26,15 @@ export type FavoriteItem =
   | { kind: "file"; path: string }
   | { kind: "command"; filePath: string; commandId: string };
 
+export const sectionHighlightLevels = ["gold", "orange", "red"] as const;
+export type SectionHighlightLevel = (typeof sectionHighlightLevels)[number];
+
+export interface SectionHighlight {
+  filePath: string;
+  sectionId: string;
+  level: SectionHighlightLevel;
+}
+
 export interface AppSettings {
   displayName: string | null;
   lastWorkspace: string | null;
@@ -37,6 +46,7 @@ export interface AppSettings {
   accentTheme: AccentTheme;
   customThemes: CustomThemes;
   favorites: FavoriteItem[];
+  sectionHighlights: SectionHighlight[];
   rememberExpandedSections: boolean;
   expandedSections: string[];
   sectionStateFiles: string[];
@@ -55,6 +65,7 @@ export const defaultSettings: AppSettings = {
   accentTheme: "cyan",
   customThemes: structuredClone(defaultCustomThemes),
   favorites: [],
+  sectionHighlights: [],
   rememberExpandedSections: true,
   expandedSections: [],
   sectionStateFiles: [],
@@ -92,4 +103,18 @@ export function favoriteKey(item: FavoriteItem): string {
   return item.kind !== "command"
     ? `${item.kind}:${item.path}`
     : `command:${item.filePath}:${item.commandId}`;
+}
+
+export function isSectionHighlight(value: unknown): value is SectionHighlight {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const item = value as Partial<SectionHighlight>;
+  return typeof item.filePath === "string" && item.filePath.length > 0 &&
+    typeof item.sectionId === "string" && item.sectionId.length > 0 &&
+    sectionHighlightLevels.includes(item.level as SectionHighlightLevel);
+}
+
+export function sectionHighlightKey(item: Pick<SectionHighlight, "filePath" | "sectionId">): string {
+  return `${item.filePath}::${item.sectionId}`;
 }

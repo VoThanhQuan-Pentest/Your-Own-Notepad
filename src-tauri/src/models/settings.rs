@@ -96,6 +96,22 @@ pub(crate) enum FavoriteItem {
     },
 }
 
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum SectionHighlightLevel {
+    Gold,
+    Orange,
+    Red,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SectionHighlight {
+    pub(crate) file_path: String,
+    pub(crate) section_id: String,
+    pub(crate) level: SectionHighlightLevel,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct AppSettings {
@@ -112,6 +128,7 @@ pub(crate) struct AppSettings {
     pub(crate) accent_theme: AccentTheme,
     pub(crate) custom_themes: CustomThemes,
     pub(crate) favorites: Vec<FavoriteItem>,
+    pub(crate) section_highlights: Vec<SectionHighlight>,
     #[serde(default = "default_true")]
     pub(crate) remember_expanded_sections: bool,
     pub(crate) expanded_sections: Vec<String>,
@@ -133,6 +150,7 @@ impl Default for AppSettings {
             accent_theme: AccentTheme::default(),
             custom_themes: CustomThemes::default(),
             favorites: Vec::new(),
+            section_highlights: Vec::new(),
             remember_expanded_sections: true,
             expanded_sections: Vec::new(),
             section_state_files: Vec::new(),
@@ -173,6 +191,16 @@ impl AppSettings {
         }) {
             return Err("Favorite paths and command IDs cannot be empty.");
         }
+        if self.section_highlights.len() > 1_000 {
+            return Err("Section highlights cannot contain more than 1000 items.");
+        }
+        if self
+            .section_highlights
+            .iter()
+            .any(|item| item.file_path.is_empty() || item.section_id.is_empty())
+        {
+            return Err("Section highlight paths and IDs cannot be empty.");
+        }
         if self.display_name.as_ref().is_some_and(|name| {
             let normalized = name.trim();
             normalized.is_empty()
@@ -195,7 +223,9 @@ fn is_hex_color(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{AccentTheme, AppSettings, FavoriteItem, ThemeMode};
+    use super::{
+        AccentTheme, AppSettings, FavoriteItem, SectionHighlight, SectionHighlightLevel, ThemeMode,
+    };
 
     #[test]
     fn defaults_are_valid() {
@@ -240,6 +270,7 @@ mod tests {
         assert_eq!(settings.custom_themes.light.background, "#f5f7fa");
         assert!(settings.favorites.is_empty());
         assert!(settings.display_name.is_none());
+        assert!(settings.section_highlights.is_empty());
         let serialized = serde_json::to_value(&settings).expect("settings must serialize");
         assert!(serialized.get("recentFiles").is_none());
     }
@@ -285,6 +316,30 @@ mod tests {
         settings.display_name = Some(" Quan  Tester ".to_string());
         assert!(settings.validate().is_err());
         settings.display_name = Some("x".repeat(33));
+        assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn serializes_and_bounds_section_highlights() {
+        let mut settings = AppSettings::default();
+        settings.section_highlights.push(SectionHighlight {
+            file_path: "/workspace/Nmap.cmdnote".to_string(),
+            section_id: "discovery".to_string(),
+            level: SectionHighlightLevel::Orange,
+        });
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert_eq!(
+            serialized["sectionHighlights"][0]["filePath"],
+            "/workspace/Nmap.cmdnote"
+        );
+        assert_eq!(serialized["sectionHighlights"][0]["level"], "orange");
+        settings.section_highlights = (0..1_001)
+            .map(|index| SectionHighlight {
+                file_path: format!("/workspace/{index}.cmdnote"),
+                section_id: format!("section-{index}"),
+                level: SectionHighlightLevel::Gold,
+            })
+            .collect();
         assert!(settings.validate().is_err());
     }
 }

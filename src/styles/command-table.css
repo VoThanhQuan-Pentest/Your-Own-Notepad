@@ -66,13 +66,82 @@
 
 .section-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto auto auto;
   align-items: center;
   min-width: 0;
   height: var(--section-height);
   padding-right: 9px;
   border-bottom: 1px solid transparent;
+  border-left: 3px solid transparent;
   background: var(--bg-secondary);
+}
+
+.command-section[data-highlight-level="gold"] {
+  --section-highlight-color: var(--highlight-gold);
+  --section-highlight-soft: var(--highlight-gold-soft);
+}
+
+.command-section[data-highlight-level="orange"] {
+  --section-highlight-color: var(--highlight-orange);
+  --section-highlight-soft: var(--highlight-orange-soft);
+}
+
+.command-section[data-highlight-level="red"] {
+  --section-highlight-color: var(--highlight-red);
+  --section-highlight-soft: var(--highlight-red-soft);
+}
+
+.command-section.section-highlighted .section-header {
+  border-left-color: var(--section-highlight-color);
+  background:
+    linear-gradient(90deg, var(--section-highlight-soft), transparent 58%),
+    var(--bg-secondary);
+}
+
+.section-highlight {
+  display: inline-flex;
+  min-width: 25px;
+  height: 25px;
+  margin-left: 6px;
+  padding: 0 5px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  gap: 3px;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.section-highlight .ui-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.section-highlight-badge {
+  color: inherit;
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.section-highlight:hover,
+.section-highlight:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.section-highlight[data-level]:not([data-level="none"]) {
+  border-color: color-mix(in srgb, var(--section-highlight-color) 66%, var(--border));
+  background: var(--section-highlight-soft);
+  color: var(--section-highlight-color);
+}
+
+.section-highlight[data-level]:not([data-level="none"]) .icon-star path {
+  fill: currentColor;
 }
 
 .section-select {
@@ -250,6 +319,30 @@
 .example-toggle[hidden],
 .tree-files[hidden] {
   display: none;
+}
+
+.section-content-opening,
+.section-content-closing {
+  will-change: transform, opacity;
+}
+
+.section-content-opening {
+  animation: section-content-open 180ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.section-content-closing {
+  pointer-events: none;
+  animation: section-content-close 140ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes section-content-open {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes section-content-close {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-6px); }
 }
 
 .table-heading,
@@ -499,6 +592,14 @@
   font-size: 11px;
   font-weight: 700;
   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-content-opening,
+  .section-content-closing {
+    animation: none;
+    will-change: auto;
+  }
 }
 
 .row-menu:hover {

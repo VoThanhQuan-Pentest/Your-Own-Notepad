@@ -20,6 +20,12 @@
   --favorite: #f472b6;
   --favorite-hover: #f9a8d4;
   --favorite-soft: rgb(244 114 182 / 10%);
+  --highlight-gold: #f5c451;
+  --highlight-gold-soft: rgb(245 196 81 / 16%);
+  --highlight-orange: #fb923c;
+  --highlight-orange-soft: rgb(251 146 60 / 16%);
+  --highlight-red: #f26d78;
+  --highlight-red-soft: rgb(242 109 120 / 15%);
   --code-bg: #0a0f14;
   --code-text: #a9e9f4;
   --example-text: #bdc6d1;
@@ -109,6 +115,12 @@
   --favorite: #be185d;
   --favorite-hover: #9d174d;
   --favorite-soft: rgb(190 24 93 / 9%);
+  --highlight-gold: #a16207;
+  --highlight-gold-soft: rgb(161 98 7 / 14%);
+  --highlight-orange: #c2410c;
+  --highlight-orange-soft: rgb(194 65 12 / 14%);
+  --highlight-red: #c2414b;
+  --highlight-red-soft: rgb(194 65 75 / 14%);
   --code-bg: #e8eef4;
   --code-text: #075985;
   --example-text: #334155;

@@ -5,6 +5,7 @@ import {
   type CommandSectionHandle,
 } from "./command-section";
 import type { CommandRowCallbacks } from "./command-row";
+import type { SectionHighlightLevel } from "../models/settings";
 
 export interface CommandTableCallbacks {
   onUndo(): void;
@@ -14,6 +15,7 @@ export interface CommandTableCallbacks {
   onAddCommand(sectionId: string): void;
   onSectionToggle(sectionId: string, expanded: boolean): void;
   onExampleColumnToggle(sectionId: string, visible: boolean): void;
+  onSectionHighlightToggle(sectionId: string, level: SectionHighlightLevel | null): void;
   onSectionMenu(anchor: HTMLButtonElement, section: CommandSection): void;
   onCommandMenu(anchor: HTMLButtonElement, command: CommandEntry): void;
   onCommandCopy(value: string, trigger: HTMLButtonElement): void;
@@ -31,6 +33,7 @@ interface CommandTableOptions {
   sectionStateInitialized?: boolean;
   expandAllSections?: boolean;
   isExampleColumnVisible(section: CommandSection): boolean;
+  sectionHighlightLevel(section: CommandSection): SectionHighlightLevel | null;
   callbacks: CommandTableCallbacks;
 }
 
@@ -93,6 +96,7 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
       const handle = createCommandSection(section, expanded, {
         onToggle: options.callbacks.onSectionToggle,
         onExampleColumnToggle: options.callbacks.onExampleColumnToggle,
+        onSectionHighlightToggle: options.callbacks.onSectionHighlightToggle,
         onAddCommand: options.callbacks.onAddCommand,
         onSectionMenu: options.callbacks.onSectionMenu,
         onSelectionMode: options.callbacks.onSelectionMode,
@@ -100,6 +104,7 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
         onBulkDelete: options.callbacks.onBulkDelete,
         onCommandReorder: options.callbacks.onCommandReorder,
         showExampleColumn: options.isExampleColumnVisible(section),
+        highlightLevel: options.sectionHighlightLevel(section),
         selectionActive: options.selectionSectionId === section.id,
         canMoveSelection: file.sections.length > 1,
         rowCallbacks,

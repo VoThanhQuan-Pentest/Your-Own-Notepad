@@ -3,8 +3,11 @@ import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openCommandForm } from "./components/command-form";
 import {
+  captureExplorerViewport,
   createExplorer,
+  restoreExplorerViewport,
   type ExplorerFavoriteItem,
+  type ExplorerViewportState,
 } from "./components/explorer";
 import { openMenu } from "./components/menu";
 import { openConfirm, openModal, openPrompt, showMessage } from "./components/modal";
@@ -25,11 +28,13 @@ import {
   defaultSettings,
   favoriteKey,
   isHexColor,
+  sectionHighlightKey,
   themeModes,
   type AccentTheme,
   type AppSettings,
   type CustomThemes,
   type FavoriteItem,
+  type SectionHighlightLevel,
   type ThemeMode,
 } from "./models/settings";
 import { copyText } from "./services/clipboard";
@@ -74,6 +79,12 @@ interface FocusTarget {
   commandId?: string;
 }
 
+interface RenderExplorerOptions {
+  resetViewport?: boolean;
+  revealPath?: string;
+  viewportState?: ExplorerViewportState | null;
+}
+
 interface LoadedCommandFile {
   path: string;
   file?: CommandFile;
@@ -98,6 +109,7 @@ interface WorkspaceSnapshot {
   exampleColumnOverrides: Map<string, boolean>;
   collapsedQuickGroups: Set<string>;
   selectionSectionId: string | null;
+  explorerViewport: ExplorerViewportState | null;
 }
 
 export class CommandVaultApplication {
@@ -110,8 +122,9 @@ export class CommandVaultApplication {
   private readonly body = element("div", "app-body");
   private readonly toolbar: ToolbarHandle;
   private explorer: HTMLElement | null = null;
+  private explorerRenderGeneration = 0;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.10.0";
+  private appVersion = "0.10.1";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -181,7 +194,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.10.0 (development)";
+      this.appVersion = "0.10.1 (development)";
     }
 
     if (!this.settings.displayName && this.skipWelcome) {
@@ -220,7 +233,11 @@ export class CommandVaultApplication {
     this.root.replaceChildren(shell);
   }
 
-  private renderExplorer(): void {
+  private renderExplorer(options: RenderExplorerOptions = {}): void {
+    const viewportState = options.resetViewport
+      ? null
+      : options.viewportState ?? (this.explorer ? captureExplorerViewport(this.explorer) : null);
+    const generation = ++this.explorerRenderGeneration;
     const next = createExplorer({
       workspaceRoot: this.workspaceRoot,
       entries: this.entries,
@@ -264,6 +281,14 @@ export class CommandVaultApplication {
       this.body.prepend(next);
     }
     this.explorer = next;
+    const restore = (): void => {
+      if (generation !== this.explorerRenderGeneration || this.explorer !== next) {
+        return;
+      }
+      restoreExplorerViewport(next, viewportState, options.revealPath);
+    };
+    restore();
+    window.requestAnimationFrame(restore);
   }
 
   private explorerFavoriteItems(): ExplorerFavoriteItem[] {
@@ -354,13 +379,12 @@ export class CommandVaultApplication {
       current = parentDirectory(current);
     }
     this.selectedFolder = path;
-    this.renderExplorer();
+    this.renderExplorer({ revealPath: path });
     queueMicrotask(() => {
       const row = this.explorer?.querySelector<HTMLElement>(
         `[data-entry-path="${CSS.escape(path)}"]`,
       );
-      row?.scrollIntoView({ block: "center" });
-      row?.querySelector<HTMLButtonElement>(".tree-folder")?.focus();
+      row?.querySelector<HTMLButtonElement>(".tree-folder")?.focus({ preventScroll: true });
     });
   }
 
@@ -380,6 +404,13 @@ export class CommandVaultApplication {
     this.settings.favorites = [...new Map(
       remappedFavorites.map((favorite) => [favoriteKey(favorite), favorite]),
     ).values()].slice(0, 50);
+    const remappedHighlights = this.settings.sectionHighlights.map((highlight) => ({
+      ...highlight,
+      filePath: remapDescendantPath(oldPath, newPath, highlight.filePath) ?? highlight.filePath,
+    }));
+    this.settings.sectionHighlights = [...new Map(
+      remappedHighlights.map((highlight) => [sectionHighlightKey(highlight), highlight]),
+    ).values()].slice(0, 1_000);
     void this.persistSettings(false);
   }
 
@@ -388,6 +419,9 @@ export class CommandVaultApplication {
       const filePath = favorite.kind === "command" ? favorite.filePath : favorite.path;
       return !isSameOrDescendant(path, filePath);
     });
+    this.settings.sectionHighlights = this.settings.sectionHighlights.filter(
+      (highlight) => !isSameOrDescendant(path, highlight.filePath),
+    );
     void this.persistSettings(false);
   }
 
@@ -402,6 +436,15 @@ export class CommandVaultApplication {
     return this.settings.favorites.length !== previousLength;
   }
 
+  private pruneSectionHighlights(filePath: string, file: CommandFile): boolean {
+    const previousLength = this.settings.sectionHighlights.length;
+    const sectionIds = new Set(file.sections.map((section) => section.id));
+    this.settings.sectionHighlights = this.settings.sectionHighlights.filter(
+      (highlight) => highlight.filePath !== filePath || sectionIds.has(highlight.sectionId),
+    );
+    return this.settings.sectionHighlights.length !== previousLength;
+  }
+
   private pruneUnavailableFavorites(): boolean {
     if (!this.workspaceRoot) {
       return false;
@@ -409,6 +452,7 @@ export class CommandVaultApplication {
     const workspaceRoot = this.workspaceRoot;
     const folderPaths = new Set(flattenFolders(this.entries).map((folder) => folder.path));
     const previousFavorites = this.settings.favorites.length;
+    const previousHighlights = this.settings.sectionHighlights.length;
     this.settings.favorites = this.settings.favorites.filter((favorite) => {
       const filePath = favorite.kind === "command" ? favorite.filePath : favorite.path;
       if (!isSameOrDescendant(workspaceRoot, filePath) || this.fileErrors.has(filePath)) {
@@ -423,7 +467,16 @@ export class CommandVaultApplication {
       }
       return favorite.kind === "file" || findCommandInFile(file, favorite.commandId) !== null;
     });
-    return previousFavorites !== this.settings.favorites.length;
+    this.settings.sectionHighlights = this.settings.sectionHighlights.filter((highlight) => {
+      if (!isSameOrDescendant(workspaceRoot, highlight.filePath) ||
+        this.fileErrors.has(highlight.filePath)) {
+        return true;
+      }
+      const file = this.files.get(highlight.filePath);
+      return file?.sections.some((section) => section.id === highlight.sectionId) ?? false;
+    });
+    return previousFavorites !== this.settings.favorites.length ||
+      previousHighlights !== this.settings.sectionHighlights.length;
   }
 
   private async chooseAndOpenWorkspace(): Promise<void> {
@@ -443,7 +496,7 @@ export class CommandVaultApplication {
       }
     } catch (error) {
       this.restoreWorkspaceSnapshot(previous);
-      this.renderExplorer();
+      this.renderExplorer({ viewportState: previous.explorerViewport });
       if (this.activeFile) {
         this.renderActiveFile();
       } else if (this.workspaceRoot) {
@@ -472,6 +525,7 @@ export class CommandVaultApplication {
       exampleColumnOverrides: new Map(this.exampleColumnOverrides),
       collapsedQuickGroups: new Set(this.collapsedQuickGroups),
       selectionSectionId: this.selectionSectionId,
+      explorerViewport: this.explorer ? captureExplorerViewport(this.explorer) : null,
     };
   }
 
@@ -513,7 +567,7 @@ export class CommandVaultApplication {
     this.fileHistory.clear();
     this.collapsedQuickGroups.clear();
     this.selectionSectionId = null;
-    this.renderExplorer();
+    this.renderExplorer({ resetViewport: true });
     this.workspaceLoading = true;
     if (this.skipWelcome || !this.settings.displayName) {
       this.renderLoading("Reading workspace…");
@@ -814,6 +868,7 @@ export class CommandVaultApplication {
       sectionStateInitialized,
       expandAllSections: this.stressMode,
       isExampleColumnVisible: (section) => this.isExampleColumnVisible(section),
+      sectionHighlightLevel: (section) => this.sectionHighlightLevel(section.id),
       callbacks: {
         onUndo: () => void this.undoCurrentFile(),
         onRedo: () => void this.redoCurrentFile(),
@@ -823,6 +878,8 @@ export class CommandVaultApplication {
         onSectionToggle: (sectionId, isExpanded) => this.rememberSection(sectionId, isExpanded),
         onExampleColumnToggle: (sectionId, visible) =>
           this.setExampleColumnVisible(sectionId, visible),
+        onSectionHighlightToggle: (sectionId, level) =>
+          this.setSectionHighlight(sectionId, level),
         onSectionMenu: (anchor, section) => this.openSectionMenu(anchor, section),
         onCommandMenu: (anchor, command) => this.openCommandMenu(anchor, command),
         onCommandCopy: (value, trigger) => void this.copyCommand(value, trigger),
@@ -1489,10 +1546,11 @@ export class CommandVaultApplication {
         (favorite) => favorite.kind === "command" && favorite.filePath === path,
       );
       const prunedFavorites = this.pruneCommandFavorites(path, next);
+      const prunedHighlights = this.pruneSectionHighlights(path, next);
       if (hasFavoriteCommands || prunedFavorites) {
         this.renderExplorer();
       }
-      if (prunedFavorites) {
+      if (prunedFavorites || prunedHighlights) {
         void this.persistSettings(false);
       }
       this.rebuildSearchIndex();
@@ -1542,6 +1600,34 @@ export class CommandVaultApplication {
       return;
     }
     this.exampleColumnOverrides.set(sectionStateKey(this.activeFilePath, sectionId), visible);
+  }
+
+  private sectionHighlightLevel(sectionId: string): SectionHighlightLevel | null {
+    if (!this.activeFilePath) {
+      return null;
+    }
+    return this.settings.sectionHighlights.find(
+      (highlight) => highlight.filePath === this.activeFilePath && highlight.sectionId === sectionId,
+    )?.level ?? null;
+  }
+
+  private setSectionHighlight(sectionId: string, level: SectionHighlightLevel | null): void {
+    if (!this.activeFilePath) {
+      return;
+    }
+    const key = sectionHighlightKey({ filePath: this.activeFilePath, sectionId });
+    this.settings.sectionHighlights = this.settings.sectionHighlights.filter(
+      (highlight) => sectionHighlightKey(highlight) !== key,
+    );
+    if (level) {
+      this.settings.sectionHighlights.unshift({
+        filePath: this.activeFilePath,
+        sectionId,
+        level,
+      });
+      this.settings.sectionHighlights = this.settings.sectionHighlights.slice(0, 1_000);
+    }
+    void this.persistSettings(false);
   }
 
   private setSelectionMode(sectionId: string, active: boolean): void {

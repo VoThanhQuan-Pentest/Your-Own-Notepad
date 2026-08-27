@@ -31,7 +31,7 @@ mockIPC((command, rawPayload) => {
       persist();
       return null;
     case "plugin:app|version":
-      return "0.10.0-test";
+      return "0.10.1-test";
     case "list_directory":
       return buildTree(String(payload.workspaceRoot));
     case "read_command_file":
@@ -198,6 +198,29 @@ function loadState(): MockState {
         },
       ],
     }, null, 2)}\n`;
+  }
+  if (parameters.has("large-tree")) {
+    Array.from({ length: 30 }, (_, index) => index + 1).forEach((number) => {
+      const suffix = String(number).padStart(2, "0");
+      const folder = `${WORKSPACE}/Long Folder ${suffix}`;
+      const file = `${folder}/Long File ${suffix}.cmdnote`;
+      initial.folders.push(folder);
+      initial.files[file] = `${JSON.stringify({
+        version: 2,
+        title: `Long File ${suffix}`,
+        description: "Explorer viewport fixture",
+        sections: [{
+          id: `long-section-${suffix}`,
+          title: `Long Section ${suffix}`,
+          commands: [{
+            id: `long-command-${suffix}`,
+            name: `Long Command ${suffix}`,
+            command: `echo ${suffix}`,
+            description: "Viewport test command.",
+          }],
+        }],
+      }, null, 2)}\n`;
+    });
   }
   return initial;
 }

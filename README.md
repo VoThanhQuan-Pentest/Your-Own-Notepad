@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.10.0</strong>
+  <strong>Current version: 0.10.1</strong>
 </p>
 
 <p align="center">
@@ -47,6 +47,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Automatic layout and virtual-row recovery after suspend or power-saving throttling.
 - Lightweight horizontal file transitions with rapid-click race protection and Reduced Motion support.
 - Always-visible Heart Favorites plus polished SVG folder, file, and disclosure icons.
+- Explorer viewport anchoring, animated Section/Table expansion, and three local Highlight levels.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
@@ -55,7 +56,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.10.0 adds animated file navigation, direct Heart Favorites, polished Explorer icons, and more readable Welcome Dashboard labels.
+Version 0.10.1 keeps Explorer in place while you work, adds lightweight Section/Table motion, and supports local Gold/Orange/Red Section Highlights.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
@@ -80,6 +81,9 @@ Version 0.10.0 adds animated file navigation, direct Heart Favorites, polished E
 - Opening a folder Favorite expands its ancestors, selects it, and scrolls it into view.
 - **FAVORITES** has its own rose styling and heart indicators above the filesystem tree.
 - Switching files slides the previous view left and the next view in from the right; Reduced Motion replaces it instantly.
+- Explorer preserves its current scroll position and focused tree control while files, folders, and Favorites update during a session.
+- Opened Sections and Compact Tables slide in and fade smoothly; closing uses the reverse motion without animating row height.
+- Use the Section star to cycle local **Gold / Orange / Red** Highlights. Highlights do not change file order or `.cmdnote` data.
 
 ### Compact tables
 
@@ -176,7 +180,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.10.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.10.1_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -257,6 +261,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Tự phục hồi layout và virtual rows sau khi máy sleep hoặc chuyển sang tiết kiệm điện.
 - Chuyển file bằng hiệu ứng trượt ngang nhẹ, chống click nhanh trả kết quả sai và hỗ trợ Reduced Motion.
 - Heart Favorite luôn hiển thị cùng icon SVG folder, file và mũi tên cây thư mục mới.
+- Explorer giữ vị trí cuộn, animation mở/đóng Section/Table nhẹ và Highlight local ba mức.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
@@ -265,7 +270,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.10.0 bổ sung chuyển file động, Heart Favorite trực tiếp, icon Explorer mới và chữ trong Welcome Dashboard dễ đọc hơn.
+Phiên bản 0.10.1 giữ nguyên vị trí Explorer khi thao tác, thêm animation Section/Table nhẹ và Highlight local Gold/Orange/Red.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
@@ -290,6 +295,9 @@ Phiên bản 0.10.0 bổ sung chuyển file động, Heart Favorite trực tiế
 - Mở folder Favorite sẽ expand các folder cha, chọn và cuộn tới folder đó.
 - **FAVORITES** có màu rose và icon trái tim riêng phía trên cây filesystem.
 - Khi đổi file, file cũ trượt sang trái và file mới đi từ phải vào; Reduced Motion sẽ thay view tức thời.
+- Explorer giữ vị trí cuộn và control đang focus khi mở file/folder hoặc cập nhật Favorite trong cùng phiên.
+- Section/Table khi mở sẽ trượt nhẹ và hiện dần; khi đóng dùng hiệu ứng ngược mà không animate chiều cao hàng.
+- Dùng nút sao trên Section để luân phiên Highlight local **Gold / Orange / Red**; Highlight không đổi thứ tự và không ghi vào `.cmdnote`.
 
 ### Bảng compact
 
@@ -385,7 +393,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.10.0_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.10.1_amd64.AppImage
 ```
 
 Output Linux:
