@@ -1,14 +1,16 @@
 import type { CommandEntry, CommandSection } from "../models/command-file";
 import { button, element } from "../utils/dom";
-import { createCommandRow, type CommandRowCallbacks } from "./command-row";
+import { createCommandRow, type CommandRowCallbacks, type CommandRowHandle } from "./command-row";
 import { createVirtualRows, type VirtualRowsHandle } from "./virtual-rows";
 import { createIcon } from "./icons";
 import type { SectionHighlightLevel } from "../models/settings";
+import type { EffectivePerformanceProfile } from "../services/performance";
 
 export interface CommandSectionHandle {
   element: HTMLElement;
   ensureCommandVisible(commandId?: string): void;
   refreshLayout(): void;
+  setPerformanceProfile(profile: EffectivePerformanceProfile): void;
   dispose(): void;
 }
 
@@ -28,9 +30,9 @@ interface CommandSectionCallbacks {
   selectionActive: boolean;
   canMoveSelection: boolean;
   getScrollRoot(): HTMLElement | null;
+  performanceProfile: EffectivePerformanceProfile;
+  deferInitialContent: boolean;
 }
-
-const VIRTUAL_ROW_THRESHOLD = 40;
 
 export function createCommandSection(
   section: CommandSection,
@@ -111,9 +113,14 @@ export function createCommandSection(
   const expandedExampleIds = new Set<string>();
   let virtualRows: VirtualRowsHandle | null = null;
   const selectedCommandIds = new Set<string>();
+  let expandedRowHandle: CommandRowHandle | null = null;
   let animationGeneration = 0;
   let animationTimer: number | null = null;
   let animationEndHandler: ((event: AnimationEvent) => void) | null = null;
+  let performanceProfile = callbacks.performanceProfile;
+  let contentMaterialized = false;
+  let sectionVisibilityObserver: IntersectionObserver | null = null;
+  let lastMaterializedHeight = 0;
 
   function setSectionExpanded(next: boolean, notify: boolean): void {
     const exitSelectionAfterClose = !next && callbacks.selectionActive;
@@ -133,7 +140,11 @@ export function createCommandSection(
         return;
       }
       queueMicrotask(() => virtualRows?.reconnect());
-      animateSectionContent("opening", 180, () => virtualRows?.reconnect());
+      animateSectionContent(
+        "opening",
+        Math.max(1, Math.round(180 * performanceProfile.sectionMotionScale)),
+        () => virtualRows?.reconnect(),
+      );
       return;
     }
     if (prefersReducedMotion()) {
@@ -145,18 +156,25 @@ export function createCommandSection(
       return;
     }
     content.setAttribute("inert", "");
-    animateSectionContent("closing", 140, () => {
+    animateSectionContent(
+      "closing",
+      Math.max(1, Math.round(140 * performanceProfile.sectionMotionScale)),
+      () => {
       disposeContent();
       if (exitSelectionAfterClose) {
         callbacks.onSelectionMode(section.id, false);
       }
-    });
+      },
+    );
   }
 
   function renderContent(): void {
     virtualRows?.destroy();
     virtualRows = null;
+    expandedRowHandle = null;
     content.replaceChildren();
+    contentMaterialized = true;
+    delete content.dataset.deferred;
     content.hidden = !isExpanded;
     if (!isExpanded) {
       return;
@@ -231,11 +249,15 @@ export function createCommandSection(
 
     const renderRow = (index: number): HTMLElement => {
       const command = section.commands[index] as CommandEntry;
-      return createCommandRow(
+      let handle: CommandRowHandle;
+      handle = createCommandRow(
         command,
-        () => {
-          expandedCommandId = expandedCommandId === command.id ? null : command.id;
-          renderContent();
+        (rowHandle) => {
+          const previousId = expandedCommandId;
+          expandedCommandId = previousId === command.id ? null : command.id;
+          if (previousId && previousId !== command.id) expandedRowHandle?.setExpanded(false);
+          rowHandle.setExpanded(expandedCommandId === command.id);
+          expandedRowHandle = expandedCommandId ? rowHandle : null;
           if (expandedCommandId) {
             queueMicrotask(() => virtualRows?.ensureVisible(index));
           }
@@ -259,7 +281,7 @@ export function createCommandSection(
         showExampleColumn
           ? (expanded) => {
               expandedExampleIds[expanded ? "add" : "delete"](command.id);
-              renderContent();
+              handle.setExampleExpanded(expanded);
             }
           : undefined,
         section.layout === "table" && !callbacks.selectionActive
@@ -272,15 +294,18 @@ export function createCommandSection(
                 callbacks.onCommandReorder(section.id, command.id, targetIndex),
             }
           : undefined,
-      ).element;
+      );
+      if (expandedCommandId === command.id) expandedRowHandle = handle;
+      return handle.element;
     };
 
-    if (section.commands.length > VIRTUAL_ROW_THRESHOLD) {
+    if (section.commands.length > performanceProfile.virtualThreshold) {
       virtualRows = createVirtualRows({
         count: section.commands.length,
         defaultRowHeight: section.layout === "table" ? 82 : 160,
         renderRow,
         getScrollRoot: callbacks.getScrollRoot,
+        overscan: performanceProfile.overscan,
       });
       content.append(virtualRows.element);
     } else {
@@ -294,8 +319,46 @@ export function createCommandSection(
     virtualRows?.destroy();
     virtualRows = null;
     content.replaceChildren();
+    contentMaterialized = false;
     content.hidden = true;
     content.removeAttribute("inert");
+  }
+
+  function deferContent(): void {
+    if (contentMaterialized && content.offsetHeight > 0) {
+      lastMaterializedHeight = content.offsetHeight;
+    }
+    virtualRows?.destroy();
+    virtualRows = null;
+    expandedRowHandle = null;
+    contentMaterialized = false;
+    content.hidden = !isExpanded;
+    content.dataset.deferred = "true";
+    if (!isExpanded) {
+      content.replaceChildren();
+      return;
+    }
+    const placeholder = element("div", "section-deferred-placeholder");
+    const rowHeight = section.layout === "table" ? 82 : 160;
+    placeholder.style.height = `${lastMaterializedHeight || 35 + section.commands.length * rowHeight}px`;
+    content.replaceChildren(placeholder);
+  }
+
+  function installSectionVisibility(): void {
+    const root = callbacks.getScrollRoot();
+    if (!root) return;
+    sectionVisibilityObserver = new IntersectionObserver((entries) => {
+      const visible = entries.some((entry) => entry.isIntersecting);
+      if (visible && isExpanded && !contentMaterialized) {
+        renderContent();
+        virtualRows?.reconnect();
+      } else if (!visible && isExpanded && contentMaterialized &&
+        performanceProfile.mode === "low-power" && !callbacks.selectionActive &&
+        expandedCommandId === null && expandedExampleIds.size === 0) {
+        deferContent();
+      }
+    }, { root, rootMargin: "800px 0px" });
+    sectionVisibilityObserver.observe(wrapper);
   }
 
   function cancelSectionAnimation(): void {
@@ -309,6 +372,7 @@ export function createCommandSection(
       animationEndHandler = null;
     }
     content.classList.remove("section-content-opening", "section-content-closing");
+    content.style.removeProperty("--section-motion-duration");
     content.removeAttribute("inert");
   }
 
@@ -325,6 +389,7 @@ export function createCommandSection(
     if (direction === "closing") {
       content.setAttribute("inert", "");
     }
+    content.style.setProperty("--section-motion-duration", `${duration}ms`);
     content.classList.add(className);
     const finish = (): void => {
       if (generation !== animationGeneration) {
@@ -339,6 +404,7 @@ export function createCommandSection(
         animationEndHandler = null;
       }
       content.classList.remove(className);
+      content.style.removeProperty("--section-motion-duration");
       content.removeAttribute("inert");
       onComplete();
     };
@@ -353,7 +419,9 @@ export function createCommandSection(
 
   toggle.addEventListener("click", () => setSectionExpanded(!isExpanded, true));
   wrapper.append(header, content);
-  renderContent();
+  if (initiallyExpanded && callbacks.deferInitialContent) deferContent();
+  else renderContent();
+  queueMicrotask(installSectionVisibility);
 
   return {
     element: wrapper,
@@ -361,6 +429,7 @@ export function createCommandSection(
       if (!isExpanded) {
         setSectionExpanded(true, true);
       }
+      if (!contentMaterialized) renderContent();
       const index = commandId ? section.commands.findIndex((command) => command.id === commandId) : 0;
       if (index < 0) {
         wrapper.scrollIntoView({ block: "center" });
@@ -377,8 +446,32 @@ export function createCommandSection(
     refreshLayout() {
       virtualRows?.reconnect();
     },
+    setPerformanceProfile(profile) {
+      const virtualizationChanged = profile.virtualThreshold !== performanceProfile.virtualThreshold ||
+        profile.overscan !== performanceProfile.overscan;
+      performanceProfile = profile;
+      let deferred = false;
+      if (profile.mode === "low-power") {
+        cancelSectionAnimation();
+        if (!isExpanded) disposeContent();
+        else if (!contentMaterialized) deferred = true;
+        else if (contentMaterialized && !callbacks.selectionActive && expandedCommandId === null &&
+          expandedExampleIds.size === 0) {
+          const root = callbacks.getScrollRoot();
+          const rootRect = root?.getBoundingClientRect();
+          const sectionRect = wrapper.getBoundingClientRect();
+          if (rootRect && (sectionRect.bottom < rootRect.top - 800 || sectionRect.top > rootRect.bottom + 800)) {
+            deferContent();
+            deferred = true;
+          }
+        }
+      }
+      if (virtualizationChanged && isExpanded && !deferred) renderContent();
+    },
     dispose() {
       cancelSectionAnimation();
+      sectionVisibilityObserver?.disconnect();
+      sectionVisibilityObserver = null;
       virtualRows?.destroy();
       virtualRows = null;
     },
@@ -440,5 +533,6 @@ function updateSectionHighlight(
 }
 
 function prefersReducedMotion(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return document.documentElement.dataset.performance === "low-power" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Current version: 0.10.1</strong>
+  <strong>Current version: 0.11.0</strong>
 </p>
 
 <p align="center">
@@ -48,6 +48,7 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 - Lightweight horizontal file transitions with rapid-click race protection and Reduced Motion support.
 - Always-visible Heart Favorites plus polished SVG folder, file, and disclosure icons.
 - Explorer viewport anchoring, animated Section/Table expansion, and three local Highlight levels.
+- Auto/Full/Balanced/Low Power profiles, Worker-based search/parse, and semantic UI scaling.
 - Persisted whole-interface scaling from 75% to 200%, with `Ctrl++`, `Ctrl+-`, and `Ctrl+0` shortcuts.
 - Atomic file writes and external-edit conflict detection.
 - Resilient handling for malformed JSON, invalid schemas, missing files, and permissions.
@@ -56,13 +57,25 @@ The filesystem is the source of truth: folders in the Explorer are real folders,
 
 ### Interface size and accessibility
 
-Version 0.10.1 keeps Explorer in place while you work, adds lightweight Section/Table motion, and supports local Gold/Orange/Red Section Highlights.
+Version 0.11.0 focuses on weak machines, power-saving operation, and smooth UI scaling without root zoom.
 
 - Open **Settings → UI scale** and choose any value from 75% to 200%.
 - Press `Ctrl++` to increase scale by 10%.
 - Press `Ctrl+-` to decrease scale by 10%.
 - Press `Ctrl+0` to return to 100%.
 - Scale, UI font size, and code font size are persisted between launches.
+- Semantic scaling grows fonts, controls, spacing, and layout tokens without turning the whole app into one oversized WebView layer.
+
+### Performance and low power
+
+- **Auto** selects Full, Balanced, or Low Power from UI scale, CPU capacity, frame timing, and recent input latency.
+- On Linux, Auto also reads `powerprofilesctl get` at startup/resume when available; it never polls that command.
+- Settings can explicitly select **Full**, **Balanced**, or **Low Power** and copy local timing diagnostics.
+- Low Power removes animation, large shadows, workspace grid painting, file snapshots, and excess virtual-row overscan.
+- Workspace JSON parsing and fuzzy search run in a dedicated Worker with a chunked fallback.
+- Unchanged resume/refresh checks do not rebuild Search, Explorer, or the active file.
+- A shared virtual-scroll coordinator uses one scroll listener and one animation frame for the command view.
+- MORE/LESS and multiline Example expansion update one row rather than rebuilding its Section.
 
 ### Search and appearance
 
@@ -180,7 +193,7 @@ npm run tauri build
 Smoke-test an AppImage without reading or writing your real workspace settings:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.10.1_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.11.0_amd64.AppImage
 ```
 
 Configured Linux outputs:
@@ -262,6 +275,7 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 - Chuyển file bằng hiệu ứng trượt ngang nhẹ, chống click nhanh trả kết quả sai và hỗ trợ Reduced Motion.
 - Heart Favorite luôn hiển thị cùng icon SVG folder, file và mũi tên cây thư mục mới.
 - Explorer giữ vị trí cuộn, animation mở/đóng Section/Table nhẹ và Highlight local ba mức.
+- Profile Auto/Full/Balanced/Low Power, Worker cho parse/search và semantic UI scale.
 - Scale toàn giao diện từ 75% đến 200%, được lưu tự động; hỗ trợ `Ctrl++`, `Ctrl+-` và `Ctrl+0`.
 - Ghi file atomic và phát hiện xung đột khi file bị sửa bên ngoài.
 - Không crash khi JSON lỗi, schema sai, file bị xóa hoặc thiếu quyền.
@@ -270,13 +284,25 @@ Filesystem là nguồn dữ liệu duy nhất: folder trong Explorer là folder 
 
 ### Kích thước giao diện và khả năng đọc
 
-Phiên bản 0.10.1 giữ nguyên vị trí Explorer khi thao tác, thêm animation Section/Table nhẹ và Highlight local Gold/Orange/Red.
+Phiên bản 0.11.0 tập trung vào máy yếu, chế độ tiết kiệm điện và UI scale lớn không dùng root zoom.
 
 - Mở **Settings → UI scale** và chọn giá trị từ 75% đến 200%.
 - Nhấn `Ctrl++` để tăng scale 10%.
 - Nhấn `Ctrl+-` để giảm scale 10%.
 - Nhấn `Ctrl+0` để trở về 100%.
 - UI scale, UI font size và code font size được lưu giữa các lần mở ứng dụng.
+- Semantic scaling phóng font, control, spacing và layout token mà không biến toàn bộ app thành một WebView layer khổng lồ.
+
+### Hiệu năng và tiết kiệm điện
+
+- **Auto** chọn Full, Balanced hoặc Low Power dựa trên UI scale, số CPU, frame timing và input latency gần đây.
+- Trên Linux, Auto cũng đọc `powerprofilesctl get` một lần khi khởi động/resume nếu có; không poll lệnh này theo chu kỳ.
+- Settings cho phép chọn thủ công mode và copy diagnostics timing chỉ lưu local.
+- Low Power tắt animation, shadow lớn, grid background, file snapshot và giảm virtual overscan.
+- Parse JSON workspace và fuzzy Search chạy trong Worker riêng, có fallback chia batch.
+- Resume/Refresh không có thay đổi sẽ không rebuild Search, Explorer hoặc file đang mở.
+- Shared virtual-scroll coordinator chỉ dùng một scroll listener và một animation frame cho command view.
+- MORE/LESS và Example nhiều dòng chỉ cập nhật hàng được bấm thay vì dựng lại cả Section.
 
 ### Tìm kiếm và giao diện
 
@@ -393,7 +419,7 @@ npm run tauri build
 Smoke-test AppImage mà không đọc hoặc ghi settings/workspace thật:
 
 ```bash
-npm run smoke:appimage -- artifacts/CommandVault_0.10.1_amd64.AppImage
+npm run smoke:appimage -- artifacts/CommandVault_0.11.0_amd64.AppImage
 ```
 
 Output Linux:

@@ -31,6 +31,27 @@
   gap: var(--button-gap);
 }
 
+.file-overflow-menu {
+  display: none;
+}
+
+:root[data-ui-scale="large"] .file-header {
+  flex-wrap: wrap;
+}
+
+:root[data-ui-scale="large"] .file-header-actions {
+  margin-left: auto;
+}
+
+:root[data-ui-scale="large"] .file-header-actions .history-button,
+:root[data-ui-scale="large"] .file-header-actions .file-add-section {
+  display: none;
+}
+
+:root[data-ui-scale="large"] .file-overflow-menu {
+  display: inline-flex;
+}
+
 .file-title-group h1 {
   overflow: hidden;
   font-size: var(--font-file-title);
@@ -62,6 +83,7 @@
 .command-section {
   min-width: 0;
   border-bottom: 1px solid var(--border);
+  contain: layout paint;
 }
 
 .section-header {
@@ -321,18 +343,25 @@
   display: none;
 }
 
+.section-deferred-placeholder {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
 .section-content-opening,
 .section-content-closing {
   will-change: transform, opacity;
 }
 
 .section-content-opening {
-  animation: section-content-open 180ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  animation: section-content-open var(--section-motion-duration, 180ms) cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
 .section-content-closing {
   pointer-events: none;
-  animation: section-content-close 140ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: section-content-close var(--section-motion-duration, 140ms) cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 @keyframes section-content-open {
@@ -421,6 +450,7 @@
   position: relative;
   align-items: stretch;
   background: var(--bg-main);
+  contain: layout paint;
 }
 
 .command-row:not(.expanded):not(.compact-table-row) {

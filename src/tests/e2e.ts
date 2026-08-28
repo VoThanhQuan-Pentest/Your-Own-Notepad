@@ -31,7 +31,9 @@ mockIPC((command, rawPayload) => {
       persist();
       return null;
     case "plugin:app|version":
-      return "0.10.1-test";
+      return "0.11.0-test";
+    case "get_power_profile":
+      return parameters.has("system-power-saver") ? "power-saver" : "performance";
     case "list_directory":
       return buildTree(String(payload.workspaceRoot));
     case "read_command_file":
@@ -83,6 +85,7 @@ function loadState(): MockState {
   };
   if (parameters.get("fixture") === "basic") {
     initial.settings.displayName = "Tester";
+    initial.settings.performanceMode = parameters.has("auto-performance") ? "auto" : "full";
     const path = `${WORKSPACE}/Nmap.cmdnote`;
     const gitPath = `${WORKSPACE}/Git.cmdnote`;
     initial.folders.push(`${WORKSPACE}/References`, `${WORKSPACE}/References/Nested`);

@@ -104,6 +104,16 @@ pub(crate) enum SectionHighlightLevel {
     Red,
 }
 
+#[derive(Debug, Clone, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum PerformanceMode {
+    #[default]
+    Auto,
+    Full,
+    Balanced,
+    LowPower,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SectionHighlight {
@@ -127,6 +137,7 @@ pub(crate) struct AppSettings {
     pub(crate) theme_mode: ThemeMode,
     pub(crate) accent_theme: AccentTheme,
     pub(crate) custom_themes: CustomThemes,
+    pub(crate) performance_mode: PerformanceMode,
     pub(crate) favorites: Vec<FavoriteItem>,
     pub(crate) section_highlights: Vec<SectionHighlight>,
     #[serde(default = "default_true")]
@@ -149,6 +160,7 @@ impl Default for AppSettings {
             theme_mode: ThemeMode::default(),
             accent_theme: AccentTheme::default(),
             custom_themes: CustomThemes::default(),
+            performance_mode: PerformanceMode::default(),
             favorites: Vec::new(),
             section_highlights: Vec::new(),
             remember_expanded_sections: true,
@@ -224,7 +236,8 @@ fn is_hex_color(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        AccentTheme, AppSettings, FavoriteItem, SectionHighlight, SectionHighlightLevel, ThemeMode,
+        AccentTheme, AppSettings, FavoriteItem, PerformanceMode, SectionHighlight,
+        SectionHighlightLevel, ThemeMode,
     };
 
     #[test]
@@ -271,6 +284,7 @@ mod tests {
         assert!(settings.favorites.is_empty());
         assert!(settings.display_name.is_none());
         assert!(settings.section_highlights.is_empty());
+        assert_eq!(settings.performance_mode, PerformanceMode::Auto);
         let serialized = serde_json::to_value(&settings).expect("settings must serialize");
         assert!(serialized.get("recentFiles").is_none());
     }
@@ -341,5 +355,13 @@ mod tests {
             })
             .collect();
         assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn serializes_performance_mode_with_kebab_case() {
+        let mut settings = AppSettings::default();
+        settings.performance_mode = PerformanceMode::LowPower;
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert_eq!(serialized["performanceMode"], "low-power");
     }
 }

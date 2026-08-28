@@ -7,6 +7,7 @@ import {
   favoriteKey,
   isFavoriteItem,
   isHexColor,
+  isPerformanceMode,
   isSectionHighlight,
   sectionHighlightKey,
   isThemeMode,
@@ -49,6 +50,9 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     themeMode: isThemeMode(value.themeMode) ? value.themeMode : defaultSettings.themeMode,
     accentTheme: isAccentTheme(value.accentTheme) ? value.accentTheme : defaultSettings.accentTheme,
     customThemes: normalizeCustomThemes(value.customThemes),
+    performanceMode: isPerformanceMode(value.performanceMode)
+      ? value.performanceMode
+      : defaultSettings.performanceMode,
     favorites,
     sectionHighlights,
     rememberExpandedSections:

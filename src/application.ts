@@ -1,4 +1,8 @@
-import { createCommandTable, type CommandTableHandle } from "./components/command-table";
+import {
+  createCommandTable,
+  type CommandTableHandle,
+  type CommandTableOptions,
+} from "./components/command-table";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openCommandForm } from "./components/command-form";
@@ -22,18 +26,21 @@ import type {
   CommandSectionLayout,
 } from "./models/command-file";
 import type { FilesystemEntry } from "./models/filesystem";
+import type { WorkerSearchResult } from "./models/workspace-worker";
 import {
   accentThemes,
   defaultCustomThemes,
   defaultSettings,
   favoriteKey,
   isHexColor,
+  performanceModes,
   sectionHighlightKey,
   themeModes,
   type AccentTheme,
   type AppSettings,
   type CustomThemes,
   type FavoriteItem,
+  type PerformanceMode,
   type SectionHighlightLevel,
   type ThemeMode,
 } from "./models/settings";
@@ -49,30 +56,21 @@ import {
 } from "./services/filesystem";
 import { isTauriRuntime, normalizeServiceError } from "./services/runtime";
 import { loadSettings, normalizeDisplayName, saveSettings } from "./services/settings";
+import { WorkspaceWorkerClient } from "./services/workspace-worker";
+import { getPowerProfile } from "./services/power-profile";
+import {
+  PerformanceController,
+  type EffectivePerformanceProfile,
+} from "./services/performance";
 import { chooseWorkspace } from "./services/workspace";
 import { restoreWindowSize } from "./services/window";
 import { button, element } from "./utils/dom";
 import { contrastRatio, mixHex } from "./utils/color";
 import { SessionHistory } from "./utils/history";
 import { createId } from "./utils/ids";
-import {
-  createSearchDocument,
-  createSearchTextCache,
-  rankSearchDocuments,
-  type RankedSearchResult,
-  type SearchDocument,
-} from "./utils/search";
-import { parseCommandFile, serializeCommandFile } from "./utils/validation";
+import { serializeCommandFile } from "./utils/validation";
 
-interface SearchResult {
-  filePath: string;
-  fileTitle: string;
-  sectionId?: string;
-  sectionTitle?: string;
-  commandId?: string;
-  commandName?: string;
-  command?: string;
-}
+type SearchResult = WorkerSearchResult;
 
 interface FocusTarget {
   sectionId?: string;
@@ -121,10 +119,13 @@ export class CommandVaultApplication {
   private readonly workspace = element("main", "workspace");
   private readonly body = element("div", "app-body");
   private readonly toolbar: ToolbarHandle;
+  private readonly performanceController = new PerformanceController();
+  private readonly workspaceWorker = new WorkspaceWorkerClient();
+  private performanceProfile: EffectivePerformanceProfile = this.performanceController.profile();
   private explorer: HTMLElement | null = null;
   private explorerRenderGeneration = 0;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.10.1";
+  private appVersion = "0.11.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -143,16 +144,18 @@ export class CommandVaultApplication {
   private readonly collapsedQuickGroups = new Set<string>();
   private selectionSectionId: string | null = null;
   private workspaceLoadGeneration = 0;
+  private workspaceTreeSignature = "";
   private searchTimer: number | null = null;
   private searchGeneration = 0;
-  private searchIndex: SearchDocument<SearchResult>[] = [];
   private pendingFilePath: string | null = null;
   private fileOpenGeneration = 0;
   private viewTransitionGeneration = 0;
   private viewTransitionTimer: number | null = null;
   private showingDashboard = false;
   private lifecycleTimer: number | null = null;
-  private lifecycleLastTick = Date.now();
+  private lifecycleInactiveAt: number | null = null;
+  private lifecycleLastActivityAt = Date.now();
+  private lifecycleLastWorkspaceScanAt = 0;
   private lifecycleNeedsWorkspaceCheck = false;
   private recoveryInFlight = false;
   private workspaceLoading = false;
@@ -163,6 +166,11 @@ export class CommandVaultApplication {
       onSearch: (query) => this.queueSearch(query),
       onHome: () => this.renderWelcomeDashboard(),
       onSettings: () => this.openSettings(),
+    });
+    this.performanceController.subscribe((profile) => {
+      this.performanceProfile = profile;
+      if (profile.mode === "low-power") this.cancelFileTransition();
+      this.activeTable?.setPerformanceProfile(profile);
     });
   }
 
@@ -181,9 +189,19 @@ export class CommandVaultApplication {
         kind: "error",
       });
     }
+    const requestedPerformance = new URLSearchParams(window.location.search).get("performance");
+    if (performanceModes.includes(requestedPerformance as PerformanceMode)) {
+      this.settings.performanceMode = requestedPerformance as PerformanceMode;
+    }
+    const requestedScale = Number(new URLSearchParams(window.location.search).get("scale"));
+    if (Number.isFinite(requestedScale) && requestedScale >= 75 && requestedScale <= 200) {
+      this.settings.uiScale = requestedScale;
+    }
     this.applySettings();
+    await this.refreshSystemPowerProfile();
     this.toolbar.setProfileName(this.settings.displayName);
     this.installKeyboardShortcuts();
+    this.installPerformanceInputMonitoring();
     await this.installWindowPersistence();
     await this.installLifecycleRecovery();
 
@@ -194,7 +212,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.10.1 (development)";
+      this.appVersion = "0.11.0 (development)";
     }
 
     if (!this.settings.displayName && this.skipWelcome) {
@@ -539,6 +557,10 @@ export class CommandVaultApplication {
     replaceMap(this.fileSources, snapshot.fileSources);
     replaceMap(this.fileRevisions, snapshot.fileRevisions);
     replaceMap(this.fileErrors, snapshot.fileErrors);
+    this.workspaceWorker.reset(this.workspaceLoadGeneration + 1);
+    this.workspaceWorker.upsertFiles(
+      [...this.files.entries()].map(([path, file]) => ({ path, file })),
+    );
     replaceSet(this.expandedFolders, snapshot.expandedFolders);
     replaceSet(this.transientExpandedSections, snapshot.transientExpandedSections);
     replaceSet(this.sectionStateInitializedFiles, snapshot.sectionStateInitializedFiles);
@@ -549,6 +571,7 @@ export class CommandVaultApplication {
 
   private async openWorkspace(path: string, restoreLastFile: boolean): Promise<void> {
     this.fileOpenGeneration += 1;
+    this.workspaceWorker.reset(this.workspaceLoadGeneration + 1);
     this.pendingFilePath = null;
     const workspaceChanged = this.settings.lastWorkspace !== path;
     this.workspaceRoot = path;
@@ -560,6 +583,7 @@ export class CommandVaultApplication {
     this.fileSources.clear();
     this.fileRevisions.clear();
     this.fileErrors.clear();
+    this.workspaceTreeSignature = "";
     this.expandedFolders.clear();
     this.transientExpandedSections.clear();
     this.sectionStateInitializedFiles.clear();
@@ -601,28 +625,51 @@ export class CommandVaultApplication {
       return;
     }
     const generation = ++this.workspaceLoadGeneration;
+    const finishDiagnostic = this.performanceController.begin("workspace-refresh");
     const workspaceRoot = this.workspaceRoot;
     const active = preserveActive && !this.showingDashboard ? this.activeFilePath : null;
     const entries = await listDirectory(workspaceRoot);
     const fileEntries = flattenFiles(entries);
     const paths = fileEntries.map((entry) => entry.path);
+    const pathSet = new Set(paths);
+    const removedPaths = [...this.fileRevisions.keys()].filter((path) => !pathSet.has(path));
+    const treeSignature = filesystemStructureSignature(entries);
+    const treeChanged = treeSignature !== this.workspaceTreeSignature;
     const entryByPath = new Map(fileEntries.map((entry) => [entry.path, entry]));
     const pathsToLoad = paths.filter((path) => {
       const revision = entryByPath.get(path)?.revision ?? null;
       return revision === null || this.fileRevisions.get(path) !== revision ||
         (!this.files.has(path) && !this.fileErrors.has(path));
     });
+    if (pathsToLoad.length === 0 && removedPaths.length === 0 && !treeChanged) {
+      finishDiagnostic();
+      return;
+    }
+    if (pathsToLoad.length === 0 && removedPaths.length === 0 && treeChanged) {
+      this.entries = entries;
+      this.workspaceTreeSignature = treeSignature;
+      entries.filter((entry) => entry.kind === "folder")
+        .forEach((entry) => this.expandedFolders.add(entry.path));
+      this.renderExplorer();
+      finishDiagnostic();
+      return;
+    }
     let completed = 0;
     const migratedPaths: string[] = [];
-    const loaded = await mapWithConcurrency(pathsToLoad, 4, async (path) => {
+    const loaded = await mapWithConcurrency(pathsToLoad, this.performanceProfile.parseConcurrency, async (path) => {
       try {
         const source = await readCommandFile(workspaceRoot, path);
         if (generation !== this.workspaceLoadGeneration) {
           return { path, error: "Workspace changed while loading." } satisfies LoadedCommandFile;
         }
-        const parsed = parseCommandFile(source);
-        if (!parsed.ok) {
-          return { path, error: formatParseError(parsed.error.message, parsed.error.issues) } satisfies LoadedCommandFile;
+        const [parsed] = await this.workspaceWorker.parseFiles([{ path, source }]);
+        if (!parsed || !parsed.ok) {
+          return {
+            path,
+            error: parsed
+              ? formatParseError(parsed.message, parsed.issues)
+              : "Workspace worker returned no parse result.",
+          } satisfies LoadedCommandFile;
         }
         if (parsed.needsMigration && this.desktopRuntime) {
           try {
@@ -632,11 +679,11 @@ export class CommandVaultApplication {
             const migrated = await writeCommandFile(
               workspaceRoot,
               path,
-              serializeCommandFile(parsed.data),
+              serializeCommandFile(parsed.file),
               source,
             );
             migratedPaths.push(path);
-            return { path, file: parsed.data, source: migrated, migrated: true } satisfies LoadedCommandFile;
+            return { path, file: parsed.file, source: migrated, migrated: true } satisfies LoadedCommandFile;
           } catch (error) {
             return {
               path,
@@ -644,7 +691,7 @@ export class CommandVaultApplication {
             } satisfies LoadedCommandFile;
           }
         }
-        return { path, file: parsed.data, source } satisfies LoadedCommandFile;
+        return { path, file: parsed.file, source } satisfies LoadedCommandFile;
       } catch (error) {
         return { path, error: normalizeServiceError(error).message } satisfies LoadedCommandFile;
       } finally {
@@ -657,6 +704,7 @@ export class CommandVaultApplication {
     });
 
     if (generation !== this.workspaceLoadGeneration) {
+      finishDiagnostic();
       return;
     }
 
@@ -665,6 +713,7 @@ export class CommandVaultApplication {
     const previousErrors = new Map(this.fileErrors);
     const loadedByPath = new Map(loaded.map((item) => [item.path, item]));
     this.entries = entries;
+    this.workspaceTreeSignature = treeSignature;
     this.files.clear();
     this.fileSources.clear();
     this.fileErrors.clear();
@@ -692,23 +741,40 @@ export class CommandVaultApplication {
         this.fileErrors.set(item.path, item.error);
       }
     });
+    const validWorkerFiles = loaded.flatMap((item) =>
+      item.file ? [{ path: item.path, file: item.file }] : [],
+    );
+    if (validWorkerFiles.length > 0) this.workspaceWorker.upsertFiles(validWorkerFiles);
+    const workerRemovals = [
+      ...removedPaths,
+      ...loaded.filter((item) => !item.file).map((item) => item.path),
+    ];
+    if (workerRemovals.length > 0) this.workspaceWorker.removeFiles(workerRemovals);
     if (this.pruneUnavailableFavorites()) {
       void this.persistSettings(false);
     }
-    this.rebuildSearchIndex();
     entries
       .filter((entry) => entry.kind === "folder")
       .forEach((entry) => this.expandedFolders.add(entry.path));
-    this.renderExplorer();
+    const favoritesNeedRefresh = pathsToLoad.some((path) =>
+      this.settings.favorites.some((favorite) =>
+        (favorite.kind === "command" ? favorite.filePath : favorite.path) === path,
+      ),
+    );
+    if (treeChanged || removedPaths.length > 0 || favoritesNeedRefresh) {
+      this.renderExplorer();
+    }
 
-    if (active && this.files.has(active)) {
+    const activeChanged = active !== null &&
+      (pathsToLoad.includes(active) || removedPaths.includes(active));
+    if (active && activeChanged && this.files.has(active)) {
       await this.openFile(active, undefined, true);
-    } else if (active && this.fileErrors.has(active)) {
+    } else if (active && activeChanged && this.fileErrors.has(active)) {
       this.activeFilePath = active;
       this.activeFile = null;
       this.renderFileError(active, this.fileErrors.get(active) as string);
       this.renderExplorer();
-    } else if (preserveActive && active) {
+    } else if (preserveActive && active && activeChanged) {
       this.activeFile = null;
       this.activeFilePath = null;
       this.renderWorkspaceEmpty("The previously open file was removed outside Command Vault.");
@@ -727,6 +793,7 @@ export class CommandVaultApplication {
         kind: migrationFailures.length ? "error" : "info",
       });
     }
+    finishDiagnostic();
   }
 
   private async refreshWorkspaceFromUi(): Promise<void> {
@@ -773,35 +840,42 @@ export class CommandVaultApplication {
     }
 
     let file = this.files.get(path);
-    if (!useCached && this.desktopRuntime && this.workspaceRoot) {
+    const forceReadForTest = new URLSearchParams(window.location.search).has("slow-files");
+    if (!useCached && this.desktopRuntime && this.workspaceRoot && (!file || forceReadForTest)) {
       try {
         const source = await readCommandFile(this.workspaceRoot, path);
         if (generation !== this.fileOpenGeneration) {
           return;
         }
-        const parsed = parseCommandFile(source);
-        if (parsed.ok) {
+        const [parsed] = await this.workspaceWorker.parseFiles([{ path, source }]);
+        if (parsed?.ok) {
           const normalizedSource = parsed.needsMigration
             ? await writeCommandFile(
                 this.workspaceRoot,
                 path,
-                serializeCommandFile(parsed.data),
+                serializeCommandFile(parsed.file),
                 source,
               )
             : source;
           if (generation !== this.fileOpenGeneration) {
             return;
           }
-          file = parsed.data;
+          file = parsed.file;
           this.files.set(path, file);
           this.fileSources.set(path, normalizedSource);
           this.fileErrors.delete(path);
-          this.rebuildSearchIndex();
+          this.workspaceWorker.upsertFiles([{ path, file }]);
         } else {
           file = undefined;
           this.files.delete(path);
           this.fileSources.delete(path);
-          this.fileErrors.set(path, formatParseError(parsed.error.message, parsed.error.issues));
+          this.fileErrors.set(
+            path,
+            parsed
+              ? formatParseError(parsed.message, parsed.issues)
+              : "Workspace worker returned no parse result.",
+          );
+          this.workspaceWorker.removeFiles([path]);
         }
       } catch (error) {
         if (generation !== this.fileOpenGeneration) {
@@ -811,6 +885,7 @@ export class CommandVaultApplication {
         this.files.delete(path);
         this.fileSources.delete(path);
         this.fileErrors.set(path, normalizeServiceError(error).message);
+        this.workspaceWorker.removeFiles([path]);
       }
     }
     if (generation !== this.fileOpenGeneration) {
@@ -840,6 +915,10 @@ export class CommandVaultApplication {
     if (!this.activeFile || !this.activeFilePath) {
       return;
     }
+    const finishDiagnostic = this.performanceController.begin(
+      "render-file",
+      `${this.activeFile.sections.length} sections`,
+    );
     this.showingDashboard = false;
 
     const expanded = new Set<string>();
@@ -860,7 +939,7 @@ export class CommandVaultApplication {
       (this.settings.rememberExpandedSections &&
         this.settings.sectionStateFiles.includes(this.activeFilePath));
 
-    const table = createCommandTable(this.activeFile, {
+    const tableOptions: CommandTableOptions = {
       canUndo: this.fileHistory.canUndo(this.activeFilePath),
       canRedo: this.fileHistory.canRedo(this.activeFilePath),
       selectionSectionId: this.selectionSectionId,
@@ -869,6 +948,7 @@ export class CommandVaultApplication {
       expandAllSections: this.stressMode,
       isExampleColumnVisible: (section) => this.isExampleColumnVisible(section),
       sectionHighlightLevel: (section) => this.sectionHighlightLevel(section.id),
+      performanceProfile: this.performanceProfile,
       callbacks: {
         onUndo: () => void this.undoCurrentFile(),
         onRedo: () => void this.redoCurrentFile(),
@@ -889,33 +969,46 @@ export class CommandVaultApplication {
         onCommandReorder: (sectionId, commandId, targetIndex) =>
           void this.reorderTableCommand(sectionId, commandId, targetIndex),
       },
-    });
+    };
     const previousTable = this.activeTable;
+    if (previousTable && !animateTransition) {
+      previousTable.update(this.activeFile, tableOptions);
+      previousTable.setPerformanceProfile(this.performanceProfile);
+      if (focus?.commandId || focus?.sectionId) {
+        queueMicrotask(() => this.focusCommandTable(previousTable, focus));
+      }
+      finishDiagnostic();
+      return;
+    }
+    const table = createCommandTable(this.activeFile, tableOptions);
     this.activeTable = table;
-    if (animateTransition && previousTable && !prefersReducedMotion()) {
+    if (animateTransition && previousTable && this.performanceProfile.fileMotion === "full" && !prefersReducedMotion()) {
       this.transitionFileView(previousTable, table.element);
     } else {
       this.cancelFileTransition();
       previousTable?.dispose();
-      if (!previousTable && !prefersReducedMotion()) {
+      if (this.performanceProfile.fileMotion === "fade" && !prefersReducedMotion()) {
+        addOneShotClass(table.element, "workspace-view-fade-in");
+      } else if (!previousTable && this.performanceProfile.fileMotion !== "none" && !prefersReducedMotion()) {
         addOneShotClass(table.element, "workspace-view-fade-in");
       }
       this.workspace.replaceChildren(table.element);
     }
 
     if (focus?.commandId || focus?.sectionId) {
-      queueMicrotask(() => {
-        table.ensureVisible(focus.sectionId, focus.commandId);
-        const selector = focus.commandId
-          ? `[data-command-id="${CSS.escape(focus.commandId)}"]`
-          : `[data-section-id="${CSS.escape(focus.sectionId as string)}"]`;
-        const target = table.element.querySelector<HTMLElement>(selector);
-        target?.scrollIntoView({ block: "center" });
-        if (focus.commandId) {
-          target?.classList.add("search-highlight");
-        }
-      });
+      queueMicrotask(() => this.focusCommandTable(table, focus));
     }
+    finishDiagnostic();
+  }
+
+  private focusCommandTable(table: CommandTableHandle, focus: FocusTarget): void {
+    table.ensureVisible(focus.sectionId, focus.commandId);
+    const selector = focus.commandId
+      ? `[data-command-id="${CSS.escape(focus.commandId)}"]`
+      : `[data-section-id="${CSS.escape(focus.sectionId as string)}"]`;
+    const target = table.element.querySelector<HTMLElement>(selector);
+    target?.scrollIntoView({ block: "center" });
+    if (focus.commandId) target?.classList.add("search-highlight");
   }
 
   private transitionFileView(
@@ -1553,7 +1646,7 @@ export class CommandVaultApplication {
       if (prunedFavorites || prunedHighlights) {
         void this.persistSettings(false);
       }
-      this.rebuildSearchIndex();
+      this.workspaceWorker.upsertFiles([{ path, file: next }]);
       this.renderActiveFile();
       return true;
     } catch (error) {
@@ -1731,11 +1824,11 @@ export class CommandVaultApplication {
     }
     this.searchTimer = window.setTimeout(() => {
       this.searchTimer = null;
-      this.search(query, generation);
-    }, 120);
+      void this.search(query, generation);
+    }, this.performanceProfile.mode === "low-power" ? 60 : 120);
   }
 
-  private search(query: string, generation: number): void {
+  private async search(query: string, generation: number): Promise<void> {
     if (generation !== this.searchGeneration) {
       return;
     }
@@ -1743,82 +1836,36 @@ export class CommandVaultApplication {
       this.toolbar.setResults(null);
       return;
     }
-    this.renderSearchResults(rankSearchDocuments(this.searchIndex, query, 100));
+    const finishDiagnostic = this.performanceController.begin("search", query.length.toString());
+    try {
+      const results = await this.workspaceWorker.search(query, 100);
+      if (generation === this.searchGeneration && query.trim()) {
+        this.renderSearchResults(results);
+      }
+    } catch (error) {
+      if (generation === this.searchGeneration) {
+        console.error("Search worker failed", error);
+        this.toolbar.setResults(element("p", "search-result-empty", "Search is temporarily unavailable."));
+      }
+    } finally {
+      finishDiagnostic();
+    }
   }
 
-  private rebuildSearchIndex(): void {
-    const records: SearchDocument<SearchResult>[] = [];
-    const textCache = createSearchTextCache();
-    let order = 0;
-    this.files.forEach((file, filePath) => {
-      records.push(createSearchDocument(
-        { filePath, fileTitle: file.title },
-        [
-          { text: file.title, priority: 3 },
-          { text: file.description, priority: 1 },
-        ],
-        order++,
-        textCache,
-      ));
-      file.sections.forEach((section) => {
-        records.push(createSearchDocument(
-          {
-            filePath,
-            fileTitle: file.title,
-            sectionId: section.id,
-            sectionTitle: section.title,
-          },
-          [
-            { text: section.title, priority: 3 },
-            { text: file.title, priority: 2 },
-          ],
-          order++,
-          textCache,
-        ));
-        section.commands.forEach((command) => {
-          records.push(createSearchDocument(
-            {
-              filePath,
-              fileTitle: file.title,
-              sectionId: section.id,
-              sectionTitle: section.title,
-              commandId: command.id,
-              commandName: command.name,
-              command: command.command,
-            },
-            [
-              { text: command.name, priority: 3 },
-              { text: command.command, priority: 3 },
-              { text: section.title, priority: 2 },
-              { text: file.title, priority: 2 },
-              { text: command.description, priority: 1 },
-              { text: command.example, priority: 1 },
-              { text: command.notes, priority: 1 },
-            ],
-            order++,
-            textCache,
-          ));
-        });
-      });
-    });
-    this.searchIndex = records;
-  }
-
-  private renderSearchResults(results: RankedSearchResult<SearchResult>[]): void {
+  private renderSearchResults(results: SearchResult[]): void {
     if (results.length === 0) {
       this.toolbar.setResults(element("p", "search-result-empty", "No matching commands."));
       return;
     }
     const list = element("div", "search-result-list");
-    results.forEach((ranked) => {
-      const result = ranked.result;
+    results.forEach((result) => {
       const item = button("search-result", "");
       item.setAttribute("role", "option");
       const title = element("span", "search-result-title-row");
       title.append(
         element("span", "search-result-title", result.commandName ?? result.sectionTitle ?? result.fileTitle),
       );
-      if (ranked.matchKind === "near") {
+      if (result.matchKind === "near") {
         title.append(element("span", "search-result-near", "NEAR"));
       }
       item.append(
@@ -1871,6 +1918,35 @@ export class CommandVaultApplication {
     versionField.append(element("span", undefined, "Command Vault version"));
     versionField.append(element("code", "settings-version", this.appVersion));
     form.append(versionField);
+
+    const performanceField = element("label", "form-field");
+    performanceField.append(element("span", undefined, "Performance mode"));
+    const performanceMode = element("select");
+    performanceModes.forEach((mode) => {
+      const option = element("option", undefined, performanceModeLabel(mode));
+      option.value = mode;
+      option.selected = mode === this.settings.performanceMode;
+      performanceMode.append(option);
+    });
+    performanceField.append(performanceMode);
+    const effectivePerformance = element(
+      "code",
+      "settings-performance-status",
+      `Effective: ${this.performanceProfile.mode} · ${this.performanceProfile.reason}`,
+    );
+    const copyDiagnostics = button("inline-button", "COPY DIAGNOSTICS");
+    copyDiagnostics.addEventListener("click", () => {
+      void copyText(this.performanceController.diagnosticsText()).then(() => {
+        const previous = copyDiagnostics.textContent;
+        copyDiagnostics.textContent = "COPIED";
+        window.setTimeout(() => {
+          if (copyDiagnostics.isConnected) copyDiagnostics.textContent = previous;
+        }, 1_200);
+      }).catch((error) => modal.setError(normalizeServiceError(error).message));
+    });
+    const performanceSummary = element("div", "settings-performance-summary");
+    performanceSummary.append(effectivePerformance, copyDiagnostics);
+    form.append(performanceField, performanceSummary);
 
     const theme = themeField(
       form,
@@ -1926,6 +2002,7 @@ export class CommandVaultApplication {
         themeMode: theme.mode(),
         accentTheme: theme.accent(),
         customThemes: theme.customThemes(),
+        performanceMode: performanceMode.value as PerformanceMode,
         rememberExpandedSections: remember.checked,
         ...(!remember.checked ? { expandedSections: [], sectionStateFiles: [] } : {}),
       };
@@ -1967,9 +2044,8 @@ export class CommandVaultApplication {
   private applySettings(): void {
     const scale = clampUiScale(this.settings.uiScale);
     this.settings.uiScale = scale;
-    document.documentElement.style.setProperty("--ui-font-size", `${this.settings.uiFontSize}px`);
-    document.documentElement.style.setProperty("--code-font-size", `${this.settings.codeFontSize}px`);
-    document.documentElement.style.setProperty("--ui-scale-factor", String(scale / 100));
+    this.performanceController.configure(this.settings.performanceMode, scale);
+    applySemanticScale(this.settings.uiFontSize, this.settings.codeFontSize, scale);
     this.applyTheme(this.settings.themeMode, this.settings.accentTheme, this.settings.customThemes);
   }
 
@@ -2066,6 +2142,34 @@ export class CommandVaultApplication {
     });
   }
 
+  private installPerformanceInputMonitoring(): void {
+    let generation = 0;
+    const measure = (event: Event): void => {
+      if (document.visibilityState !== "visible") return;
+      const current = ++generation;
+      const started = performance.now();
+      window.requestAnimationFrame(() => {
+        if (current === generation) {
+          this.performanceController.record(
+            "input-to-paint",
+            performance.now() - started,
+            event.type,
+          );
+        }
+      });
+    };
+    document.addEventListener("pointerdown", measure, { capture: true, passive: true });
+    document.addEventListener("keydown", measure, { capture: true });
+    if ("__COMMAND_VAULT_E2E__" in window || this.stressMode) {
+      const testWindow = window as unknown as {
+        __COMMAND_VAULT_DIAGNOSTICS__: () => string;
+        __COMMAND_VAULT_CLEAR_DIAGNOSTICS__: () => void;
+      };
+      testWindow.__COMMAND_VAULT_DIAGNOSTICS__ = () => this.performanceController.diagnosticsText();
+      testWindow.__COMMAND_VAULT_CLEAR_DIAGNOSTICS__ = () => this.performanceController.clearDiagnostics();
+    }
+  }
+
   private async installWindowPersistence(): Promise<void> {
     if (!this.desktopRuntime) {
       return;
@@ -2093,17 +2197,18 @@ export class CommandVaultApplication {
   }
 
   private async installLifecycleRecovery(): Promise<void> {
-    const markHidden = (): void => {
-      this.lifecycleLastTick = Date.now();
+    const markInactive = (): void => {
+      this.lifecycleInactiveAt ??= Date.now();
     };
     const markVisible = (): void => {
-      const elapsed = Date.now() - this.lifecycleLastTick;
-      this.lifecycleLastTick = Date.now();
-      this.scheduleLifecycleRecovery(elapsed > 5_000);
+      const elapsed = this.lifecycleInactiveAt === null ? 0 : Date.now() - this.lifecycleInactiveAt;
+      this.lifecycleInactiveAt = null;
+      this.lifecycleLastActivityAt = Date.now();
+      this.scheduleLifecycleRecovery(elapsed > 30_000);
     };
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") markVisible();
-      else markHidden();
+      else markInactive();
     });
     window.addEventListener("pageshow", markVisible);
     window.addEventListener("focus", markVisible);
@@ -2111,20 +2216,24 @@ export class CommandVaultApplication {
       try {
         await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
           if (focused) markVisible();
-          else markHidden();
+          else markInactive();
         });
       } catch (error) {
         console.warn("Could not install native focus recovery", normalizeServiceError(error));
       }
     }
-    window.setInterval(() => {
+    const recoverFromFirstInput = (): void => {
       const now = Date.now();
-      const delayed = now - this.lifecycleLastTick > 15_000;
-      this.lifecycleLastTick = now;
+      const delayed = now - this.lifecycleLastActivityAt > 30_000;
+      this.lifecycleLastActivityAt = now;
       if (delayed && document.visibilityState === "visible") {
+        this.cancelFileTransition();
+        this.activeTable?.refreshLayout();
         this.scheduleLifecycleRecovery(true);
       }
-    }, 5_000);
+    };
+    document.addEventListener("pointerdown", recoverFromFirstInput, { capture: true, passive: true });
+    document.addEventListener("keydown", recoverFromFirstInput, { capture: true });
     if ("__COMMAND_VAULT_E2E__" in window) {
       (window as unknown as { __COMMAND_VAULT_TRIGGER_RECOVERY__: () => void })
         .__COMMAND_VAULT_TRIGGER_RECOVERY__ = () => this.scheduleLifecycleRecovery(true);
@@ -2143,10 +2252,15 @@ export class CommandVaultApplication {
   }
 
   private async recoverLifecycle(): Promise<void> {
+    const finishDiagnostic = this.performanceController.begin("resume-recovery");
+    this.cancelFileTransition();
     this.activeTable?.refreshLayout();
-    const shouldCheckWorkspace = this.lifecycleNeedsWorkspaceCheck;
+    const now = Date.now();
+    const shouldCheckWorkspace = this.lifecycleNeedsWorkspaceCheck &&
+      now - this.lifecycleLastWorkspaceScanAt >= 30_000;
     this.lifecycleNeedsWorkspaceCheck = false;
     if (!shouldCheckWorkspace || !this.workspaceRoot || this.recoveryInFlight) {
+      finishDiagnostic();
       return;
     }
     if (document.querySelector(".modal-overlay")) {
@@ -2155,12 +2269,16 @@ export class CommandVaultApplication {
         this.lifecycleTimer = null;
         void this.recoverLifecycle();
       }, 750);
+      finishDiagnostic();
       return;
     }
     this.recoveryInFlight = true;
+    this.lifecycleLastWorkspaceScanAt = now;
     const wasDashboard = this.showingDashboard;
     this.setRecoveryNotice("RESTORING WORKSPACE…");
     try {
+      await nextPaint();
+      await this.refreshSystemPowerProfile();
       await this.refreshWorkspace(true);
       if (wasDashboard) {
         this.renderWelcomeDashboard();
@@ -2172,6 +2290,7 @@ export class CommandVaultApplication {
       this.setRecoveryNotice(`RECOVERY FAILED · ${failure.message}`, true);
     } finally {
       this.recoveryInFlight = false;
+      finishDiagnostic();
     }
   }
 
@@ -2188,6 +2307,11 @@ export class CommandVaultApplication {
       notice.append(action);
     }
     this.root.querySelector(".app-shell")?.append(notice);
+  }
+
+  private async refreshSystemPowerProfile(): Promise<void> {
+    const profile = await getPowerProfile();
+    this.performanceController.setSystemPowerProfile(profile);
   }
 
   private renderNoWorkspace(): void {
@@ -2385,13 +2509,16 @@ export class CommandVaultApplication {
     this.activeFilePath = nmapPath;
     this.activeFile = file;
     this.entries = demoFilesystemEntries();
+    this.workspaceTreeSignature = filesystemStructureSignature(this.entries);
     this.files.set(nmapPath, file);
     this.fileSources.set(nmapPath, serializeCommandFile(file));
     this.files.set("/demo/Network/Wireshark.cmdnote", { ...demoCommandFile, title: "Wireshark" });
     this.files.set("/demo/Network/tcpdump.cmdnote", { ...demoCommandFile, title: "tcpdump" });
     this.files.set("/demo/Linux/Terminal.cmdnote", { ...demoCommandFile, title: "Linux Terminal" });
     this.files.set("/demo/Development/Git.cmdnote", { ...demoCommandFile, title: "Git" });
-    this.rebuildSearchIndex();
+    this.workspaceWorker.upsertFiles(
+      [...this.files.entries()].map(([path, current]) => ({ path, file: current })),
+    );
     this.expandedFolders.add("/demo/Network");
     this.expandedFolders.add("/demo/Linux");
     this.expandedFolders.add("/demo/Development");
@@ -2413,6 +2540,40 @@ export class CommandVaultApplication {
   }
 }
 
+function performanceModeLabel(mode: PerformanceMode): string {
+  if (mode === "low-power") return "LOW POWER";
+  return mode.toUpperCase();
+}
+
+function applySemanticScale(uiFontSize: number, codeFontSize: number, scale: number): void {
+  document.documentElement.dataset.uiScale = scale >= 150 ? "large" : "normal";
+  const root = document.documentElement.style;
+  const factor = scale / 100;
+  const px = (base: number, maximum = Number.POSITIVE_INFINITY): string =>
+    `${Math.min(base * factor, maximum).toFixed(2)}px`;
+  root.setProperty("--ui-scale-factor", String(factor));
+  root.setProperty("--ui-font-size", px(uiFontSize));
+  root.setProperty("--code-font-size", px(codeFontSize));
+  root.setProperty("--header-height", px(52, 84));
+  root.setProperty("--section-height", px(46, 68));
+  root.setProperty("--cell-padding", px(18, 28));
+  root.setProperty("--button-height", px(36, 52));
+  root.setProperty("--button-gap", px(8, 14));
+  root.setProperty("--radius-sm", px(4, 8));
+  root.setProperty("--radius-md", px(7, 12));
+  root.setProperty("--sidebar-min-width", px(220, 300));
+  root.setProperty("--sidebar-width", `clamp(${px(220, 300)}, ${Math.min(20 * factor, 34).toFixed(1)}vw, ${px(340, 380)})`);
+  root.setProperty("--font-brand", px(14));
+  root.setProperty("--font-panel-title", px(13));
+  root.setProperty("--font-tree", px(14));
+  root.setProperty("--font-file-title", px(18));
+  root.setProperty("--font-section-title", px(13));
+  root.setProperty("--font-column-label", px(12));
+  root.setProperty("--font-command-name", px(15));
+  root.setProperty("--font-button", px(13));
+  root.setProperty("--font-caption", px(11));
+}
+
 function flattenFiles(entries: FilesystemEntry[]): FilesystemEntry[] {
   return entries.flatMap((entry) =>
     entry.kind === "command-file" ? [entry] : flattenFiles(entry.children),
@@ -2423,6 +2584,13 @@ function flattenFolders(entries: FilesystemEntry[]): FilesystemEntry[] {
   return entries.flatMap((entry) =>
     entry.kind === "folder" ? [entry, ...flattenFolders(entry.children)] : [],
   );
+}
+
+function filesystemStructureSignature(entries: FilesystemEntry[]): string {
+  return entries.flatMap((entry) => [
+    `${entry.kind}:${entry.path}`,
+    ...(entry.kind === "folder" ? [filesystemStructureSignature(entry.children)] : []),
+  ]).join("\n");
 }
 
 function findFilesystemEntry(
@@ -2560,7 +2728,8 @@ function stressRowCountFromLocation(): number {
 }
 
 function prefersReducedMotion(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return document.documentElement.dataset.performance === "low-power" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function cloneViewSnapshot(source: HTMLElement): HTMLElement {
@@ -2588,6 +2757,12 @@ function addOneShotClass(element: HTMLElement, className: string): void {
   const remove = (): void => element.classList.remove(className);
   element.addEventListener("animationend", remove, { once: true });
   window.setTimeout(remove, 220);
+}
+
+function nextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve()));
+  });
 }
 
 function demoFilesystemEntries(): FilesystemEntry[] {

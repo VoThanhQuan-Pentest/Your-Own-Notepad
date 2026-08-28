@@ -4,6 +4,7 @@ import { button, element } from "../utils/dom";
 export interface CommandRowHandle {
   element: HTMLElement;
   setExpanded(expanded: boolean): void;
+  setExampleExpanded(expanded: boolean): void;
 }
 
 export interface CommandRowCallbacks {
@@ -122,17 +123,14 @@ export function createCommandRow(
     infoCell.append(infoActions);
   }
 
-  if (showExampleColumn) {
+  const exampleCell = showExampleColumn
+    ? createExampleCell(command, callbacks, visibleName, exampleExpanded, onExampleToggle)
+    : null;
+  if (exampleCell) {
     row.append(
       commandCell,
       infoCell,
-      createExampleCell(
-        command,
-        callbacks,
-        visibleName,
-        exampleExpanded,
-        onExampleToggle,
-      ),
+      exampleCell.element,
     );
   } else {
     row.append(commandCell, infoCell);
@@ -149,6 +147,9 @@ export function createCommandRow(
       row.classList.toggle("expanded", isExpanded);
       moreButton.textContent = isExpanded ? "LESS" : "MORE";
       moreButton.setAttribute("aria-expanded", String(isExpanded));
+    },
+    setExampleExpanded(isExpanded) {
+      exampleCell?.setExpanded(isExpanded);
     },
   };
   moreButton?.addEventListener("click", () => requestExpansion(handle));
@@ -294,15 +295,23 @@ function createReorderHandle(
   return handle;
 }
 
+interface ExampleCellHandle {
+  element: HTMLElement;
+  setExpanded(expanded: boolean): void;
+}
+
 function createExampleCell(
   command: CommandEntry,
   callbacks: CommandRowCallbacks,
   visibleName: string,
   expanded: boolean,
   onToggle?: (expanded: boolean) => void,
-): HTMLElement {
+): ExampleCellHandle {
   if (!command.example) {
-    return element("div", "example-cell example-empty", "—");
+    return {
+      element: element("div", "example-cell example-empty", "—"),
+      setExpanded() { /* Empty examples cannot expand. */ },
+    };
   }
   const cell = element("div", `example-cell${expanded ? " expanded" : ""}`);
   const copyExample = button("example-copy", "");
@@ -313,8 +322,10 @@ function createExampleCell(
   copyExample.setAttribute("aria-label", `Copy example for ${visibleName}`);
   copyExample.addEventListener("click", () => callbacks.onCopy(command.example ?? "", copyExample));
   cell.append(copyExample);
+  let toggle: HTMLButtonElement | null = null;
+  let canExpand = expanded;
   if (onToggle) {
-    const toggle = button("example-toggle", expanded ? "LESS" : "MORE");
+    toggle = button("example-toggle", expanded ? "LESS" : "MORE");
     toggle.hidden = !expanded;
     toggle.setAttribute(
       "aria-label",
@@ -322,15 +333,32 @@ function createExampleCell(
     );
     toggle.setAttribute("aria-expanded", String(expanded));
     toggle.setAttribute("aria-controls", content.id);
-    toggle.addEventListener("click", () => onToggle(!expanded));
+    toggle.addEventListener("click", () => {
+      const next = !cell.classList.contains("expanded");
+      setExpanded(next);
+      onToggle(next);
+    });
     cell.append(toggle);
+    const currentToggle = toggle;
     window.requestAnimationFrame(() => {
       if (cell.isConnected && !expanded && content.scrollHeight > content.clientHeight + 1) {
-        toggle.hidden = false;
+        canExpand = true;
+        currentToggle.hidden = false;
       }
     });
   }
-  return cell;
+  function setExpanded(next: boolean): void {
+    cell.classList.toggle("expanded", next);
+    if (!toggle) return;
+    toggle.hidden = !next && !canExpand;
+    toggle.textContent = next ? "LESS" : "MORE";
+    toggle.setAttribute("aria-expanded", String(next));
+    toggle.setAttribute(
+      "aria-label",
+      `${next ? "Collapse" : "Expand"} example for ${visibleName}`,
+    );
+  }
+  return { element: cell, setExpanded };
 }
 
 function appendDetail(

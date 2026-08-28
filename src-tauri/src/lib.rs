@@ -16,6 +16,7 @@ pub fn run() {
             commands::filesystem::trash_entry,
             commands::settings::load_settings,
             commands::settings::save_settings,
+            commands::performance::get_power_profile,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

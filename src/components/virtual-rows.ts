@@ -6,6 +6,39 @@ export interface VirtualRowsHandle {
   reconnect(): void;
 }
 
+class VirtualScrollCoordinator {
+  private readonly callbacks = new Set<() => void>();
+  private frame: number | null = null;
+
+  constructor(root: HTMLElement) {
+    root.addEventListener("scroll", this.onScroll, { passive: true });
+  }
+
+  subscribe(callback: () => void): () => void {
+    this.callbacks.add(callback);
+    return () => this.callbacks.delete(callback);
+  }
+
+  private readonly onScroll = (): void => {
+    if (this.frame !== null) return;
+    this.frame = window.requestAnimationFrame(() => {
+      this.frame = null;
+      this.callbacks.forEach((callback) => callback());
+    });
+  };
+}
+
+const coordinators = new WeakMap<HTMLElement, VirtualScrollCoordinator>();
+
+function coordinatorFor(root: HTMLElement): VirtualScrollCoordinator {
+  let coordinator = coordinators.get(root);
+  if (!coordinator) {
+    coordinator = new VirtualScrollCoordinator(root);
+    coordinators.set(root, coordinator);
+  }
+  return coordinator;
+}
+
 interface VirtualRowsOptions {
   count: number;
   defaultRowHeight: number;
@@ -32,6 +65,7 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
   let active = false;
   let forcedIndex: number | null = null;
   let scrollRoot: HTMLElement | null = null;
+  let unsubscribeScroll: (() => void) | null = null;
   let visibilityObserver: IntersectionObserver | null = null;
   const observer = new ResizeObserver((entries) => {
     let changed = false;
@@ -52,8 +86,6 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
     }
   });
 
-  const onScroll = () => schedule();
-
   queueMicrotask(() => {
     if (disposed) {
       return;
@@ -71,10 +103,13 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
         }
         active = nextActive;
         if (active) {
-          scrollRoot?.addEventListener("scroll", onScroll, { passive: true });
+          if (scrollRoot && !unsubscribeScroll) {
+            unsubscribeScroll = coordinatorFor(scrollRoot).subscribe(refresh);
+          }
           refresh();
         } else {
-          scrollRoot?.removeEventListener("scroll", onScroll);
+          unsubscribeScroll?.();
+          unsubscribeScroll = null;
           renderRange(0, 0);
         }
       },
@@ -153,7 +188,8 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
       if (animationFrame !== null) {
         window.cancelAnimationFrame(animationFrame);
       }
-      scrollRoot?.removeEventListener("scroll", onScroll);
+      unsubscribeScroll?.();
+      unsubscribeScroll = null;
       visibilityObserver?.disconnect();
       observer.disconnect();
       element.replaceChildren();
@@ -167,7 +203,7 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
         return;
       }
       active = true;
-      root.addEventListener("scroll", onScroll, { passive: true });
+      unsubscribeScroll ??= coordinatorFor(root).subscribe(refresh);
       const target = offsets[index] ?? 0;
       forcedIndex = index;
       const start = Math.max(0, index - overscan);
@@ -191,25 +227,28 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
         window.cancelAnimationFrame(animationFrame);
         animationFrame = null;
       }
-      scrollRoot?.removeEventListener("scroll", onScroll);
+      unsubscribeScroll?.();
+      unsubscribeScroll = null;
       scrollRoot = options.getScrollRoot();
       if (!scrollRoot) {
         return;
       }
-      active = true;
-      scrollRoot.addEventListener("scroll", onScroll, { passive: true });
+      active = false;
       visibilityObserver?.disconnect();
       visibilityObserver?.observe(element);
-      rangeStart = -1;
-      rangeEnd = -1;
-      refresh();
-      window.requestAnimationFrame(() => {
-        if (!disposed) {
-          rangeStart = -1;
-          rangeEnd = -1;
-          refresh();
-        }
-      });
+      const rootRect = scrollRoot.getBoundingClientRect();
+      const listRect = element.getBoundingClientRect();
+      const nearViewport = listRect.bottom >= rootRect.top - 800 &&
+        listRect.top <= rootRect.bottom + 800;
+      if (nearViewport) {
+        active = true;
+        unsubscribeScroll = coordinatorFor(scrollRoot).subscribe(refresh);
+        rangeStart = -1;
+        rangeEnd = -1;
+        refresh();
+      } else {
+        renderRange(0, 0);
+      }
     },
   };
 }

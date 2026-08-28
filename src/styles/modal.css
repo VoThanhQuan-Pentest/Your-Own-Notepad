@@ -368,6 +368,49 @@
   white-space: nowrap;
 }
 
+.settings-performance-summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-performance-status {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  font-size: var(--font-caption);
+}
+
+:root[data-ui-scale="large"] .modal-overlay {
+  padding: 12px;
+}
+
+:root[data-ui-scale="large"] .modal-dialog,
+:root[data-ui-scale="large"] .modal-dialog.wide {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 24px);
+}
+
+:root[data-ui-scale="large"] .modal-header {
+  height: var(--header-height);
+}
+
+:root[data-ui-scale="large"] .modal-body {
+  padding: var(--cell-padding);
+}
+
+:root[data-ui-scale="large"] .settings-performance-summary {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+:root[data-ui-scale="large"] .settings-performance-summary .inline-button {
+  align-self: flex-start;
+}
+
 .appearance-field {
   display: grid;
   min-width: 0;

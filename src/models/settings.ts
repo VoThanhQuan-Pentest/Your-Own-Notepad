@@ -4,6 +4,9 @@ export type ThemeMode = (typeof themeModes)[number];
 export const accentThemes = ["cyan", "blue", "purple", "green", "orange", "pink"] as const;
 export type AccentTheme = (typeof accentThemes)[number];
 
+export const performanceModes = ["auto", "full", "balanced", "low-power"] as const;
+export type PerformanceMode = (typeof performanceModes)[number];
+
 export interface CustomThemeColors {
   enabled: boolean;
   background: string;
@@ -45,6 +48,7 @@ export interface AppSettings {
   themeMode: ThemeMode;
   accentTheme: AccentTheme;
   customThemes: CustomThemes;
+  performanceMode: PerformanceMode;
   favorites: FavoriteItem[];
   sectionHighlights: SectionHighlight[];
   rememberExpandedSections: boolean;
@@ -64,6 +68,7 @@ export const defaultSettings: AppSettings = {
   themeMode: "dark",
   accentTheme: "cyan",
   customThemes: structuredClone(defaultCustomThemes),
+  performanceMode: "auto",
   favorites: [],
   sectionHighlights: [],
   rememberExpandedSections: true,
@@ -79,6 +84,10 @@ export function isThemeMode(value: unknown): value is ThemeMode {
 
 export function isAccentTheme(value: unknown): value is AccentTheme {
   return accentThemes.includes(value as AccentTheme);
+}
+
+export function isPerformanceMode(value: unknown): value is PerformanceMode {
+  return performanceModes.includes(value as PerformanceMode);
 }
 
 export function isHexColor(value: unknown): value is string {

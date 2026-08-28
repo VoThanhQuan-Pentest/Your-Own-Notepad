@@ -292,6 +292,7 @@ test("defaults profile settings and ignores removed Recent data", () => {
   const legacy = normalizeSettings({ recentFiles: ["/Nmap.cmdnote"] } as Partial<AppSettings>);
   equal(legacy.favorites.length, 0);
   equal(legacy.displayName, null);
+  equal(legacy.performanceMode, "auto");
   equal(legacy.sectionHighlights.length, 0);
   equal(legacy.customThemes.dark.background, "#0d1117");
 
@@ -302,6 +303,14 @@ test("defaults profile settings and ignores removed Recent data", () => {
   });
   equal(normalized.favorites.length, 1);
   equal(normalized.displayName, "Quan Tester");
+});
+
+test("normalizes backward-compatible Performance Mode settings", () => {
+  equal(normalizeSettings({ performanceMode: "low-power" }).performanceMode, "low-power");
+  equal(
+    normalizeSettings({ performanceMode: "turbo" } as unknown as Partial<AppSettings>).performanceMode,
+    "auto",
+  );
 });
 
 test("normalizes and bounds local Section highlights", () => {

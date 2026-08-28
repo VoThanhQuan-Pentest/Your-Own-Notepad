@@ -186,7 +186,7 @@ test("skips existing commands in pasted table by default", async ({ page }) => {
 
 test("keeps bulk selection stable across virtualized rows", async ({ page }) => {
   test.setTimeout(60_000);
-  await page.goto("/?stress=5000&skip-welcome");
+  await page.goto("/?stress=5000&skip-welcome&performance=full");
   await expect(page.locator(".command-section")).toHaveCount(50);
   await expect(page.locator(".command-row")).not.toHaveCount(5_000);
   await page.getByRole("button", { name: "SELECT", exact: true }).first().click();
@@ -361,7 +361,7 @@ test("only offers Example expansion beyond six visual lines", async ({ page }) =
 
 test("remeasures expanded multiline Examples inside a 5,000-row virtual list", async ({ page }) => {
   test.setTimeout(60_000);
-  await page.goto("/?stress=5000&skip-welcome");
+  await page.goto("/?stress=5000&skip-welcome&performance=full");
   const row = page.locator("[data-command-id='stress-command-10']");
   await expect(row).toBeVisible();
   const collapsedHeight = await row.evaluate((element) => element.getBoundingClientRect().height);
@@ -439,6 +439,9 @@ test("recovers after a simulated wake without rereading unchanged files or losin
   const before = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
   const readsBefore = before.calls.filter((call: string) => call === "read_command_file").length;
   const listsBefore = before.calls.filter((call: string) => call === "list_directory").length;
+  await page.locator("[data-command-id='ping-scan']").evaluate((row) => {
+    row.dataset.resumeSentinel = "preserved";
+  });
 
   await page.getByRole("button", { name: "Open settings" }).click();
   const profile = page.getByLabel("Local profile name");
@@ -458,6 +461,8 @@ test("recovers after a simulated wake without rereading unchanged files or losin
   const after = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
   expect(after.calls.filter((call: string) => call === "read_command_file").length).toBe(readsBefore);
   await expect(page.locator("[data-command-id='ping-scan']")).toBeVisible();
+  await expect(page.locator("[data-command-id='ping-scan']"))
+    .toHaveAttribute("data-resume-sentinel", "preserved");
 });
 
 test("animates file changes and removes the visual snapshot after the transition", async ({ page }) => {
@@ -692,7 +697,7 @@ test("keeps virtual Section motion stable through 100 rapid toggles", async ({ p
   page.on("console", (message) => {
     if (message.type() === "error") runtimeErrors.push(message.text());
   });
-  await page.goto("/?stress=5000&skip-welcome");
+  await page.goto("/?stress=5000&skip-welcome&performance=full");
   const first = page.locator(".command-section").first();
   const toggle = first.locator(".section-toggle");
   await toggle.evaluate((button) => {
@@ -705,4 +710,158 @@ test("keeps virtual Section motion stable through 100 rapid toggles", async ({ p
   await expect(first.locator(".section-content")).not.toHaveAttribute("inert", "");
   expect(await page.locator(".command-row").count()).toBeLessThan(50);
   expect(runtimeErrors).toEqual([]);
+});
+
+test("persists Performance Mode and disables motion in Low Power", async ({ page }) => {
+  await page.goto(`${FIXTURE_URL}&auto-performance`);
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await page.getByLabel("Performance mode").selectOption("low-power");
+  await page.getByRole("button", { name: "SAVE", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+
+  await page.locator(".tree-file").filter({ hasText: "Git" }).click();
+  await expect(page.getByRole("heading", { name: "GIT" })).toBeVisible();
+  await expect(page.locator(".file-view-outgoing, .file-view-incoming")).toHaveCount(0);
+  await page.getByRole("button", { name: "Table Example Cases TABLE" }).click();
+  await expect(page.locator("[data-section-id='table-example-cases'] .section-content"))
+    .not.toHaveClass(/section-content-opening/);
+
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await page.getByRole("button", { name: "COPY DIAGNOSTICS" }).click();
+  await expect(page.getByRole("button", { name: "COPIED" })).toBeVisible();
+  const diagnostics = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
+  expect(diagnostics.selectedMode).toBe("low-power");
+  expect(diagnostics.effectiveMode).toBe("low-power");
+  await page.getByRole("button", { name: "CANCEL" }).click();
+
+  await page.goto("/e2e.html?fixture=basic&skip-welcome");
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+});
+
+test("keeps Search usable when the workspace Worker is unavailable", async ({ page }) => {
+  await page.goto(`${FIXTURE_URL}&disable-worker`);
+  const search = page.getByRole("combobox", { name: "Search commands" });
+  await search.fill("namp");
+  await expect(page.getByRole("option").first()).toBeVisible();
+  await expect(page.getByText("NEAR").first()).toBeVisible();
+});
+
+test("uses shorter non-cloning motion in Balanced mode", async ({ page }) => {
+  await page.goto(`${FIXTURE_URL}&performance=balanced`);
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "balanced");
+  const archive = page.locator("[data-section-id='archive']");
+  await archive.getByRole("button", { name: "Archive TABLE" }).click();
+  await expect(archive.locator(".section-content")).toHaveCSS("animation-duration", "0.121s");
+  await page.locator(".tree-file").filter({ hasText: "Git" }).click();
+  await expect(page.getByRole("heading", { name: "GIT" })).toBeVisible();
+  await expect(page.locator(".file-view-outgoing")).toHaveCount(0);
+});
+
+test("Auto selects Low Power for 200% semantic scale without root zoom", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 600 });
+  await page.goto(`${FIXTURE_URL}&auto-performance`);
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await page.getByLabel("UI scale percentage").fill("200");
+  await page.getByRole("button", { name: "SAVE", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+  await expect(page.locator("html")).toHaveAttribute("data-ui-scale", "large");
+  await expect(page.locator("#app")).toHaveCSS("zoom", "1");
+  await expect(page.locator("body")).toHaveCSS("font-size", "28px");
+  const layout = await page.locator(".app-shell").evaluate((shell) => ({
+    horizontalOverflow: shell.scrollWidth > shell.clientWidth,
+  }));
+  expect(layout.horizontalOverflow).toBe(false);
+  await expect(page.locator(".file-overflow-menu")).toBeVisible();
+});
+
+test("Auto downgrades after sustained slow frames", async ({ page }) => {
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setCPUThrottlingRate", { rate: 6 });
+  try {
+    await page.goto(`${FIXTURE_URL}&auto-performance`);
+    await page.evaluate(async () => {
+      for (let index = 0; index < 8; index += 1) {
+        document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+        const started = performance.now();
+        while (performance.now() - started < 90) { /* Simulate a slow interaction. */ }
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      }
+    });
+    await expect.poll(() => page.locator("html").getAttribute("data-performance"), {
+      timeout: 8_000,
+    }).toBe("low-power");
+  } finally {
+    await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  }
+});
+
+test("Auto honors the Linux power-saver profile without a polling timer", async ({ page }) => {
+  await page.goto(`${FIXTURE_URL}&auto-performance&system-power-saver`);
+  await expect.poll(() => page.locator("html").getAttribute("data-performance"))
+    .toBe("low-power");
+});
+
+test("stays responsive at 200% scale and six-times CPU throttling in Low Power", async ({ page }) => {
+  test.setTimeout(60_000);
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setCPUThrottlingRate", { rate: 6 });
+  try {
+    await page.goto("/?stress=5000&skip-welcome&performance=low-power&scale=200");
+    await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+    await expect(page.locator("html")).toHaveAttribute("data-ui-scale", "large");
+    await expect(page.locator("#app")).toHaveCSS("zoom", "1");
+    await expect(page.locator("body")).toHaveCSS("font-size", "28px");
+    expect(await page.locator(".command-row").count()).toBeLessThan(120);
+    await page.evaluate(() =>
+      (window as unknown as { __COMMAND_VAULT_CLEAR_DIAGNOSTICS__: () => void })
+        .__COMMAND_VAULT_CLEAR_DIAGNOSTICS__(),
+    );
+
+    const toggle = page.locator(".command-section .section-toggle").first();
+    const durations = await toggle.evaluate(async (button) => {
+      const values: number[] = [];
+      for (let index = 0; index < 40; index += 1) {
+        const started = performance.now();
+        (button as HTMLButtonElement).click();
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        values.push(performance.now() - started);
+      }
+      return values.sort((left, right) => left - right);
+    });
+    const p95Index = Math.max(0, Math.ceil(durations.length * 0.95) - 1);
+    expect(durations[p95Index] ?? 999).toBeLessThan(100);
+
+    const search = page.getByRole("combobox", { name: "Search commands" });
+    const searchDuration = await search.evaluate(async (input) => {
+      const results = document.querySelector<HTMLElement>("#command-search-results");
+      if (!results) return 999;
+      const started = performance.now();
+      const completed = new Promise<number>((resolve) => {
+        const observer = new MutationObserver(() => {
+          if (!results.hidden && results.querySelector(".search-result")) {
+            observer.disconnect();
+            resolve(performance.now() - started);
+          }
+        });
+        observer.observe(results, { childList: true, subtree: true, attributes: true });
+      });
+      (input as HTMLInputElement).value = "Stress Command 4999";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      return completed;
+    });
+    await expect(page.getByRole("option").first()).toBeVisible();
+    expect(searchDuration).toBeLessThan(300);
+    await expect(page.locator(".file-view-outgoing, .file-view-incoming"))
+      .toHaveCount(0);
+    const diagnostics = JSON.parse(await page.evaluate(() =>
+      (window as unknown as { __COMMAND_VAULT_DIAGNOSTICS__: () => string })
+        .__COMMAND_VAULT_DIAGNOSTICS__(),
+    ));
+    expect(diagnostics.recent.filter(
+      (entry: { name: string; durationMs: number }) =>
+        entry.name === "main-thread-long-task" && entry.durationMs > 250,
+    )).toEqual([]);
+  } finally {
+    await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  }
 });
