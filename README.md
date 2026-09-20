@@ -136,6 +136,42 @@ The compiled `.exe` / `.msi` will be located in `src-tauri\target\release\bundle
 
 ---
 
+#### 4. Updating an Existing Clone
+
+If you already cloned the repository earlier and want to update to the latest version:
+
+##### Step 1: Pull the latest changes
+```bash
+cd Your-Own-Notepad
+git pull origin main
+```
+
+##### Step 2: Update dependencies and build frontend
+```bash
+npm install
+npm run build
+```
+
+##### Step 3: Run or re-package
+* **Run directly in development mode:**
+  ```bash
+  npm run tauri dev
+  ```
+* **Build and install updated `.deb` (Kali/Debian/Ubuntu):**
+  ```bash
+  npm run tauri build
+  sudo apt install --reinstall ./src-tauri/target/release/bundle/deb/*.deb
+  ```
+* **Build updated installer on Windows (PowerShell):**
+  ```powershell
+  npm run tauri build
+  ```
+
+> **Data Safety Guarantee:**
+> Your workspaces, `.cmdnote` files, and user preferences are stored separately from the application codebase (e.g. `~/.config/io.commandvault.desktop/` or `%APPDATA%\io.commandvault.desktop\`). Updating or reinstalling Command Vault **will never overwrite, alter, or delete** your existing notes or commands.
+
+---
+
 ### User Guide
 
 1. **Launch & Choose Performance Mode**:
@@ -325,6 +361,50 @@ Tải file cài đặt `.exe` hoặc `.msi` từ mục [Releases](https://github
    npm run tauri build
    ```
 File thực thi hoàn thiện sẽ nằm tại thư mục `src-tauri\target\release\bundle\`.
+
+---
+
+#### 4. Hướng dẫn cập nhật phiên bản mới (Nếu đã clone repo từ trước)
+
+Nếu bạn đã tải/clone repository này về máy trước đó và muốn cập nhật lên phiên bản mới nhất, hãy thực hiện theo các bước sau:
+
+##### Bước 1: Kéo mã nguồn mới nhất về máy
+Mở Terminal trong thư mục dự án và chạy:
+```bash
+cd Your-Own-Notepad
+git pull origin main
+```
+
+##### Bước 2: Cập nhật dependencies và build lại frontend
+```bash
+npm install
+npm run build
+```
+
+##### Bước 3: Áp dụng bản cập nhật
+
+* **Cách A: Chạy trực tiếp ở chế độ phát triển (Dev mode):**
+  ```bash
+  npm run tauri dev
+  ```
+
+* **Cách B: Đóng gói bản Release mới (Debian / Kali / Ubuntu):**
+  ```bash
+  npm run tauri build
+  ```
+  Sau khi build xong, cài đặt đè gói `.deb` mới vừa tạo:
+  ```bash
+  sudo apt install --reinstall ./src-tauri/target/release/bundle/deb/*.deb
+  ```
+
+* **Cách C: Cập nhật trên Windows (PowerShell):**
+  ```powershell
+  npm run tauri build
+  ```
+  File cài đặt mới sẽ nằm trong `src-tauri\target\release\bundle\`.
+
+> **Lưu ý quan trọng về an toàn dữ liệu khi cập nhật:**
+> Toàn bộ dữ liệu Workspace, các file `.cmdnote` và thiết lập (Settings/Theme) được lưu trữ độc lập tại thư mục cấu hình riêng trên máy của bạn (`~/.config/io.commandvault.desktop/` hoặc `%APPDATA%\io.commandvault.desktop\`). Việc cập nhật mã nguồn hay cài đè phần mềm sẽ **không bao giờ** làm mất hay ảnh hưởng đến các ghi chú/câu lệnh đã lưu của bạn.
 
 ---
 
