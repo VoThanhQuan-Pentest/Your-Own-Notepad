@@ -18,6 +18,7 @@ import { openConfirm, openModal, openPrompt, showMessage } from "./components/mo
 import { openTableImportForm } from "./components/table-import-form";
 import { createToolbar, type ToolbarHandle } from "./components/toolbar";
 import { createWelcomeDashboard, type DashboardFavorite } from "./components/welcome-dashboard";
+import { createStartupModeDashboard } from "./components/startup-mode-dashboard";
 import { buildStressFile, demoCommandFile } from "./demo-data";
 import type {
   CommandEntry,
@@ -42,6 +43,8 @@ import {
   type FavoriteItem,
   type PerformanceMode,
   type SectionHighlightLevel,
+  type StartupModePreference,
+  type StartupPerformanceMode,
   type ThemeMode,
 } from "./models/settings";
 import { copyText } from "./services/clipboard";
@@ -71,6 +74,12 @@ import { createId } from "./utils/ids";
 import { serializeCommandFile } from "./utils/validation";
 
 type SearchResult = WorkerSearchResult;
+
+export type AppStartupState =
+  | "initializing"
+  | "choosing-mode"
+  | "loading-workspace"
+  | "ready";
 
 interface FocusTarget {
   sectionId?: string;
@@ -159,18 +168,33 @@ export class CommandVaultApplication {
   private lifecycleNeedsWorkspaceCheck = false;
   private recoveryInFlight = false;
   private workspaceLoading = false;
+  private startupState: AppStartupState = "initializing";
+  private workspaceInitializationStarted = false;
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.toolbar = createToolbar({
-      onSearch: (query) => this.queueSearch(query),
-      onHome: () => this.renderWelcomeDashboard(),
+      onSearch: (query) => {
+        if (this.startupState === "choosing-mode") {
+          return;
+        }
+        this.queueSearch(query);
+      },
+      onHome: () => {
+        if (this.startupState === "choosing-mode") {
+          return;
+        }
+        this.renderWelcomeDashboard();
+      },
       onSettings: () => this.openSettings(),
     });
     this.performanceController.subscribe((profile) => {
       this.performanceProfile = profile;
       if (profile.mode === "low-power") this.cancelFileTransition();
       this.activeTable?.setPerformanceProfile(profile);
+    });
+    this.performanceController.onFallbackNotification((message) => {
+      this.showPerformanceNotice(message);
     });
   }
 
@@ -222,10 +246,94 @@ export class CommandVaultApplication {
       await this.collectDisplayName();
     }
 
-    if (!this.desktopRuntime) {
-      this.loadDevelopmentWorkspace();
+    await this.handleStartupFlow();
+  }
+
+  getStartupState(): AppStartupState {
+    return this.startupState;
+  }
+
+  private renderShell(): void {
+    const shell = element("div", "app-shell");
+    this.body.append(this.workspace);
+    shell.append(this.toolbar.element, this.body);
+    this.root.replaceChildren(shell);
+  }
+
+  private async handleStartupFlow(): Promise<void> {
+    const searchParams = new URLSearchParams(window.location.search);
+    const interrupted = Boolean(this.settings.startupInProgress);
+    const queryStartup = searchParams.get("startup");
+    const requestedPerformance = searchParams.get("performance");
+    const hasAskStartup = searchParams.has("ask-startup");
+
+    let preference: StartupModePreference = this.settings.startupModePreference;
+    if (hasAskStartup || queryStartup === "ask") {
+      preference = "ask";
+    } else if (queryStartup === "battery-saver" || queryStartup === "performance") {
+      preference = queryStartup;
+    } else if (this.stressMode || requestedPerformance) {
+      preference = requestedPerformance === "low-power" ? "battery-saver" : "performance";
+    }
+
+    if (interrupted || preference === "ask") {
+      this.startupState = "choosing-mode";
+      this.renderStartupModeDashboard();
       return;
     }
+
+    await this.startWorkspaceWithMode(preference);
+  }
+
+  private renderStartupModeDashboard(): void {
+    this.clearActiveTable();
+    this.showingDashboard = false;
+    this.body.classList.add("app-body-startup");
+    const interrupted = Boolean(this.settings.startupInProgress);
+    const dashboard = createStartupModeDashboard({
+      displayName: this.settings.displayName,
+      lastMode: this.settings.lastStartupMode,
+      interruptedStartup: interrupted,
+      onSelect: (mode) => void this.startWorkspaceWithMode(mode),
+    });
+    this.workspace.replaceChildren(dashboard);
+  }
+
+  private async startWorkspaceWithMode(mode: StartupPerformanceMode): Promise<void> {
+    if (this.workspaceInitializationStarted) {
+      return;
+    }
+    this.workspaceInitializationStarted = true;
+    this.body.classList.remove("app-body-startup");
+    this.startupState = "loading-workspace";
+    this.settings.lastStartupMode = mode;
+    const requestedPerformance = new URLSearchParams(window.location.search).get("performance");
+    const hasAutoPerformance = new URLSearchParams(window.location.search).has("auto-performance");
+    if (hasAutoPerformance) {
+      this.performanceController.configure("auto", this.settings.uiScale);
+    } else if (requestedPerformance === "balanced") {
+      this.performanceController.configure("balanced", this.settings.uiScale);
+    } else {
+      this.performanceController.applyStartupMode(mode);
+    }
+    this.performanceProfile = this.performanceController.profile();
+    this.workspaceWorker.configure(this.workspaceLoadGeneration, {
+      batchSize: this.performanceProfile.workerBatchSize,
+      yieldMs: this.performanceProfile.workerYieldMs,
+    });
+    if (this.performanceProfile.mode === "low-power") {
+      this.cancelFileTransition();
+    }
+    this.activeTable?.setPerformanceProfile(this.performanceProfile);
+
+    if (!this.desktopRuntime) {
+      this.loadDevelopmentWorkspace();
+      this.startupState = "ready";
+      return;
+    }
+
+    this.settings.startupInProgress = true;
+    await this.persistSettings(false);
 
     if (this.settings.lastWorkspace) {
       try {
@@ -234,21 +342,30 @@ export class CommandVaultApplication {
       } catch (error) {
         const failure = normalizeServiceError(error);
         this.workspaceRoot = null;
+        this.settings.startupInProgress = false;
+        await this.persistSettings(false);
         this.renderExplorer();
         this.renderWorkspaceMissing(failure.message);
+        this.startupState = "ready";
         return;
       }
     }
 
+    this.settings.startupInProgress = false;
+    await this.persistSettings(false);
     this.renderExplorer();
     this.renderWelcomeDashboard();
+    this.startupState = "ready";
   }
 
-  private renderShell(): void {
-    const shell = element("div", "app-shell");
-    this.body.append(this.workspace);
-    shell.append(this.toolbar.element, this.body);
-    this.root.replaceChildren(shell);
+  private showPerformanceNotice(message: string): void {
+    this.root.querySelector(".performance-notice")?.remove();
+    const notice = element("div", "recovery-notice performance-notice");
+    notice.append(element("span", undefined, message));
+    this.root.querySelector(".app-shell")?.append(notice);
+    window.setTimeout(() => {
+      notice.remove();
+    }, 4000);
   }
 
   private renderExplorer(options: RenderExplorerOptions = {}): void {
@@ -571,7 +688,12 @@ export class CommandVaultApplication {
 
   private async openWorkspace(path: string, restoreLastFile: boolean): Promise<void> {
     this.fileOpenGeneration += 1;
-    this.workspaceWorker.reset(this.workspaceLoadGeneration + 1);
+    const generation = ++this.workspaceLoadGeneration;
+    this.workspaceWorker.reset(generation);
+    this.workspaceWorker.configure(generation, {
+      batchSize: this.performanceProfile.workerBatchSize,
+      yieldMs: this.performanceProfile.workerYieldMs,
+    });
     this.pendingFilePath = null;
     const workspaceChanged = this.settings.lastWorkspace !== path;
     this.workspaceRoot = path;
@@ -591,44 +713,70 @@ export class CommandVaultApplication {
     this.fileHistory.clear();
     this.collapsedQuickGroups.clear();
     this.selectionSectionId = null;
-    this.renderExplorer({ resetViewport: true });
-    this.workspaceLoading = true;
-    if (this.skipWelcome || !this.settings.displayName) {
-      this.renderLoading("Reading workspace…");
-    } else {
-      this.renderWelcomeDashboard();
-    }
-    try {
-      await this.refreshWorkspace(false);
-    } finally {
-      this.workspaceLoading = false;
-    }
 
     if (workspaceChanged) {
       this.settings.expandedSections = [];
       this.settings.sectionStateFiles = [];
     }
     this.settings.lastWorkspace = path;
-    const candidate = restoreLastFile ? this.settings.lastOpenedFile : null;
-    const fileToOpen = candidate && this.files.has(candidate) ? candidate : null;
-    await this.persistSettings(false);
 
-    if (fileToOpen && this.skipWelcome) {
-      await this.openFile(fileToOpen);
+    // Progressive phase 1: load workspace directory tree and render Explorer immediately
+    const entries = await listDirectory(path);
+    if (generation !== this.workspaceLoadGeneration) {
+      return;
+    }
+    this.entries = entries;
+    this.workspaceTreeSignature = filesystemStructureSignature(entries);
+    entries
+      .filter((entry) => entry.kind === "folder")
+      .forEach((entry) => this.expandedFolders.add(entry.path));
+
+    // Progressive phase 2: prioritize active file first
+    const fileEntries = flattenFiles(entries);
+    const candidate = restoreLastFile ? this.settings.lastOpenedFile : null;
+    const targetPath = candidate && fileEntries.some((entry) => entry.path === candidate) ? candidate : null;
+
+    if (targetPath) {
+      try {
+        const source = await readCommandFile(path, targetPath);
+        if (generation === this.workspaceLoadGeneration) {
+          const [parsed] = await this.workspaceWorker.parseFiles([{ path: targetPath, source }]);
+          if (parsed && parsed.ok) {
+            this.files.set(targetPath, parsed.file);
+            this.fileSources.set(targetPath, source);
+            this.workspaceWorker.upsertFiles([{ path: targetPath, file: parsed.file }]);
+          }
+        }
+      } catch (error) {
+        console.warn("Could not prioritize active file", normalizeServiceError(error));
+      }
+    }
+
+    if (targetPath && this.skipWelcome && this.files.has(targetPath)) {
+      await this.openFile(targetPath, undefined, true);
     } else {
+      this.renderExplorer({ resetViewport: true });
       this.renderWelcomeDashboard();
     }
+
+    // Progressive phase 3: mark startup complete & UI usable
+    this.settings.startupInProgress = false;
+    await this.persistSettings(false);
+    this.startupState = "ready";
+
+    // Progressive phase 4: asynchronous background indexing for remaining files
+    void this.refreshWorkspace(true, entries);
   }
 
-  private async refreshWorkspace(preserveActive: boolean): Promise<void> {
+  private async refreshWorkspace(preserveActive: boolean, existingEntries?: FilesystemEntry[]): Promise<void> {
     if (!this.workspaceRoot) {
       return;
     }
-    const generation = ++this.workspaceLoadGeneration;
+    const generation = existingEntries ? this.workspaceLoadGeneration : ++this.workspaceLoadGeneration;
     const finishDiagnostic = this.performanceController.begin("workspace-refresh");
     const workspaceRoot = this.workspaceRoot;
     const active = preserveActive && !this.showingDashboard ? this.activeFilePath : null;
-    const entries = await listDirectory(workspaceRoot);
+    const entries = existingEntries ?? await listDirectory(workspaceRoot);
     const fileEntries = flattenFiles(entries);
     const paths = fileEntries.map((entry) => entry.path);
     const pathSet = new Set(paths);
@@ -753,9 +901,11 @@ export class CommandVaultApplication {
     if (this.pruneUnavailableFavorites()) {
       void this.persistSettings(false);
     }
-    entries
-      .filter((entry) => entry.kind === "folder")
-      .forEach((entry) => this.expandedFolders.add(entry.path));
+    if (!preserveActive) {
+      entries
+        .filter((entry) => entry.kind === "folder")
+        .forEach((entry) => this.expandedFolders.add(entry.path));
+    }
     const favoritesNeedRefresh = pathsToLoad.some((path) =>
       this.settings.favorites.some((favorite) =>
         (favorite.kind === "command" ? favorite.filePath : favorite.path) === path,
@@ -1825,7 +1975,7 @@ export class CommandVaultApplication {
     this.searchTimer = window.setTimeout(() => {
       this.searchTimer = null;
       void this.search(query, generation);
-    }, this.performanceProfile.mode === "low-power" ? 60 : 120);
+    }, this.performanceProfile.searchDebounceMs);
   }
 
   private async search(query: string, generation: number): Promise<void> {
@@ -1900,7 +2050,7 @@ export class CommandVaultApplication {
     profileField.append(element("span", undefined, "Local profile name"));
     const profileName = element("input");
     profileName.type = "text";
-    profileName.maxLength = 64;
+    profileName.maxLength = 32;
     profileName.autocomplete = "name";
     profileName.value = this.settings.displayName ?? "";
     profileField.append(profileName);
@@ -1929,10 +2079,13 @@ export class CommandVaultApplication {
       performanceMode.append(option);
     });
     performanceField.append(performanceMode);
+    const selectedModeText = this.performanceProfile.selectedStartupMode
+      ? (this.performanceProfile.selectedStartupMode === "battery-saver" ? "Battery Saver" : "Performance")
+      : performanceModeLabel(this.settings.performanceMode);
     const effectivePerformance = element(
       "code",
       "settings-performance-status",
-      `Effective: ${this.performanceProfile.mode} · ${this.performanceProfile.reason}`,
+      `Selected: ${selectedModeText} · Effective: ${this.performanceProfile.mode} (${this.performanceProfile.reason})`,
     );
     const copyDiagnostics = button("inline-button", "COPY DIAGNOSTICS");
     copyDiagnostics.addEventListener("click", () => {
@@ -1946,7 +2099,39 @@ export class CommandVaultApplication {
     });
     const performanceSummary = element("div", "settings-performance-summary");
     performanceSummary.append(effectivePerformance, copyDiagnostics);
-    form.append(performanceField, performanceSummary);
+
+    const startupField = element("label", "form-field");
+    startupField.append(element("span", undefined, "Startup mode"));
+    const startupModeSelect = element("select");
+    const startupOptions = [
+      { value: "ask", label: "Ask every launch" },
+      { value: "battery-saver", label: "Start in Battery Saver" },
+      { value: "performance", label: "Start in Performance" },
+    ] as const;
+    startupOptions.forEach((opt) => {
+      const option = element("option", undefined, opt.label);
+      option.value = opt.value;
+      option.selected = opt.value === this.settings.startupModePreference;
+      startupModeSelect.append(option);
+    });
+    startupField.append(startupModeSelect);
+
+    performanceMode.addEventListener("change", () => {
+      if (performanceMode.value === "low-power") {
+        startupModeSelect.value = "battery-saver";
+      } else if (startupModeSelect.value === "battery-saver") {
+        startupModeSelect.value = "performance";
+      }
+    });
+    startupModeSelect.addEventListener("change", () => {
+      if (startupModeSelect.value === "battery-saver") {
+        performanceMode.value = "low-power";
+      } else if (startupModeSelect.value === "performance" && performanceMode.value === "low-power") {
+        performanceMode.value = "full";
+      }
+    });
+
+    form.append(performanceField, performanceSummary, startupField);
 
     const theme = themeField(
       form,
@@ -1974,8 +2159,10 @@ export class CommandVaultApplication {
       const nextScale = clampUiScale(rawScale);
       if (
         !nextDisplayName ||
+        !Number.isInteger(nextUi) ||
         nextUi < 11 ||
         nextUi > 20 ||
+        !Number.isInteger(nextCode) ||
         nextCode < 11 ||
         nextCode > 22 ||
         !Number.isFinite(rawScale) ||
@@ -1985,7 +2172,7 @@ export class CommandVaultApplication {
         modal.setError(
           !nextDisplayName
             ? "Local profile name must contain 1 to 32 characters."
-            : "Font sizes or UI scale are outside the supported range.",
+            : "Font sizes must be whole numbers within the supported range.",
         );
         return;
       }
@@ -2003,6 +2190,7 @@ export class CommandVaultApplication {
         accentTheme: theme.accent(),
         customThemes: theme.customThemes(),
         performanceMode: performanceMode.value as PerformanceMode,
+        startupModePreference: startupModeSelect.value as StartupModePreference,
         rememberExpandedSections: remember.checked,
         ...(!remember.checked ? { expandedSections: [], sectionStateFiles: [] } : {}),
       };
@@ -2045,6 +2233,15 @@ export class CommandVaultApplication {
     const scale = clampUiScale(this.settings.uiScale);
     this.settings.uiScale = scale;
     this.performanceController.configure(this.settings.performanceMode, scale);
+    this.performanceProfile = this.performanceController.profile();
+    this.workspaceWorker.configure(this.workspaceLoadGeneration, {
+      batchSize: this.performanceProfile.workerBatchSize,
+      yieldMs: this.performanceProfile.workerYieldMs,
+    });
+    if (this.performanceProfile.mode === "low-power") {
+      this.cancelFileTransition();
+    }
+    this.activeTable?.setPerformanceProfile(this.performanceProfile);
     applySemanticScale(this.settings.uiFontSize, this.settings.codeFontSize, scale);
     this.applyTheme(this.settings.themeMode, this.settings.accentTheme, this.settings.customThemes);
   }
@@ -2343,7 +2540,7 @@ export class CommandVaultApplication {
       label.append(element("span", undefined, "DISPLAY NAME"));
       const input = element("input");
       input.type = "text";
-      input.maxLength = 64;
+      input.maxLength = 32;
       input.autocomplete = "name";
       input.placeholder = "Your name";
       label.append(input);
@@ -2814,6 +3011,7 @@ function numberField(
   label.append(element("span", undefined, labelText));
   const input = element("input");
   input.type = "number";
+  input.step = "1";
   input.value = String(value);
   input.min = String(min);
   input.max = String(max);

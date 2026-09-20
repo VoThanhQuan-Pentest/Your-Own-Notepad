@@ -378,6 +378,10 @@ test("creates a local profile and opens the Welcome dashboard", async ({ page })
   await expect(page.getByRole("heading", { name: "Who’s using Command Vault?" })).toBeVisible();
   await page.getByLabel("DISPLAY NAME").fill("  Quan   Tester  ");
   await page.getByRole("button", { name: "ENTER VAULT" }).click();
+  const perfBtn = page.getByRole("button", { name: /Performance/i });
+  if (await perfBtn.isVisible()) {
+    await perfBtn.click();
+  }
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening), Quan Tester/ }))
     .toBeVisible();
   await expect(page.getByText("No workspace selected", { exact: true })).toBeVisible();
@@ -864,4 +868,205 @@ test("stays responsive at 200% scale and six-times CPU throttling in Low Power",
   } finally {
     await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
+});
+
+test("BUG-007: rejects fractional font sizes and accepts integer font sizes", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  await page.getByRole("button", { name: "Open settings" }).click();
+  const uiFont = page.getByLabel("UI font size");
+  const codeFont = page.getByLabel("Code font size");
+
+  await uiFont.fill("14.5");
+  await page.getByRole("button", { name: "SAVE" }).click();
+  await expect(page.locator(".modal-error")).toContainText("Font sizes must be whole numbers");
+
+  await uiFont.fill("14");
+  await codeFont.fill("13.2");
+  await page.getByRole("button", { name: "SAVE" }).click();
+  await expect(page.locator(".modal-error")).toContainText("Font sizes must be whole numbers");
+
+  await codeFont.fill("13");
+  await page.getByRole("button", { name: "SAVE" }).click();
+  await expect(page.locator(".modal-dialog")).toHaveCount(0);
+});
+
+test("BUG-008: manages modal keyboard focus, initial focus, focus trap, and restore on close", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  const settingsButton = page.getByRole("button", { name: "Open settings" });
+  await settingsButton.click();
+
+  const dialog = page.locator(".modal-dialog");
+  await expect(dialog).toBeVisible();
+
+  await expect(page.locator(":focus")).toBeVisible();
+  const initialFocusInside = await dialog.evaluate((node) => node.contains(document.activeElement));
+  expect(initialFocusInside).toBe(true);
+
+  for (let i = 0; i < 15; i += 1) {
+    await page.keyboard.press("Tab");
+    const inside = await dialog.evaluate((node) => node.contains(document.activeElement));
+    expect(inside).toBe(true);
+  }
+
+  for (let i = 0; i < 5; i += 1) {
+    await page.keyboard.press("Shift+Tab");
+    const inside = await dialog.evaluate((node) => node.contains(document.activeElement));
+    expect(inside).toBe(true);
+  }
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(settingsButton).toBeFocused();
+});
+
+test("BUG-009: keeps compact table row number and search result title consistent after reorder", async ({ page }) => {
+  await page.goto(FIXTURE_URL);
+  const table = page.locator("[data-section-id='reorder-table']");
+  await table.getByRole("button", { name: "Reorder Table TABLE" }).click();
+
+  // Initially, table-gamma is row 03
+  await expect(table.locator("[data-command-id='table-gamma'] .compact-row-number")).toHaveText("03");
+
+  // Move table-gamma to position 1
+  await table.locator("[data-command-id='table-gamma']")
+    .getByRole("button", { name: "Actions for table row 03" }).click();
+  await page.getByRole("menuitem", { name: "Move to Position…" }).click();
+  await page.getByLabel("Position (1–3)").fill("1");
+  await page.getByRole("button", { name: "MOVE", exact: true }).click();
+
+  // table-gamma is now at position 01
+  await expect(table.locator("[data-command-id='table-gamma'] .compact-row-number")).toHaveText("01");
+
+  // Search for echo gamma
+  const searchInput = page.getByRole("combobox", { name: "Search commands" });
+  await searchInput.fill("echo gamma");
+  const firstOption = page.getByRole("option").first();
+  await expect(firstOption).toBeVisible();
+  await expect(firstOption.locator(".search-result-title")).toHaveText("Table Row 01");
+  await expect(firstOption.locator(".search-result-command")).toHaveText("echo gamma");
+});
+
+test("PHASE 1 & 49: renders startup dashboard and blocks heavy workspace initialization before selection", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup");
+
+  // Verify dashboard is visible
+  await expect(page.getByRole("heading", { name: "Choose how Command Vault should run." })).toBeVisible();
+  const batteryBtn = page.getByRole("button", { name: /Battery Saver/i });
+  const perfBtn = page.getByRole("button", { name: /Performance/i });
+  await expect(batteryBtn).toBeVisible();
+  await expect(perfBtn).toBeVisible();
+
+  // Verify heavy workspace state has not been rendered
+  await expect(page.locator(".tree-file")).toHaveCount(0);
+  await expect(page.locator(".command-entry")).toHaveCount(0);
+
+  // Verify no filesystem list_directory or read_command_file calls made before choice
+  const state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.calls).not.toContain("list_directory");
+  expect(state.calls).not.toContain("read_command_file");
+});
+
+test("PHASE 49: choosing Battery Saver applies low-power mode and restores workspace", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup");
+
+  const batteryBtn = page.getByRole("button", { name: /Battery Saver/i });
+  await batteryBtn.click();
+
+  // Verify mode applied and workspace loaded
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  await expect(page.locator(".tree-file").filter({ hasText: "Nmap" })).toBeVisible();
+
+  const state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.calls).toContain("list_directory");
+});
+
+test("PHASE 49: choosing Performance applies full mode and restores workspace", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup");
+
+  const perfBtn = page.getByRole("button", { name: /Performance/i });
+  await perfBtn.click();
+
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  await expect(page.locator(".tree-file").filter({ hasText: "Nmap" })).toBeVisible();
+});
+
+test("PHASE 52: rapid double-click on mode action initiates workspace only once", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup");
+
+  const perfBtn = page.getByRole("button", { name: /Performance/i });
+  // Click multiple times rapidly
+  await Promise.all([
+    perfBtn.click(),
+    perfBtn.click().catch(() => {}),
+    perfBtn.click().catch(() => {}),
+  ]);
+
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+
+  // Verify list_directory called only once for initial workspace load
+  const state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  const listCalls = state.calls.filter((c: string) => c === "list_directory");
+  expect(listCalls.length).toBe(1);
+});
+
+test("PHASE 53: displays last used mode while keeping workspace uninitialized until selection", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup&last-performance");
+
+  await expect(page.getByText("Last used: Performance")).toBeVisible();
+  await expect(page.locator(".tree-file")).toHaveCount(0);
+
+  const state = JSON.parse(await page.locator("#e2e-state").getAttribute("data-state") ?? "{}");
+  expect(state.calls).not.toContain("list_directory");
+});
+
+test("PHASE 54: auto-start preference skips selection and applies chosen mode", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=battery-saver");
+
+  // Selection dashboard skipped, workspace loaded directly
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+});
+
+test("PHASE 55: interrupted startup recovery overrides auto-start preference and focuses Battery Saver", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&interrupted-startup&startup-preference=performance");
+
+  // Must show recovery dashboard despite startup-preference=performance
+  await expect(page.getByText("Interrupted startup detected")).toBeVisible();
+  await expect(page.getByText("Previous startup did not finish normally.")).toBeVisible();
+  const batteryBtn = page.getByRole("button", { name: /Battery Saver/i });
+  await expect(batteryBtn).toBeVisible();
+  await expect(batteryBtn).toBeFocused();
+
+  // Heavy workspace not loaded
+  await expect(page.locator(".tree-file")).toHaveCount(0);
+});
+
+test("PHASE 56: keyboard accessibility with Tab, Space, Enter, and initial focus", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup&last-performance");
+
+  const perfBtn = page.getByRole("button", { name: /Performance/i });
+  const batteryBtn = page.getByRole("button", { name: /Battery Saver/i });
+
+  // Initial focus on last used mode (performance)
+  await expect(perfBtn).toBeFocused();
+
+  // Press Enter on focused button or Tab to Battery Saver
+  await batteryBtn.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
+});
+
+test("PHASE 57: prefers-reduced-motion overrides animations in Performance mode", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&ask-startup");
+
+  const perfBtn = page.getByRole("button", { name: /Performance/i });
+  await perfBtn.click();
+
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
 });

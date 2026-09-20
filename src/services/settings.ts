@@ -10,6 +10,8 @@ import {
   isPerformanceMode,
   isSectionHighlight,
   sectionHighlightKey,
+  isStartupModePreference,
+  isStartupPerformanceMode,
   isThemeMode,
   type AppSettings,
 } from "../models/settings";
@@ -63,6 +65,15 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     sectionStateFiles: Array.isArray(value.sectionStateFiles) ? value.sectionStateFiles : [],
     windowWidth: typeof value.windowWidth === "number" ? value.windowWidth : null,
     windowHeight: typeof value.windowHeight === "number" ? value.windowHeight : null,
+    startupModePreference: isStartupModePreference(value.startupModePreference)
+      ? value.startupModePreference
+      : defaultSettings.startupModePreference,
+    lastStartupMode: isStartupPerformanceMode(value.lastStartupMode)
+      ? value.lastStartupMode
+      : null,
+    startupInProgress: typeof value.startupInProgress === "boolean"
+      ? value.startupInProgress
+      : false,
   };
 }
 

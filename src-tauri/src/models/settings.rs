@@ -122,6 +122,22 @@ pub(crate) struct SectionHighlight {
     pub(crate) level: SectionHighlightLevel,
 }
 
+#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum StartupModePreference {
+    #[default]
+    Ask,
+    BatterySaver,
+    Performance,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum StartupPerformanceMode {
+    BatterySaver,
+    Performance,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct AppSettings {
@@ -146,6 +162,12 @@ pub(crate) struct AppSettings {
     pub(crate) section_state_files: Vec<String>,
     pub(crate) window_width: Option<u32>,
     pub(crate) window_height: Option<u32>,
+    #[serde(default)]
+    pub(crate) startup_mode_preference: StartupModePreference,
+    #[serde(default)]
+    pub(crate) last_startup_mode: Option<StartupPerformanceMode>,
+    #[serde(default)]
+    pub(crate) startup_in_progress: bool,
 }
 
 impl Default for AppSettings {
@@ -168,6 +190,9 @@ impl Default for AppSettings {
             section_state_files: Vec::new(),
             window_width: None,
             window_height: None,
+            startup_mode_preference: StartupModePreference::default(),
+            last_startup_mode: None,
+            startup_in_progress: false,
         }
     }
 }
@@ -237,7 +262,7 @@ fn is_hex_color(value: &str) -> bool {
 mod tests {
     use super::{
         AccentTheme, AppSettings, FavoriteItem, PerformanceMode, SectionHighlight,
-        SectionHighlightLevel, ThemeMode,
+        SectionHighlightLevel, StartupModePreference, StartupPerformanceMode, ThemeMode,
     };
 
     #[test]
@@ -285,8 +310,48 @@ mod tests {
         assert!(settings.display_name.is_none());
         assert!(settings.section_highlights.is_empty());
         assert_eq!(settings.performance_mode, PerformanceMode::Auto);
+        assert_eq!(settings.startup_mode_preference, StartupModePreference::Ask);
+        assert_eq!(settings.last_startup_mode, None);
+        assert!(!settings.startup_in_progress);
         let serialized = serde_json::to_value(&settings).expect("settings must serialize");
         assert!(serialized.get("recentFiles").is_none());
+        assert_eq!(serialized["startupModePreference"], "ask");
+        assert!(
+            serialized.get("lastStartupMode").is_none() || serialized["lastStartupMode"].is_null()
+        );
+        assert_eq!(serialized["startupInProgress"], false);
+    }
+
+    #[test]
+    fn startup_settings_serialize_and_deserialize() {
+        let mut settings = AppSettings {
+            startup_mode_preference: StartupModePreference::BatterySaver,
+            last_startup_mode: Some(StartupPerformanceMode::Performance),
+            startup_in_progress: true,
+            ..Default::default()
+        };
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert_eq!(serialized["startupModePreference"], "battery-saver");
+        assert_eq!(serialized["lastStartupMode"], "performance");
+        assert_eq!(serialized["startupInProgress"], true);
+
+        settings.startup_mode_preference = StartupModePreference::Performance;
+        settings.last_startup_mode = Some(StartupPerformanceMode::BatterySaver);
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert_eq!(serialized["startupModePreference"], "performance");
+        assert_eq!(serialized["lastStartupMode"], "battery-saver");
+
+        let deserialized: AppSettings =
+            serde_json::from_value(serialized).expect("settings must deserialize");
+        assert_eq!(
+            deserialized.startup_mode_preference,
+            StartupModePreference::Performance
+        );
+        assert_eq!(
+            deserialized.last_startup_mode,
+            Some(StartupPerformanceMode::BatterySaver)
+        );
+        assert!(deserialized.startup_in_progress);
     }
 
     #[test]
@@ -324,8 +389,10 @@ mod tests {
 
     #[test]
     fn validates_normalized_local_profile_names() {
-        let mut settings = AppSettings::default();
-        settings.display_name = Some("Quan Tester".to_string());
+        let mut settings = AppSettings {
+            display_name: Some("Quan Tester".to_string()),
+            ..Default::default()
+        };
         assert!(settings.validate().is_ok());
         settings.display_name = Some(" Quan  Tester ".to_string());
         assert!(settings.validate().is_err());
@@ -359,8 +426,10 @@ mod tests {
 
     #[test]
     fn serializes_performance_mode_with_kebab_case() {
-        let mut settings = AppSettings::default();
-        settings.performance_mode = PerformanceMode::LowPower;
+        let settings = AppSettings {
+            performance_mode: PerformanceMode::LowPower,
+            ..Default::default()
+        };
         let serialized = serde_json::to_value(&settings).expect("settings must serialize");
         assert_eq!(serialized["performanceMode"], "low-power");
     }

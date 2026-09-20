@@ -38,6 +38,12 @@ export interface SectionHighlight {
   level: SectionHighlightLevel;
 }
 
+export const startupModePreferences = ["ask", "battery-saver", "performance"] as const;
+export type StartupModePreference = (typeof startupModePreferences)[number];
+
+export const startupPerformanceModes = ["battery-saver", "performance"] as const;
+export type StartupPerformanceMode = (typeof startupPerformanceModes)[number];
+
 export interface AppSettings {
   displayName: string | null;
   lastWorkspace: string | null;
@@ -56,6 +62,9 @@ export interface AppSettings {
   sectionStateFiles: string[];
   windowWidth: number | null;
   windowHeight: number | null;
+  startupModePreference: StartupModePreference;
+  lastStartupMode: StartupPerformanceMode | null;
+  startupInProgress: boolean;
 }
 
 export const defaultSettings: AppSettings = {
@@ -76,6 +85,9 @@ export const defaultSettings: AppSettings = {
   sectionStateFiles: [],
   windowWidth: null,
   windowHeight: null,
+  startupModePreference: "ask",
+  lastStartupMode: null,
+  startupInProgress: false,
 };
 
 export function isThemeMode(value: unknown): value is ThemeMode {
@@ -88,6 +100,14 @@ export function isAccentTheme(value: unknown): value is AccentTheme {
 
 export function isPerformanceMode(value: unknown): value is PerformanceMode {
   return performanceModes.includes(value as PerformanceMode);
+}
+
+export function isStartupModePreference(value: unknown): value is StartupModePreference {
+  return startupModePreferences.includes(value as StartupModePreference);
+}
+
+export function isStartupPerformanceMode(value: unknown): value is StartupPerformanceMode {
+  return startupPerformanceModes.includes(value as StartupPerformanceMode);
 }
 
 export function isHexColor(value: unknown): value is string {

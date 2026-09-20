@@ -74,6 +74,34 @@ export function searchDocuments<T>(
   return rankSearchDocuments(documents, query, limit).map((item) => item.result);
 }
 
+export function selectSearchCandidates<T>(
+  documents: SearchDocument<T>[],
+  query: string,
+): SearchDocument<T>[] {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) {
+    return documents;
+  }
+  const wholeMatches = documents.filter((document) =>
+    document.fields.some((field) => field.text.normalized.includes(normalizedQuery)),
+  );
+  if (wholeMatches.length > 0) {
+    return wholeMatches;
+  }
+  const queryTokens = [...new Set(normalizedQuery.split(" "))];
+  if (queryTokens.length > 1) {
+    const tokenMatches = documents.filter((document) =>
+      queryTokens.every((token) =>
+        document.fields.some((field) => field.text.normalized.includes(token)),
+      ),
+    );
+    if (tokenMatches.length > 0) {
+      return tokenMatches;
+    }
+  }
+  return documents;
+}
+
 export function rankSearchDocuments<T>(
   documents: SearchDocument<T>[],
   query: string,

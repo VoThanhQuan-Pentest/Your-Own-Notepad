@@ -21,8 +21,14 @@ export interface WorkerSearchResult {
   matchKind?: "exact" | "near";
 }
 
+export interface WorkerProfileConfig {
+  batchSize: number;
+  yieldMs: number;
+}
+
 export type WorkspaceWorkerRequest =
   | { type: "reset"; generation: number }
+  | { type: "configure"; generation: number; profile: WorkerProfileConfig }
   | { type: "parse-files"; requestId: number; files: SourceFileInput[] }
   | { type: "upsert-files"; files: Array<{ path: string; file: CommandFile }> }
   | { type: "remove-files"; paths: string[] }

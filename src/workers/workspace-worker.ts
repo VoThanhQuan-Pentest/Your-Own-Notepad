@@ -7,14 +7,16 @@ import type {
   WorkspaceWorkerRequest,
   WorkspaceWorkerResponse,
 } from "../models/workspace-worker";
-import { createSearchDocument, createSearchTextCache, normalizeSearchText, rankSearchDocuments, type SearchDocument } from "../utils/search";
+import { createSearchDocument, createSearchTextCache, rankSearchDocuments, selectSearchCandidates, type SearchDocument } from "../utils/search";
 import { parseCommandFile } from "../utils/validation";
 
 const files = new Map<string, CommandFile>();
 const documentsByFile = new Map<string, SearchDocument<WorkerSearchResult>[]>();
 let index: SearchDocument<WorkerSearchResult>[] = [];
-let tokenIndex = new Map<string, Set<SearchDocument<WorkerSearchResult>>>();
 let indexBuild = Promise.resolve();
+let currentGeneration = 0;
+let workerBatchSize = 200;
+let workerYieldMs = 8;
 
 self.addEventListener("message", (event: MessageEvent<WorkspaceWorkerRequest>) => {
   void handleRequest(event.data);
@@ -23,11 +25,18 @@ self.addEventListener("message", (event: MessageEvent<WorkspaceWorkerRequest>) =
 async function handleRequest(request: WorkspaceWorkerRequest): Promise<void> {
   try {
     if (request.type === "reset") {
+      currentGeneration = request.generation;
       files.clear();
       documentsByFile.clear();
       index = [];
-      tokenIndex = new Map();
       indexBuild = Promise.resolve();
+      return;
+    }
+    if (request.type === "configure") {
+      if (request.generation >= currentGeneration) {
+        workerBatchSize = request.profile.batchSize;
+        workerYieldMs = request.profile.yieldMs;
+      }
       return;
     }
     if (request.type === "parse-files") {
@@ -46,34 +55,45 @@ async function handleRequest(request: WorkspaceWorkerRequest): Promise<void> {
       return;
     }
     if (request.type === "upsert-files") {
+      const generation = currentGeneration;
       request.files.forEach(({ path, file }) => files.set(path, file));
       indexBuild = indexBuild.then(async () => {
+        if (generation !== currentGeneration) {
+          return;
+        }
         for (const { path, file } of request.files) {
-          documentsByFile.set(path, await buildFileDocuments(path, file));
+          const docs = await buildFileDocuments(path, file, generation);
+          if (generation !== currentGeneration) {
+            return;
+          }
+          documentsByFile.set(path, docs);
+        }
+        if (generation !== currentGeneration) {
+          return;
         }
         flattenIndex();
       });
       return;
     }
     if (request.type === "remove-files") {
+      const generation = currentGeneration;
       request.paths.forEach((path) => files.delete(path));
       indexBuild = indexBuild.then(() => {
+        if (generation !== currentGeneration) {
+          return;
+        }
         request.paths.forEach((path) => documentsByFile.delete(path));
         flattenIndex();
       });
       return;
     }
+    const generation = currentGeneration;
     await indexBuild;
-    const normalizedQuery = normalizeSearchText(request.query);
-    const queryTokens = normalizedQuery ? [...new Set(normalizedQuery.split(" "))] : [];
-    const indexedSets = queryTokens.map((token) => tokenIndex.get(token)).filter(Boolean) as Array<Set<SearchDocument<WorkerSearchResult>>>;
-    let exactCandidates: SearchDocument<WorkerSearchResult>[] = [];
-    if (indexedSets.length === queryTokens.length && indexedSets.length > 0) {
-      const [smallest, ...rest] = [...indexedSets].sort((left, right) => left.size - right.size);
-      exactCandidates = [...smallest].filter((document) => rest.every((set) => set.has(document)));
+    if (generation !== currentGeneration) {
+      return;
     }
     const ranked = rankSearchDocuments(
-      exactCandidates.length > 0 ? exactCandidates : index,
+      selectSearchCandidates(index, request.query),
       request.query,
       request.limit,
     );
@@ -94,6 +114,7 @@ async function handleRequest(request: WorkspaceWorkerRequest): Promise<void> {
 async function buildFileDocuments(
   filePath: string,
   file: CommandFile,
+  generation: number,
 ): Promise<SearchDocument<WorkerSearchResult>[]> {
   const records: SearchDocument<WorkerSearchResult>[] = [];
   const cache = createSearchTextCache();
@@ -113,7 +134,11 @@ async function buildFileDocuments(
       order++,
       cache,
     ));
-    for (const command of section.commands) {
+    const isTable = section.layout === "table";
+    for (const [commandIndex, command] of section.commands.entries()) {
+      const displayCommandName = isTable
+        ? `Table Row ${String(commandIndex + 1).padStart(2, "0")}`
+        : command.name;
       records.push(createSearchDocument(
         {
           filePath,
@@ -121,21 +146,28 @@ async function buildFileDocuments(
           sectionId: section.id,
           sectionTitle: section.title,
           commandId: command.id,
-          commandName: command.name,
+          commandName: displayCommandName,
           command: command.command,
         },
         [
-          { text: command.name, priority: 3 }, { text: command.command, priority: 3 },
-          { text: section.title, priority: 2 }, { text: file.title, priority: 2 },
-          { text: command.description, priority: 1 }, { text: command.example, priority: 1 },
+          { text: displayCommandName, priority: 3 },
+          ...(command.name !== displayCommandName ? [{ text: command.name, priority: 3 as const }] : []),
+          { text: command.command, priority: 3 },
+          { text: section.title, priority: 2 },
+          { text: file.title, priority: 2 },
+          { text: command.description, priority: 1 },
+          { text: command.example, priority: 1 },
           { text: command.notes, priority: 1 },
         ],
         order++,
         cache,
       ));
       processed += 1;
-      if (processed % 200 === 0 || performance.now() - sliceStarted >= 8) {
+      if (processed % workerBatchSize === 0 || performance.now() - sliceStarted >= workerYieldMs) {
         await workerYield();
+        if (generation !== currentGeneration) {
+          return [];
+        }
         sliceStarted = performance.now();
       }
     }
@@ -145,18 +177,8 @@ async function buildFileDocuments(
 
 function flattenIndex(): void {
   index = [...documentsByFile.values()].flat();
-  tokenIndex = new Map();
   index.forEach((document, order) => {
     document.order = order;
-    const tokens = new Set(document.fields.flatMap((field) => field.text.tokens));
-    tokens.forEach((token) => {
-      let documents = tokenIndex.get(token);
-      if (!documents) {
-        documents = new Set();
-        tokenIndex.set(token, documents);
-      }
-      documents.add(document);
-    });
   });
 }
 

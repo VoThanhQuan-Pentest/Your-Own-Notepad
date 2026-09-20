@@ -284,6 +284,10 @@ pub(crate) fn atomic_write(target: &Path, bytes: &[u8]) -> CommandResult<()> {
         .as_nanos();
     let temporary = parent.join(format!(".{file_name}.{nonce}.tmp"));
 
+    let existing_permissions = fs::metadata(target)
+        .ok()
+        .map(|metadata| metadata.permissions());
+
     let result = (|| -> CommandResult<()> {
         let mut handle = OpenOptions::new()
             .write(true)
@@ -294,6 +298,11 @@ pub(crate) fn atomic_write(target: &Path, bytes: &[u8]) -> CommandResult<()> {
             .write_all(bytes)
             .and_then(|_| handle.sync_all())
             .map_err(|error| CommandError::from_io(error, "Could not write temporary file"))?;
+        if let Some(permissions) = existing_permissions {
+            fs::set_permissions(&temporary, permissions).map_err(|error| {
+                CommandError::from_io(error, "Could not preserve file permissions")
+            })?;
+        }
         fs::rename(&temporary, target)
             .map_err(|error| CommandError::from_io(error, "Could not replace command file"))?;
         if let Ok(directory) = File::open(parent) {
@@ -345,15 +354,31 @@ fn read_directory(
         ));
     }
 
-    let iterator = fs::read_dir(directory)
-        .map_err(|error| CommandError::from_io(error, "Could not read workspace folder"))?;
+    let iterator = match fs::read_dir(directory) {
+        Ok(iter) => iter,
+        Err(error) if depth > 0 && error.kind() == std::io::ErrorKind::PermissionDenied => {
+            return Ok(Vec::new());
+        }
+        Err(error) => {
+            return Err(CommandError::from_io(
+                error,
+                "Could not read workspace folder",
+            ));
+        }
+    };
     let mut entries = Vec::new();
 
     for item in iterator {
-        let item = item.map_err(|error| CommandError::from_io(error, "Could not read entry"))?;
-        let file_type = item
-            .file_type()
-            .map_err(|error| CommandError::from_io(error, "Could not inspect entry"))?;
+        let item = match item {
+            Ok(item) => item,
+            Err(error) if error.kind() == std::io::ErrorKind::PermissionDenied => continue,
+            Err(error) => return Err(CommandError::from_io(error, "Could not read entry")),
+        };
+        let file_type = match item.file_type() {
+            Ok(ft) => ft,
+            Err(error) if error.kind() == std::io::ErrorKind::PermissionDenied => continue,
+            Err(error) => return Err(CommandError::from_io(error, "Could not inspect entry")),
+        };
         if file_type.is_symlink() {
             continue;
         }
@@ -362,17 +387,25 @@ fn read_directory(
         ensure_inside(root, &path)?;
         let name = item.file_name().to_string_lossy().into_owned();
         if file_type.is_dir() {
+            let children = read_directory(root, &path, depth + 1)?;
             entries.push(FilesystemEntry {
                 name,
                 path: path.to_string_lossy().into_owned(),
                 kind: EntryKind::Folder,
-                children: read_directory(root, &path, depth + 1)?,
+                children,
                 revision: None,
             });
         } else if file_type.is_file() && has_command_extension(&path) {
-            let metadata = item
-                .metadata()
-                .map_err(|error| CommandError::from_io(error, "Could not inspect command file"))?;
+            let metadata = match item.metadata() {
+                Ok(meta) => meta,
+                Err(error) if error.kind() == std::io::ErrorKind::PermissionDenied => continue,
+                Err(error) => {
+                    return Err(CommandError::from_io(
+                        error,
+                        "Could not inspect command file",
+                    ))
+                }
+            };
             entries.push(FilesystemEntry {
                 name,
                 path: path.to_string_lossy().into_owned(),
@@ -829,6 +862,99 @@ mod tests {
         assert_eq!(
             fs::read_to_string(command_file.path).expect("external content must remain"),
             "external edit\n"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn atomic_write_preserves_unix_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let workspace = TestDirectory::new("atomic-perms");
+        let target = workspace.path.join("permissions.cmdnote");
+        fs::write(&target, "initial").expect("target must be written");
+
+        for mode in [0o600, 0o640, 0o644] {
+            fs::set_permissions(&target, fs::Permissions::from_mode(mode))
+                .expect("permission must be set");
+            atomic_write(&target, b"updated content\n").expect("atomic write must succeed");
+            let metadata = fs::metadata(&target).expect("metadata must be readable");
+            assert_eq!(
+                metadata.permissions().mode() & 0o777,
+                mode,
+                "Mode 0{:o} must be preserved after atomic_write",
+                mode
+            );
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn nested_unreadable_folder_does_not_fail_workspace() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let workspace = TestDirectory::new("nested-unreadable");
+        let root = workspace.path.to_string_lossy().into_owned();
+
+        let readable_folder = workspace.path.join("Linux");
+        fs::create_dir(&readable_folder).expect("Linux folder must be created");
+        let command_file = readable_folder.join("Terminal.cmdnote");
+        fs::write(
+            &command_file,
+            r#"{"version":2,"title":"Terminal","sections":[]}"#,
+        )
+        .expect("file must be created");
+
+        let unreadable_folder = workspace.path.join("Private");
+        fs::create_dir(&unreadable_folder).expect("Private folder must be created");
+        fs::set_permissions(&unreadable_folder, fs::Permissions::from_mode(0o000))
+            .expect("Private permissions must be stripped");
+
+        let list_result = tauri::async_runtime::block_on(list_directory(root));
+
+        let _ = fs::set_permissions(&unreadable_folder, fs::Permissions::from_mode(0o755));
+
+        let entries =
+            list_result.expect("workspace listing must not fail due to nested unreadable folder");
+        let folder_names: Vec<&str> = entries.iter().map(|entry| entry.name.as_str()).collect();
+        assert!(
+            folder_names.contains(&"Linux"),
+            "Readable folder must be present"
+        );
+        assert!(
+            folder_names.contains(&"Private"),
+            "Unreadable folder entry must be present"
+        );
+
+        let linux_entry = entries.iter().find(|entry| entry.name == "Linux").unwrap();
+        assert_eq!(linux_entry.children.len(), 1);
+        assert_eq!(linux_entry.children[0].name, "Terminal.cmdnote");
+
+        let private_entry = entries
+            .iter()
+            .find(|entry| entry.name == "Private")
+            .unwrap();
+        assert_eq!(private_entry.children.len(), 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn unreadable_workspace_root_fails_gracefully() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let workspace = TestDirectory::new("unreadable-root");
+        let root = workspace.path.to_string_lossy().into_owned();
+
+        fs::set_permissions(&workspace.path, fs::Permissions::from_mode(0o000))
+            .expect("root permissions must be stripped");
+
+        let list_result = tauri::async_runtime::block_on(list_directory(root));
+
+        let _ = fs::set_permissions(&workspace.path, fs::Permissions::from_mode(0o755));
+
+        assert!(
+            list_result.is_err(),
+            "Unreadable root workspace must fail as an error"
         );
     }
 }

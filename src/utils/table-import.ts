@@ -257,13 +257,14 @@ export function normalizeExampleBreaks(value: string): string {
 }
 
 function normalizeSource(source: string): string {
-  const trimmed = source.trim();
-  if (!trimmed) {
+  const withoutBom = source.replace(/^\uFEFF/, "");
+  if (!withoutBom.trim()) {
     return "";
   }
-  const fenced = [...trimmed.matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map((match) => match[1]?.trim() ?? "");
+  const fenced = [...withoutBom.matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
   const candidate = fenced.find((value) => value.includes("|") || value.includes("\t") || value.includes(","));
-  return (candidate ?? trimmed).replace(/^\uFEFF/, "").trim();
+  const target = (candidate ?? withoutBom).trimStart();
+  return target.replace(/^(\r?\n)+/, "").replace(/(\r?\n)+$/, "");
 }
 
 function parseGrid(source: string, issues: TableImportIssue[]): ParsedGrid | null {
@@ -272,7 +273,7 @@ function parseGrid(source: string, issues: TableImportIssue[]): ParsedGrid | nul
     return markdown;
   }
   if (source.includes("\t")) {
-    return parseDelimited(source, "\t", "tsv", issues);
+    return parseTsv(source, issues);
   }
   if (source.includes(",")) {
     return parseDelimited(source, ",", "csv", issues);
@@ -282,6 +283,26 @@ function parseGrid(source: string, issues: TableImportIssue[]): ParsedGrid | nul
     message: "Paste a Markdown, TSV, or CSV table with a header row.",
   });
   return null;
+}
+
+function parseTsv(source: string, issues: TableImportIssue[]): ParsedGrid | null {
+  const lines = source.split(/\r?\n/);
+  const rows: GridRow[] = [];
+  lines.forEach((line, index) => {
+    if (!line.includes("\t") && !line.trim()) {
+      return;
+    }
+    const cells = line.split("\t").map(cleanCell);
+    if (cells.some((cell) => cell.trim())) {
+      rows.push({ cells, row: index + 1 });
+    }
+  });
+  const header = rows.shift();
+  if (!header) {
+    issues.push({ severity: "error", message: "The pasted table is empty." });
+    return null;
+  }
+  return { format: "tsv", header, rows };
 }
 
 function parseMarkdown(source: string): ParsedGrid | null {
@@ -314,7 +335,7 @@ function parseMarkdown(source: string): ParsedGrid | null {
 
 function parseDelimited(
   source: string,
-  delimiter: "\t" | ",",
+  delimiter: ",",
   format: TablePasteFormat,
   issues: TableImportIssue[],
 ): ParsedGrid | null {
@@ -418,14 +439,18 @@ function isMarkdownSeparator(value: string): boolean {
 }
 
 function hasPipe(value: string): boolean {
-  let escaped = false;
-  for (const character of value) {
-    if (character === "|" && !escaped) {
-      return true;
-    }
-    escaped = character === "\\" && !escaped;
-    if (character !== "\\") {
-      escaped = false;
+  let backslashCount = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index] ?? "";
+    if (character === "\\") {
+      backslashCount += 1;
+    } else if (character === "|") {
+      if (backslashCount % 2 === 0) {
+        return true;
+      }
+      backslashCount = 0;
+    } else {
+      backslashCount = 0;
     }
   }
   return false;
@@ -433,27 +458,41 @@ function hasPipe(value: string): boolean {
 
 function splitMarkdownLine(line: string): string[] {
   const cells: string[] = [];
+  const trimmed = line.trim();
   let cell = "";
-  let escaped = false;
-  for (const character of line.trim()) {
-    if (escaped) {
-      cell += character;
-      escaped = false;
-      continue;
-    }
+  let index = 0;
+  while (index < trimmed.length) {
+    const character = trimmed[index] ?? "";
     if (character === "\\") {
-      escaped = true;
-      continue;
+      let backslashCount = 0;
+      while (index + backslashCount < trimmed.length && trimmed[index + backslashCount] === "\\") {
+        backslashCount += 1;
+      }
+      const nextChar = trimmed[index + backslashCount];
+      if (nextChar === "|") {
+        const escapedPipe = backslashCount % 2 === 1;
+        const literalBackslashes = escapedPipe ? backslashCount - 1 : backslashCount;
+        cell += "\\".repeat(literalBackslashes);
+        index += backslashCount;
+        if (escapedPipe) {
+          cell += "|";
+          index += 1;
+        }
+        continue;
+      } else {
+        cell += "\\".repeat(backslashCount);
+        index += backslashCount;
+        continue;
+      }
     }
     if (character === "|") {
       cells.push(cleanCell(cell));
       cell = "";
+      index += 1;
       continue;
     }
     cell += character;
-  }
-  if (escaped) {
-    cell += "\\";
+    index += 1;
   }
   cells.push(cleanCell(cell));
   if (cells[0] === "") {

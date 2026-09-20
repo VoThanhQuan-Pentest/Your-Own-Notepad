@@ -2,11 +2,12 @@ import type { CommandFile } from "../models/command-file";
 import type {
   ParsedWorkerFile,
   SourceFileInput,
+  WorkerProfileConfig,
   WorkerSearchResult,
   WorkspaceWorkerRequest,
   WorkspaceWorkerResponse,
 } from "../models/workspace-worker";
-import { createSearchDocument, createSearchTextCache, normalizeSearchText, rankSearchDocuments, type SearchDocument } from "../utils/search";
+import { createSearchDocument, createSearchTextCache, rankSearchDocuments, selectSearchCandidates, type SearchDocument } from "../utils/search";
 import { parseCommandFile } from "../utils/validation";
 
 export class WorkspaceWorkerClient {
@@ -17,9 +18,10 @@ export class WorkspaceWorkerClient {
   private readonly fallbackFiles = new Map<string, CommandFile>();
   private fallbackIndex: SearchDocument<WorkerSearchResult>[] = [];
   private fallbackBuild = Promise.resolve();
+  private fallbackGeneration = 0;
 
   constructor() {
-    if (new URLSearchParams(window.location.search).has("disable-worker")) return;
+    if (typeof window === "undefined" || new URLSearchParams(window.location.search).has("disable-worker")) return;
     try {
       this.worker = new Worker(new URL("../workers/workspace-worker.ts", import.meta.url), { type: "module" });
       this.worker.addEventListener("message", (event: MessageEvent<WorkspaceWorkerResponse>) => this.onMessage(event.data));
@@ -29,7 +31,12 @@ export class WorkspaceWorkerClient {
     }
   }
 
+  configure(generation: number, profile: WorkerProfileConfig): void {
+    this.post({ type: "configure", generation, profile });
+  }
+
   reset(generation: number): void {
+    this.fallbackGeneration = generation;
     this.fallbackFiles.clear();
     this.fallbackIndex = [];
     this.fallbackBuild = Promise.resolve();
@@ -60,7 +67,7 @@ export class WorkspaceWorkerClient {
   async search(query: string, limit: number): Promise<WorkerSearchResult[]> {
     if (!this.worker) {
       await this.fallbackBuild;
-      return rankSearchDocuments(this.searchCandidates(this.fallbackIndex, query), query, limit)
+      return rankSearchDocuments(selectSearchCandidates(this.fallbackIndex, query), query, limit)
         .map(({ result, matchKind }) => ({ ...result, matchKind }));
     }
     const requestId = ++this.requestId;
@@ -69,7 +76,7 @@ export class WorkspaceWorkerClient {
       this.post({ type: "search", requestId, query, limit });
     }).catch(async () => {
       await this.fallbackBuild;
-      return rankSearchDocuments(this.searchCandidates(this.fallbackIndex, query), query, limit)
+      return rankSearchDocuments(selectSearchCandidates(this.fallbackIndex, query), query, limit)
         .map(({ result, matchKind }) => ({ ...result, matchKind }));
     });
   }
@@ -111,6 +118,7 @@ export class WorkspaceWorkerClient {
   }
 
   private async parseFallback(files: SourceFileInput[]): Promise<ParsedWorkerFile[]> {
+    const generation = this.fallbackGeneration;
     const results: ParsedWorkerFile[] = [];
     let sliceStarted = performance.now();
     for (const { path, source } of files) {
@@ -120,6 +128,9 @@ export class WorkspaceWorkerClient {
         : { path, ok: false, message: parsed.error.message, issues: parsed.error.issues });
       if (performance.now() - sliceStarted >= 8) {
         await yieldToMain();
+        if (generation !== this.fallbackGeneration) {
+          return [];
+        }
         sliceStarted = performance.now();
       }
     }
@@ -131,25 +142,38 @@ export class WorkspaceWorkerClient {
   }
 
   private async rebuildFallbackIndex(): Promise<void> {
+    const generation = this.fallbackGeneration;
     const records: SearchDocument<WorkerSearchResult>[] = [];
     const cache = createSearchTextCache();
     let order = 0;
     let processed = 0;
     let sliceStarted = performance.now();
     for (const [filePath, file] of this.fallbackFiles) {
+      if (generation !== this.fallbackGeneration) {
+        return;
+      }
       records.push(createSearchDocument({ filePath, fileTitle: file.title }, [
         { text: file.title, priority: 3 }, { text: file.description, priority: 1 },
       ], order++, cache));
       for (const section of file.sections) {
+        if (generation !== this.fallbackGeneration) {
+          return;
+        }
         records.push(createSearchDocument({ filePath, fileTitle: file.title, sectionId: section.id, sectionTitle: section.title }, [
           { text: section.title, priority: 3 }, { text: file.title, priority: 2 },
         ], order++, cache));
-        for (const command of section.commands) {
+        const isTable = section.layout === "table";
+        for (const [commandIndex, command] of section.commands.entries()) {
+          const displayCommandName = isTable
+            ? `Table Row ${String(commandIndex + 1).padStart(2, "0")}`
+            : command.name;
           records.push(createSearchDocument({
             filePath, fileTitle: file.title, sectionId: section.id, sectionTitle: section.title,
-            commandId: command.id, commandName: command.name, command: command.command,
+            commandId: command.id, commandName: displayCommandName, command: command.command,
           }, [
-            { text: command.name, priority: 3 }, { text: command.command, priority: 3 },
+            { text: displayCommandName, priority: 3 },
+            ...(command.name !== displayCommandName ? [{ text: command.name, priority: 3 as const }] : []),
+            { text: command.command, priority: 3 },
             { text: section.title, priority: 2 }, { text: file.title, priority: 2 },
             { text: command.description, priority: 1 }, { text: command.example, priority: 1 },
             { text: command.notes, priority: 1 },
@@ -157,27 +181,21 @@ export class WorkspaceWorkerClient {
           processed += 1;
           if (processed % 200 === 0 || performance.now() - sliceStarted >= 8) {
             await yieldToMain();
+            if (generation !== this.fallbackGeneration) {
+              return;
+            }
             sliceStarted = performance.now();
           }
         }
       }
     }
+    if (generation !== this.fallbackGeneration) {
+      return;
+    }
     this.fallbackIndex = records;
-  }
-
-  private searchCandidates(
-    documents: SearchDocument<WorkerSearchResult>[],
-    query: string,
-  ): SearchDocument<WorkerSearchResult>[] {
-    const normalized = normalizeSearchText(query);
-    if (!normalized) return documents;
-    const exact = documents.filter((document) =>
-      document.fields.some((field) => field.text.normalized.includes(normalized)),
-    );
-    return exact.length > 0 ? exact : documents;
   }
 }
 
 function yieldToMain(): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, 0));
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }

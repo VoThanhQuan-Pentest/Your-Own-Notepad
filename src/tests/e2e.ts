@@ -83,9 +83,23 @@ function loadState(): MockState {
     settings: structuredClone(defaultSettings),
     calls: [],
   };
+  if (parameters.has("interrupted-startup")) {
+    initial.settings.startupInProgress = true;
+  }
+  if (parameters.has("last-performance")) {
+    initial.settings.lastStartupMode = "performance";
+  } else if (parameters.has("last-battery")) {
+    initial.settings.lastStartupMode = "battery-saver";
+  }
   if (parameters.get("fixture") === "basic") {
     initial.settings.displayName = "Tester";
     initial.settings.performanceMode = parameters.has("auto-performance") ? "auto" : "full";
+    initial.settings.startupModePreference = parameters.has("ask-startup")
+      ? "ask"
+      : ((parameters.get("startup-preference") as any) ?? "performance");
+    if (!initial.settings.lastStartupMode) {
+      initial.settings.lastStartupMode = "performance";
+    }
     const path = `${WORKSPACE}/Nmap.cmdnote`;
     const gitPath = `${WORKSPACE}/Git.cmdnote`;
     initial.folders.push(`${WORKSPACE}/References`, `${WORKSPACE}/References/Nested`);

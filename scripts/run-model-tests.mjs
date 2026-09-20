@@ -19,4 +19,7 @@ await build({
   },
 });
 
-await import(`${pathToFileURL(resolve(outputDirectory, "validation.test.mjs")).href}?run=${Date.now()}`);
+const mod = await import(`${pathToFileURL(resolve(outputDirectory, "validation.test.mjs")).href}?run=${Date.now()}`);
+if (mod.testPromise) {
+  await mod.testPromise;
+}

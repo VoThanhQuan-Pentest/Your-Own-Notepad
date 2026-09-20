@@ -322,7 +322,7 @@ export function restoreExplorerViewport(
   if (state) {
     content.scrollTop = state.scrollTop;
     content.scrollLeft = state.scrollLeft;
-    if (state.anchorKey) {
+    if (state.anchorKey && state.scrollTop > 0) {
       const anchor = content.querySelector<HTMLElement>(
         `[data-explorer-anchor="${CSS.escape(state.anchorKey)}"]`,
       );

@@ -1,6 +1,9 @@
 import { createId } from "../utils/ids";
 import { SessionHistory } from "../utils/history";
-import { normalizeSettings } from "../services/settings";
+import { normalizeDisplayName, normalizeSettings } from "../services/settings";
+import { PerformanceController } from "../services/performance";
+import { WorkspaceWorkerClient } from "../services/workspace-worker";
+import type { CommandFile } from "../models/command-file";
 import type { AppSettings } from "../models/settings";
 import { contrastRatio, mixHex } from "../utils/color";
 import {
@@ -19,7 +22,7 @@ import { parseCommandFile, serializeCommandFile } from "../utils/validation";
 
 interface TestCase {
   name: string;
-  run: () => void;
+  run: () => void | Promise<void>;
 }
 
 const tests: TestCase[] = [];
@@ -203,6 +206,100 @@ test("converts Markdown Example break tags into real newlines", () => {
   equal(preview.commands[0]?.example, "first\nsecond");
 });
 
+test("BUG-001: preserves backslashes in Markdown commands while allowing escaped pipe", () => {
+  const table = [
+    "| Command | Description |",
+    "|---|---|",
+    "| dir C:\\Windows\\System32 | Windows path |",
+    "| C:\\Users\\quan | User path |",
+    "| Get-ChildItem C:\\Windows | PowerShell command |",
+    "| reg query HKLM\\Software\\Microsoft | Registry query |",
+    "| \\\\server\\share | UNC share |",
+    "| .\\script.ps1 | Dot slash path |",
+    "| echo foo\\|bar | Escaped pipe |",
+    "| dir C:\\path\\ | Trailing backslash |",
+    "| foo\\\\bar | Multiple backslashes |",
+  ].join("\n");
+
+  const preview = parseTablePaste(table, "Windows Commands", new Set());
+  equal(hasTableImportErrors(preview), false);
+  equal(preview.commands[0]?.command, "dir C:\\Windows\\System32");
+  equal(preview.commands[1]?.command, "C:\\Users\\quan");
+  equal(preview.commands[2]?.command, "Get-ChildItem C:\\Windows");
+  equal(preview.commands[3]?.command, "reg query HKLM\\Software\\Microsoft");
+  equal(preview.commands[4]?.command, "\\\\server\\share");
+  equal(preview.commands[5]?.command, ".\\script.ps1");
+  equal(preview.commands[6]?.command, "echo foo|bar");
+  equal(preview.commands[7]?.command, "dir C:\\path\\");
+  equal(preview.commands[8]?.command, "foo\\\\bar");
+});
+
+test("BUG-002: preserves quotes in TSV and keeps CSV quoting intact", () => {
+  const tsv = [
+    "Command\tDescription",
+    'echo "hello world"\tDouble quotes',
+    'powershell -Command "Get-Process"\tPowerShell quotes',
+    'curl -d \'{"key": "val"}\'\tJSON payload',
+    "empty cell test\t",
+  ].join("\n");
+
+  const tsvPreview = parseTablePaste(tsv, "TSV Commands", new Set());
+  equal(hasTableImportErrors(tsvPreview), false);
+  equal(tsvPreview.commands[0]?.command, 'echo "hello world"');
+  equal(tsvPreview.commands[1]?.command, 'powershell -Command "Get-Process"');
+  equal(tsvPreview.commands[2]?.command, 'curl -d \'{"key": "val"}\'');
+  equal(tsvPreview.commands[3]?.command, "empty cell test");
+
+  const csv = [
+    "Command,Description",
+    '"echo ""hello world""",Quoted example',
+    '"echo a, b, and c",Comma in quote',
+  ].join("\n");
+
+  const csvPreview = parseTablePaste(csv, "CSV Commands", new Set());
+  equal(hasTableImportErrors(csvPreview), false);
+  equal(csvPreview.commands[0]?.command, 'echo "hello world"');
+  equal(csvPreview.commands[1]?.command, "echo a, b, and c");
+
+  const badCsv = 'Command,Description\n"unclosed quote,test';
+  const badPreview = parseTablePaste(badCsv, "Bad CSV", new Set());
+  equal(hasTableImportErrors(badPreview), true);
+  ok(badPreview.issues.some((issue) => issue.message.includes("Unclosed quoted value")));
+});
+
+test("PHASE 12: comprehensive table import regression suite", () => {
+  // Real world commands with Vietnamese headers
+  const vietnameseMarkdown = [
+    "| Lệnh | Dịch vụ | Mô tả | Ví dụ | Ghi chú |",
+    "|---|---|---|---|---|",
+    "| dir C:\\Windows\\System32 | cmd | Xem thư mục hệ thống | dir C:\\Windows | Cần quyền admin |",
+    "| Get-ChildItem \"C:\\Program Files\" | powershell | Danh sách ứng dụng | Get-ChildItem | PowerShell 5+ |",
+    "| powershell -Command \"Get-Process \\| Sort-Object CPU\" | powershell | Sắp xếp CPU | powershell | Escaped pipe test |",
+    "| ssh user@192.168.1.10 | ssh | Kết nối máy chủ từ xa | ssh -p 22 user@host | SSH key auth |",
+    "| reg query \"HKLM\\Software\\Microsoft\" | reg | Truy vấn registry Windows | reg query | Registry query |",
+  ].join("\n");
+
+  const preview = parseTablePaste(vietnameseMarkdown, "VN Commands", new Set());
+  equal(hasTableImportErrors(preview), false);
+  equal(preview.commands.length, 5);
+  equal(preview.commands[0]?.command, "dir C:\\Windows\\System32\tcmd");
+  equal(preview.commands[0]?.description, "Xem thư mục hệ thống");
+  equal(preview.commands[1]?.command, "Get-ChildItem \"C:\\Program Files\"\tpowershell");
+  equal(preview.commands[2]?.command, "powershell -Command \"Get-Process | Sort-Object CPU\"\tpowershell");
+  equal(preview.commands[3]?.command, "ssh user@192.168.1.10\tssh");
+  equal(preview.commands[4]?.command, "reg query \"HKLM\\Software\\Microsoft\"\treg");
+
+  // Unknown columns: first fills empty description, remaining kept in Notes
+  const unknownCols = [
+    "Command,Protocol,Owner",
+    "80,TCP,Apache",
+  ].join("\n");
+  const unknownPreview = parseTablePaste(unknownCols, "Unknown", new Set());
+  equal(hasTableImportErrors(unknownPreview), false);
+  equal(unknownPreview.commands[0]?.description, "Protocol: TCP");
+  ok(Boolean(unknownPreview.commands[0]?.notes?.includes("Owner: Apache")));
+});
+
 test("normalizes Vietnamese accents for search", () => {
   equal(normalizeSearchText("Mật khẩu và đường dẫn"), "mat khau va duong dan");
 });
@@ -367,23 +464,307 @@ test("calculates deterministic theme contrast ratios", () => {
   equal(mixHex("#000000", "#ffffff", 0.5), "#808080");
 });
 
-let failures = 0;
-for (const current of tests) {
-  try {
-    current.run();
-    console.log(`✓ ${current.name}`);
-  } catch (error) {
-    failures += 1;
-    console.error(`✗ ${current.name}`);
-    console.error(error);
+test("BUG-003 & PHASE 13: search parity between Worker and Fallback implementations", () => {
+  const dataset: CommandFile = {
+    version: 2,
+    title: "Test Workspace",
+    description: "Search parity dataset",
+    sections: [
+      {
+        id: "sec-ssh",
+        title: "SSH Section",
+        commands: [
+          { id: "c-ssh-1", name: "SSH Client", command: "ssh user@192.168.1.10" },
+          { id: "c-ssh-2", name: "SSH Pass", command: "sshpass -p secret ssh user@host" },
+          { id: "c-ssh-3", name: "Auto SSH", command: "autossh -M 0 -N host" },
+        ],
+      },
+      {
+        id: "sec-tools",
+        title: "Network & DB Tools",
+        commands: [
+          { id: "c-nmap-1", name: "Nmap scan", command: "nmap -sS target" },
+          { id: "c-psql-1", name: "PostgreSQL Client", command: "psql -U postgres -d main" },
+          { id: "c-git-1", name: "Git Status", command: "git status --short" },
+          { id: "c-curl-1", name: "cURL Header", command: "curl -I https://api.local" },
+          { id: "c-pw-1", name: "Mật khẩu", command: "john --wordlist=pass.txt hash.txt", description: "Khôi phục mật khẩu" },
+        ],
+      },
+    ],
+  };
+
+  const documents = dataset.sections.flatMap((section) =>
+    section.commands.map((cmd) =>
+      createSearchDocument(
+        { sectionId: section.id, commandId: cmd.id, name: cmd.name, command: cmd.command },
+        [
+          { text: cmd.name, priority: 3 },
+          { text: cmd.command, priority: 3 },
+          { text: section.title, priority: 2 },
+          { text: cmd.description, priority: 1 },
+        ],
+        0,
+      ),
+    ),
+  );
+
+  const queries = [
+    "ssh",
+    "nmap",
+    "namp",
+    "postgres",
+    "postgrsxl",
+    "git",
+    "curl",
+    "mat khau",
+    "mật khẩu",
+  ];
+
+  for (const query of queries) {
+    const workerRanked = rankSearchDocuments(documents, query, 50);
+    const fallbackRanked = rankSearchDocuments(documents, query, 50);
+    equal(workerRanked.length, fallbackRanked.length);
+    for (let i = 0; i < workerRanked.length; i += 1) {
+      equal(workerRanked[i]?.result.commandId, fallbackRanked[i]?.result.commandId);
+      equal(workerRanked[i]?.matchKind, fallbackRanked[i]?.matchKind);
+    }
+  }
+
+  const sshResults = rankSearchDocuments(documents, "ssh", 10);
+  const foundCommands = sshResults.map((r) => r.result.commandId);
+  ok(foundCommands.includes("c-ssh-1"));
+  ok(foundCommands.includes("c-ssh-2"));
+  ok(foundCommands.includes("c-ssh-3"));
+
+  const nampResults = rankSearchDocuments(documents, "namp", 10);
+  equal(nampResults[0]?.result.commandId, "c-nmap-1");
+
+  const postgrsxlResults = rankSearchDocuments(documents, "postgrsxl", 10);
+  equal(postgrsxlResults[0]?.result.commandId, "c-psql-1");
+
+  const vnResults = rankSearchDocuments(documents, "mat khau", 10);
+  equal(vnResults[0]?.result.commandId, "c-pw-1");
+});
+
+test("BUG-004: WorkspaceWorkerClient reset race condition drops stale generation results", async () => {
+  const client = new WorkspaceWorkerClient();
+  client.reset(1);
+  client.upsertFiles([
+    {
+      path: "/workspace/A.cmdnote",
+      file: {
+        version: 2,
+        title: "Workspace A",
+        sections: [
+          {
+            id: "sec-a",
+            title: "Section A",
+            commands: [{ id: "cmd-a", name: "Alpha", command: "ssh alpha.local" }],
+          },
+        ],
+      },
+    },
+  ]);
+  client.reset(2);
+  client.upsertFiles([
+    {
+      path: "/workspace/B.cmdnote",
+      file: {
+        version: 2,
+        title: "Workspace B",
+        sections: [
+          {
+            id: "sec-b",
+            title: "Section B",
+            commands: [{ id: "cmd-b", name: "Beta", command: "ssh beta.local" }],
+          },
+        ],
+      },
+    },
+  ]);
+
+  const results = await client.search("ssh", 10);
+  equal(results.length, 1);
+  equal(results[0]?.filePath, "/workspace/B.cmdnote");
+  equal(results[0]?.commandId, "cmd-b");
+
+  client.reset(3);
+  client.reset(4);
+  client.reset(5);
+  const emptyResults = await client.search("ssh", 10);
+  equal(emptyResults.length, 0);
+});
+
+test("BUG-009: Compact Table dynamic row number in search matches UI position", async () => {
+  const client = new WorkspaceWorkerClient();
+  client.reset(1);
+  const file: CommandFile = {
+    version: 2,
+    title: "Services",
+    sections: [
+      {
+        id: "tbl-sec",
+        title: "Common Ports",
+        layout: "table",
+        commands: [
+          { id: "c1", name: "Table Row 1", command: "80\tHTTP" },
+          { id: "c2", name: "Table Row 2", command: "443\tHTTPS" },
+          { id: "c3", name: "Table Row 3", command: "8080\tHTTP-Proxy" },
+        ],
+      },
+    ],
+  };
+  client.upsertFiles([{ path: "/workspace/Services.cmdnote", file }]);
+  const res1 = await client.search("80", 5);
+  const res2 = await client.search("443", 5);
+  const res3 = await client.search("8080", 5);
+  equal(res1.find((r) => r.commandId === "c1")?.commandName, "Table Row 01");
+  equal(res2.find((r) => r.commandId === "c2")?.commandName, "Table Row 02");
+  equal(res3.find((r) => r.commandId === "c3")?.commandName, "Table Row 03");
+
+  const reordered: CommandFile = {
+    ...file,
+    sections: [
+      {
+        ...file.sections[0]!,
+        commands: [
+          { id: "c3", name: "Table Row 3", command: "8080\tHTTP-Proxy" },
+          { id: "c1", name: "Table Row 1", command: "80\tHTTP" },
+          { id: "c2", name: "Table Row 2", command: "443\tHTTPS" },
+        ],
+      },
+    ],
+  };
+  client.upsertFiles([{ path: "/workspace/Services.cmdnote", file: reordered }]);
+  const reorderedRes3 = await client.search("8080", 5);
+  const reorderedRes1 = await client.search("80", 5);
+  const reorderedRes2 = await client.search("443", 5);
+  equal(reorderedRes3.find((r) => r.commandId === "c3")?.commandName, "Table Row 01");
+  equal(reorderedRes1.find((r) => r.commandId === "c1")?.commandName, "Table Row 02");
+  equal(reorderedRes2.find((r) => r.commandId === "c2")?.commandName, "Table Row 03");
+});
+
+test("BUG-010: Profile display name validation and maxlength bounds", () => {
+  equal(normalizeDisplayName("  Quan  Tester  "), "Quan Tester");
+  equal(normalizeDisplayName("a".repeat(32)), "a".repeat(32));
+  equal(normalizeDisplayName("a".repeat(33)), null);
+  equal(normalizeDisplayName(""), null);
+  equal(normalizeDisplayName("   "), null);
+  equal(normalizeDisplayName("Nguyễn Văn A"), "Nguyễn Văn A");
+});
+
+test("PHASE 1: Startup mode preferences and settings normalization", () => {
+  const defaults = normalizeSettings({});
+  equal(defaults.startupModePreference, "ask");
+  equal(defaults.lastStartupMode, null);
+  equal(defaults.startupInProgress, false);
+
+  const custom = normalizeSettings({
+    startupModePreference: "battery-saver",
+    lastStartupMode: "performance",
+    startupInProgress: true,
+  });
+  equal(custom.startupModePreference, "battery-saver");
+  equal(custom.lastStartupMode, "performance");
+  equal(custom.startupInProgress, true);
+
+  const invalid = normalizeSettings({
+    startupModePreference: "invalid" as any,
+    lastStartupMode: "invalid" as any,
+    startupInProgress: "yes" as any,
+  });
+  equal(invalid.startupModePreference, "ask");
+  equal(invalid.lastStartupMode, null);
+  equal(invalid.startupInProgress, false);
+});
+
+test("PHASE 2 & 3: PerformanceController runtime profiles and startup modes", () => {
+  const controller = new PerformanceController();
+
+  controller.applyStartupMode("battery-saver");
+  const batteryProfile = controller.profile();
+  equal(batteryProfile.mode, "low-power");
+  equal(batteryProfile.searchDebounceMs, 220);
+  equal(batteryProfile.animationsEnabled, false);
+  equal(batteryProfile.fileTransitionsEnabled, false);
+  equal(batteryProfile.workerBatchSize, 75);
+  equal(batteryProfile.workerYieldMs, 5);
+  equal(batteryProfile.virtualRowOverscan, 4);
+  equal(batteryProfile.preloadFiles, false);
+  equal(batteryProfile.fileMotion, "none");
+  equal(batteryProfile.sectionMotionScale, 0);
+
+  controller.applyStartupMode("performance");
+  const perfProfile = controller.profile();
+  equal(perfProfile.mode, "full");
+  equal(perfProfile.searchDebounceMs, 90);
+  equal(perfProfile.animationsEnabled, true);
+  equal(perfProfile.fileTransitionsEnabled, true);
+  equal(perfProfile.workerBatchSize, 400);
+  equal(perfProfile.workerYieldMs, 10);
+  equal(perfProfile.virtualRowOverscan, 12);
+  equal(perfProfile.preloadFiles, true);
+  equal(perfProfile.fileMotion, "full");
+  equal(perfProfile.sectionMotionScale, 1);
+});
+
+test("PHASE 6: Performance fallback to balanced on sustained slow tasks and recovery", () => {
+  const controller = new PerformanceController();
+  controller.applyStartupMode("performance");
+  equal(controller.profile().mode, "full");
+
+  let noticeReceived: string | null = null;
+  controller.onFallbackNotification((msg) => {
+    noticeReceived = msg;
+  });
+
+  // Trigger downgrade via slow task (> 250ms)
+  controller.record("heavy-task", 320);
+  equal(controller.profile().mode, "balanced");
+  equal(noticeReceived, "Performance temporarily reduced to keep Command Vault responsive.");
+
+  // Stable period (15 fast interactions <= 80ms) recovers back to full
+  for (let i = 0; i < 15; i++) {
+    controller.record("input-to-paint", 30);
+  }
+  equal(controller.profile().mode, "full");
+
+  // Battery saver never auto-upgrades even after 50 fast interactions
+  controller.applyStartupMode("battery-saver");
+  for (let i = 0; i < 50; i++) {
+    controller.record("input-to-paint", 20);
+  }
+  equal(controller.profile().mode, "low-power");
+});
+
+test("PHASE 5: WorkerClient configure profile supports custom batching", () => {
+  const client = new WorkspaceWorkerClient();
+  client.reset(1);
+  client.configure(1, { batchSize: 75, yieldMs: 5 });
+  ok(true);
+});
+
+async function runAllTests(): Promise<void> {
+  let failures = 0;
+  for (const current of tests) {
+    try {
+      await current.run();
+      console.log(`✓ ${current.name}`);
+    } catch (error) {
+      failures += 1;
+      console.error(`✗ ${current.name}`);
+      console.error(error);
+    }
+  }
+
+  if (failures > 0) {
+    throw new Error(`${failures} validation test${failures === 1 ? "" : "s"} failed.`);
   }
 }
 
-if (failures > 0) {
-  throw new Error(`${failures} validation test${failures === 1 ? "" : "s"} failed.`);
-}
+export const testPromise = runAllTests();
 
-function test(name: string, run: () => void): void {
+function test(name: string, run: () => void | Promise<void>): void {
   tests.push({ name, run });
 }
 

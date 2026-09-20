@@ -142,6 +142,10 @@ export function openModal(
 ): CustomModalHandle {
   activeClose?.();
 
+  const previouslyFocused = (typeof document !== "undefined" && document.activeElement instanceof HTMLElement)
+    ? document.activeElement
+    : null;
+
   const overlay = element("div", "modal-overlay");
   const dialog = element("section", `modal-dialog${wide ? " wide" : ""}`);
   dialog.setAttribute("role", "dialog");
@@ -176,6 +180,14 @@ export function openModal(
   overlay.append(dialog);
   document.body.append(overlay);
 
+  const getFocusableElements = (): HTMLElement[] => {
+    const selector =
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    return Array.from(dialog.querySelectorAll<HTMLElement>(selector)).filter(
+      (el) => !el.hidden && el.getAttribute("aria-hidden") !== "true",
+    );
+  };
+
   const close = (notifyDismissal = true): void => {
     if (!overlay.isConnected) {
       return;
@@ -183,6 +195,9 @@ export function openModal(
     overlay.remove();
     document.removeEventListener("keydown", onKeyDown);
     activeClose = null;
+    if (previouslyFocused && previouslyFocused.isConnected) {
+      previouslyFocused.focus();
+    }
     if (notifyDismissal) {
       onDismiss?.();
     }
@@ -191,6 +206,27 @@ export function openModal(
   const onKeyDown = (event: KeyboardEvent): void => {
     if (event.key === "Escape") {
       close();
+      return;
+    }
+    if (event.key === "Tab") {
+      const focusables = getFocusableElements();
+      if (focusables.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey) {
+        if (document.activeElement === first || !dialog.contains(document.activeElement)) {
+          event.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last || !dialog.contains(document.activeElement)) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
     }
   };
 
@@ -202,6 +238,19 @@ export function openModal(
     }
   });
   document.addEventListener("keydown", onKeyDown);
+
+  queueMicrotask(() => {
+    if (!dialog.contains(document.activeElement)) {
+      const firstInput = content.querySelector<HTMLElement>(
+        'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])',
+      );
+      const primaryAction = actions.find((a) => a.primary);
+      const primaryButton = primaryAction ? actionButtons.get(primaryAction.label) : undefined;
+      const focusables = getFocusableElements();
+      const target = firstInput ?? primaryButton ?? focusables[0];
+      target?.focus();
+    }
+  });
 
   return {
     body,
