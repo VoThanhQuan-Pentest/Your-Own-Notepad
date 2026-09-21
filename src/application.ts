@@ -76,9 +76,12 @@ import {
   playTacticalBlip,
   isAudioMuted,
   toggleAudioMuted,
+  getAudioFrequencyData,
 } from "./services/audio";
 import { initDelegatedTilt } from "./utils/tilt";
 import { triggerSparkBurst } from "./utils/particles";
+import { initGridCanvas, stopGridCanvas } from "./utils/grid-canvas";
+import { triggerDecryptionStream } from "./utils/decryption";
 
 import { button, element } from "./utils/dom";
 import { contrastRatio, mixHex } from "./utils/color";
@@ -187,6 +190,7 @@ export class CommandVaultApplication {
   private telemetryFpsFrameId: number | null = null;
   private mouseSpotlightCleanup: (() => void) | null = null;
   private tiltCleanup: (() => void) | null = null;
+  private gridCleanup: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -297,6 +301,35 @@ export class CommandVaultApplication {
     center.append(statsText);
 
     const right = element("div", "telemetry-segment telemetry-engine");
+
+    const visualizer = element("div", "telemetry-visualizer");
+    visualizer.setAttribute("aria-hidden", "true");
+    const eqBars: HTMLElement[] = [];
+    for (let i = 0; i < 7; i++) {
+      const b = element("span", "telemetry-eq-bar");
+      visualizer.append(b);
+      eqBars.push(b);
+    }
+
+    const freqData = new Uint8Array(16);
+    const animateVisualizer = () => {
+      if (!this.telemetryBar || !this.telemetryBar.isConnected) return;
+      if (this.performanceProfile.mode === "full" && !isAudioMuted()) {
+        getAudioFrequencyData(freqData);
+        for (let i = 0; i < 7; i++) {
+          const val = freqData[i * 2] ?? 0;
+          const h = Math.max(2, Math.floor((val / 255) * 13));
+          eqBars[i]!.style.height = `${h}px`;
+        }
+      } else {
+        for (let i = 0; i < 7; i++) {
+          eqBars[i]!.style.height = "2px";
+        }
+      }
+      window.requestAnimationFrame(animateVisualizer);
+    };
+    window.requestAnimationFrame(animateVisualizer);
+
     const audioToggle = button(
       `telemetry-button telemetry-audio-toggle${isAudioMuted() ? " muted" : ""}`,
       isAudioMuted() ? "AUDIO: OFF" : "AUDIO: ON",
@@ -310,7 +343,7 @@ export class CommandVaultApplication {
     });
 
     const engineText = element("span", "telemetry-label telemetry-engine-label");
-    right.append(audioToggle, engineText);
+    right.append(visualizer, audioToggle, engineText);
 
     bar.append(left, center, right);
     this.telemetryBar = bar;
@@ -423,10 +456,16 @@ export class CommandVaultApplication {
       this.tiltCleanup();
       this.tiltCleanup = null;
     }
+    if (this.gridCleanup) {
+      this.gridCleanup();
+      this.gridCleanup = null;
+    }
     if (this.performanceProfile.mode !== "full") {
+      stopGridCanvas();
       return;
     }
     this.tiltCleanup = initDelegatedTilt(this.workspace);
+    this.gridCleanup = initGridCanvas(this.workspace);
   }
 
 
@@ -565,8 +604,14 @@ export class CommandVaultApplication {
       favoriteItems: this.explorerFavoriteItems(),
       collapsedQuickGroups: this.collapsedQuickGroups,
       callbacks: {
-        onOpenFile: (path) => void this.openFile(path),
-        onSelectFolder: (path) => this.selectFolder(path),
+        onOpenFile: (path) => {
+          playServoClick();
+          void this.openFile(path);
+        },
+        onSelectFolder: (path) => {
+          playServoClick();
+          this.selectFolder(path);
+        },
         onCreateFolder: (parent) => void this.newFolder(parent),
         onCreateFile: (parent) => void this.newFile(parent),
         onRename: (entry) => void this.renameFilesystemEntry(entry),
@@ -1331,6 +1376,12 @@ export class CommandVaultApplication {
         addOneShotClass(table.element, "workspace-view-fade-in");
       }
       this.workspace.replaceChildren(table.element);
+      if (this.performanceProfile.mode === "full" && !prefersReducedMotion()) {
+        const titleEl = table.element.querySelector<HTMLElement>(".file-title-group h1");
+        if (titleEl) {
+          triggerDecryptionStream(titleEl);
+        }
+      }
     }
 
     if (focus?.commandId || focus?.sectionId) {
@@ -1382,6 +1433,12 @@ export class CommandVaultApplication {
       snapshot.remove();
       nextElement.classList.remove("workspace-view-layer", "file-view-incoming");
       this.workspace.classList.remove("file-transitioning");
+      if (this.performanceProfile.mode === "full" && !prefersReducedMotion()) {
+        const titleEl = nextElement.querySelector<HTMLElement>(".file-title-group h1");
+        if (titleEl) {
+          triggerDecryptionStream(titleEl);
+        }
+      }
     };
     const onAnimationEnd = (event: AnimationEvent): void => {
       if (event.target === nextElement) {
@@ -2132,11 +2189,11 @@ export class CommandVaultApplication {
   }
 
   private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
+    playLaserChirp();
+    const rect = trigger.getBoundingClientRect();
+    triggerSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
     try {
       await copyText(value);
-      playLaserChirp();
-      const rect = trigger.getBoundingClientRect();
-      triggerSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
       if (trigger.classList.contains("example-copy")) {
         trigger.classList.add("copied");
         window.setTimeout(() => trigger.classList.remove("copied"), 1200);

@@ -1,3 +1,4 @@
+import { playModalWhoosh } from "../services/audio";
 import { button, element } from "../utils/dom";
 
 interface PromptOptions {
@@ -141,6 +142,7 @@ export function openModal(
   onDismiss?: () => void,
 ): CustomModalHandle {
   activeClose?.();
+  playModalWhoosh(true);
 
   const previouslyFocused = (typeof document !== "undefined" && document.activeElement instanceof HTMLElement)
     ? document.activeElement
@@ -192,6 +194,7 @@ export function openModal(
     if (!overlay.isConnected) {
       return;
     }
+    playModalWhoosh(false);
     overlay.remove();
     document.removeEventListener("keydown", onKeyDown);
     activeClose = null;

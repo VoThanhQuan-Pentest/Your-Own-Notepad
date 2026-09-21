@@ -1093,6 +1093,28 @@
   color: #ff9f43;
 }
 
+:root[data-performance="full"] .interactive-param {
+  position: relative;
+  display: inline-block;
+  padding: 0 4px;
+  margin: 0 1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+:root[data-performance="full"] .interactive-param:hover,
+:root[data-performance="full"] .interactive-param:focus-visible {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-bright) 50%, transparent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 :root[data-performance="full"] .syntax-op {
   color: #ff5555;
   font-weight: bold;

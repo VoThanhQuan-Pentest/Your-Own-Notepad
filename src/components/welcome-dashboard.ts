@@ -1,4 +1,6 @@
+import { playReactorOverload } from "../services/audio";
 import { button, element } from "../utils/dom";
+import { triggerSparkBurst } from "../utils/particles";
 import { createIcon } from "./icons";
 
 export interface DashboardFavorite {
@@ -36,12 +38,29 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
 
   const reactor = element("div", "quantum-core-reactor");
   reactor.setAttribute("aria-hidden", "true");
+  reactor.setAttribute("title", "Quantum Core Reactor - Click to Overcharge");
   reactor.append(
     element("div", "reactor-ring ring-outer"),
     element("div", "reactor-ring ring-mid"),
     element("div", "reactor-ring ring-inner"),
     element("div", "reactor-plasma-core"),
   );
+
+  reactor.addEventListener("click", () => {
+    if (reactor.classList.contains("overcharged")) return;
+    reactor.classList.add("overcharged");
+    playReactorOverload();
+    const rect = reactor.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerSparkBurst(cx, cy);
+    window.setTimeout(() => triggerSparkBurst(cx - 20, cy + 12), 120);
+    window.setTimeout(() => triggerSparkBurst(cx + 20, cy - 12), 240);
+    window.setTimeout(() => {
+      reactor.classList.remove("overcharged");
+    }, 1800);
+  });
+
   hero.append(heroLeft, reactor);
 
 

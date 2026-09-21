@@ -21,7 +21,7 @@ interface Token {
 const OPERATOR_REGEX = /^(\|\||&&|\||;|>>|>|<|2>&1)/;
 const FLAG_REGEX = /^(--[a-zA-Z0-9_-]+|-[a-zA-Z0-9]+)/;
 const STRING_REGEX = /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/;
-const TARGET_REGEX = /^(https?:\/\/[^\s]+|(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?|:\d{2,5}\b)/;
+const TARGET_REGEX = /^(https?:\/\/[^\s]+|(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?(?::\d{1,5})?|:\d{2,5}\b)/;
 const VAR_REGEX = /^(\$[a-zA-Z_][a-zA-Z0-9_]*|\$\{[^}]+\})/;
 const WHITESPACE_REGEX = /^(\s+)/;
 const WORD_REGEX = /^([^\s|&;><"'$]+)/;
@@ -133,6 +133,12 @@ export function renderHighlightedCommand(
       fragment.append(document.createTextNode(token.text));
     } else {
       const span = element("span", `syntax-${token.type}`, token.text);
+      if (token.type === "target" || token.type === "var") {
+        span.classList.add("interactive-param");
+        span.setAttribute("tabindex", "0");
+        span.setAttribute("role", "button");
+        span.setAttribute("title", "Tactical Parameter - Click to edit target");
+      }
       fragment.append(span);
     }
   }

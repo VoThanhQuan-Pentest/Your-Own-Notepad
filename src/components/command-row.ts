@@ -1,4 +1,5 @@
 import type { CommandEntry } from "../models/command-file";
+import { playLaserChirp, playTargetLock } from "../services/audio";
 import { button, element } from "../utils/dom";
 import { renderHighlightedCommand } from "../utils/syntax";
 
@@ -88,17 +89,53 @@ export function createCommandRow(
   menu.hidden = selection?.active ?? false;
   commandHeader.append(menu);
 
+  let activeCommandText = command.command;
   const isFullPerf =
     typeof document !== "undefined" &&
     document.documentElement.dataset.performance === "full";
   const codeScroller = element("div", "command-code");
   const codeElement = element("code");
-  renderHighlightedCommand(codeElement, command.command, isFullPerf);
+  renderHighlightedCommand(codeElement, activeCommandText, isFullPerf);
   codeScroller.append(codeElement);
+
   const commandActions = element("div", "command-actions");
   const copyButton = button("action-button primary-action", "COPY");
-  copyButton.addEventListener("click", () => callbacks.onCopy(command.command, copyButton));
+  copyButton.addEventListener("click", () => callbacks.onCopy(activeCommandText, copyButton));
   commandActions.append(copyButton);
+
+  if (isFullPerf) {
+    const handleChipEdit = (chip: HTMLElement) => {
+      playTargetLock();
+      const oldVal = chip.textContent ?? "";
+      const newVal = window.prompt("Tactical Target Injector:\nEnter new target parameter:", oldVal);
+      if (newVal !== null && newVal.trim().length > 0 && newVal.trim() !== oldVal) {
+        activeCommandText = activeCommandText.replace(oldVal, newVal.trim());
+        renderHighlightedCommand(codeElement, activeCommandText, isFullPerf);
+        playLaserChirp();
+        copyButton.focus();
+      }
+    };
+
+    codeElement.addEventListener("click", (e) => {
+      const chip = (e.target as HTMLElement | null)?.closest<HTMLElement>(".interactive-param");
+      if (chip) {
+        e.stopPropagation();
+        handleChipEdit(chip);
+      }
+    });
+
+    codeElement.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        const chip = (e.target as HTMLElement | null)?.closest<HTMLElement>(".interactive-param");
+        if (chip) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleChipEdit(chip);
+        }
+      }
+    });
+  }
+
   commandCell.append(commandHeader, codeScroller, commandActions);
 
   const infoCell = element("div", "info-cell");

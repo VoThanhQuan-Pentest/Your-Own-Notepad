@@ -1099,3 +1099,30 @@ test("persists Performance mode and cyber UI when switching theme color", async 
   await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
   await expect(page.locator(".telemetry-button")).toBeVisible();
 });
+
+test("God-Tier 2.0: equalizer visualizer, interactive params, and reactor overcharge", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&performance=full");
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+
+  // Telemetry real-time 7-bar visualizer
+  const visualizer = page.locator(".telemetry-visualizer");
+  await expect(visualizer).toBeVisible();
+  await expect(visualizer.locator(".telemetry-eq-bar")).toHaveCount(7);
+
+  // Open Nmap command file
+  await page.locator(".tree-file").filter({ hasText: "Nmap" }).click();
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+
+  // Tactical parameter chips in visible command
+  const paramChip = page.locator(".interactive-param").first();
+  await expect(paramChip).toBeVisible();
+  await expect(paramChip).toHaveAttribute("role", "button");
+
+  // Welcome dashboard Quantum Core Reactor Overcharge
+  await page.getByRole("button", { name: "Open Home dashboard" }).click();
+  const reactor = page.locator(".quantum-core-reactor");
+  await expect(reactor).toBeVisible();
+  await reactor.click();
+  await expect(reactor).toHaveClass(/overcharged/);
+});
+

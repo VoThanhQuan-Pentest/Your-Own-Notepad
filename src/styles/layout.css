@@ -521,6 +521,39 @@
   background: radial-gradient(circle, #ffffff 0%, var(--accent) 60%, transparent 100%);
 }
 
+:root[data-performance="full"] .quantum-core-reactor {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+:root[data-performance="full"] .quantum-core-reactor:hover {
+  transform: scale(1.08);
+}
+
+:root[data-performance="full"] .quantum-core-reactor.overcharged .ring-outer {
+  animation: reactor-spin-3d 1.4s linear infinite !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 24px var(--accent-bright) !important;
+}
+
+:root[data-performance="full"] .quantum-core-reactor.overcharged .ring-mid {
+  animation: reactor-spin-rev 0.9s linear infinite !important;
+  border-color: #ffd166 !important;
+  box-shadow: 0 0 20px #ffd166 !important;
+}
+
+:root[data-performance="full"] .quantum-core-reactor.overcharged .ring-inner {
+  animation: reactor-spin-3d 0.5s linear infinite !important;
+  border-color: #ff0055 !important;
+  box-shadow: 0 0 20px #ff0055 !important;
+}
+
+:root[data-performance="full"] .quantum-core-reactor.overcharged .reactor-plasma-core {
+  transform: scale(1.6) !important;
+  box-shadow: 0 0 35px #ffffff, 0 0 60px var(--accent-bright) !important;
+  animation: reactor-pulse 0.4s ease-in-out infinite !important;
+}
+
 :root[data-performance="full"] .reactor-ring {
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
 }
@@ -1279,6 +1312,34 @@
   background: var(--bg-panel) !important;
   box-shadow: none !important;
   border-top: 1px solid var(--border) !important;
+}
+
+.telemetry-visualizer {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 14px;
+  padding: 0 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.telemetry-eq-bar {
+  display: inline-block;
+  width: 2.5px;
+  height: 2px;
+  min-height: 2px;
+  background-color: var(--accent);
+  border-radius: 1px;
+  transition: height 0.06s ease;
+}
+
+:root[data-performance="full"] .telemetry-eq-bar {
+  box-shadow: 0 0 6px var(--accent-bright);
+}
+
+:root[data-performance="low-power"] .telemetry-visualizer {
+  display: none !important;
 }
 
 .telemetry-button {
