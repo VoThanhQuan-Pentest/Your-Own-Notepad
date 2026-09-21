@@ -81,7 +81,6 @@ import {
 import { initDelegatedTilt } from "./utils/tilt";
 import { triggerSparkBurst } from "./utils/particles";
 import { initGridCanvas, stopGridCanvas } from "./utils/grid-canvas";
-import { triggerDecryptionStream } from "./utils/decryption";
 
 import { button, element } from "./utils/dom";
 import { contrastRatio, mixHex } from "./utils/color";
@@ -1376,12 +1375,6 @@ export class CommandVaultApplication {
         addOneShotClass(table.element, "workspace-view-fade-in");
       }
       this.workspace.replaceChildren(table.element);
-      if (this.performanceProfile.mode === "full" && !prefersReducedMotion()) {
-        const titleEl = table.element.querySelector<HTMLElement>(".file-title-group h1");
-        if (titleEl) {
-          triggerDecryptionStream(titleEl);
-        }
-      }
     }
 
     if (focus?.commandId || focus?.sectionId) {
@@ -1433,12 +1426,6 @@ export class CommandVaultApplication {
       snapshot.remove();
       nextElement.classList.remove("workspace-view-layer", "file-view-incoming");
       this.workspace.classList.remove("file-transitioning");
-      if (this.performanceProfile.mode === "full" && !prefersReducedMotion()) {
-        const titleEl = nextElement.querySelector<HTMLElement>(".file-title-group h1");
-        if (titleEl) {
-          triggerDecryptionStream(titleEl);
-        }
-      }
     };
     const onAnimationEnd = (event: AnimationEvent): void => {
       if (event.target === nextElement) {

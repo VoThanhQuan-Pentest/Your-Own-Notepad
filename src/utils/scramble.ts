@@ -1,7 +1,10 @@
+import { playDecryptionTick } from "../services/audio";
+
 const GLYPHS = "0123456789ABCDEF_#%!<>~/*-+=";
 
 interface ScrambleHandle {
   timerId: number;
+  finalText: string;
 }
 
 const activeScrambles = new WeakMap<HTMLElement, ScrambleHandle>();
@@ -11,17 +14,19 @@ export function cancelScramble(element: HTMLElement): void {
   if (active) {
     window.cancelAnimationFrame(active.timerId);
     activeScrambles.delete(element);
+    element.textContent = active.finalText;
   }
 }
 
 /**
- * High-tech decryption text scramble animation.
+ * High-tech decryption text scramble animation with audio clicks.
  * Only runs when performance mode is "full" and reduced-motion is not requested.
+ * Guaranteed to settle 100% of characters to finalText.
  */
 export function scrambleText(
   target: HTMLElement,
   finalText: string,
-  durationMs = 280,
+  durationMs = 240,
 ): void {
   cancelScramble(target);
 
@@ -38,8 +43,10 @@ export function scrambleText(
     return;
   }
 
+  playDecryptionTick();
   const startTime = performance.now();
   const length = finalText.length;
+  let lastTickProgress = 0;
 
   const frame = (now: number): void => {
     const elapsed = now - startTime;
@@ -47,6 +54,18 @@ export function scrambleText(
 
     // Number of characters that have settled to their final state
     const settledCount = Math.floor(progress * length);
+
+    // Occasional decryption tick audio as characters unlock
+    if (progress - lastTickProgress >= 0.35 && progress < 0.95) {
+      lastTickProgress = progress;
+      playDecryptionTick();
+    }
+
+    if (progress >= 1) {
+      target.textContent = finalText;
+      activeScrambles.delete(target);
+      return;
+    }
 
     let output = "";
     for (let i = 0; i < length; i++) {
@@ -63,19 +82,15 @@ export function scrambleText(
 
     target.textContent = output;
 
-    if (progress < 1) {
-      const handle = activeScrambles.get(target);
-      if (handle) {
-        handle.timerId = window.requestAnimationFrame(frame);
-      }
-    } else {
-      target.textContent = finalText;
-      activeScrambles.delete(target);
+    const handle = activeScrambles.get(target);
+    if (handle) {
+      handle.timerId = window.requestAnimationFrame(frame);
     }
   };
 
   const handle: ScrambleHandle = {
     timerId: window.requestAnimationFrame(frame),
+    finalText,
   };
   activeScrambles.set(target, handle);
 }

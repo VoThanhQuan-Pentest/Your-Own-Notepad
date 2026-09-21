@@ -8,7 +8,7 @@ import type { CommandRowCallbacks } from "./command-row";
 import type { SectionHighlightLevel } from "../models/settings";
 import type { EffectivePerformanceProfile } from "../services/performance";
 import { openMenu } from "./menu";
-import { scrambleText } from "../utils/scramble";
+import { cancelScramble, scrambleText } from "../utils/scramble";
 
 export interface CommandTableCallbacks {
   onUndo(): void;
@@ -197,6 +197,7 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
       sectionHandles.forEach((handle) => handle.setPerformanceProfile(profile));
     },
     dispose() {
+      cancelScramble(title);
       sectionHandles.forEach((handle) => handle.dispose());
       sectionHandles.clear();
     },
