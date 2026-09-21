@@ -1153,18 +1153,16 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   await expect(bootOverlay).not.toBeVisible();
 });
 
-test("God-Tier 4.0: holographic cyber globe, tactical minimap scanner HUD, and matrix digital rain", async ({ page }) => {
+test("God-Tier 4.0: holographic cyber globe and matrix digital rain", async ({ page }) => {
   // 1. Check Welcome Dashboard Cyber Globe
   await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");
   await expect(page.locator(".cyber-globe-container")).toBeVisible();
   await expect(page.locator(".quantum-core-reactor")).toBeVisible();
 
-  // 2. Open file and verify Tactical Minimap HUD
+  // 2. Open file and verify section actions are fully accessible without obstructions
   await page.getByRole("button", { name: "OPEN FILE" }).click();
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
-  const minimap = page.locator(".tactical-minimap");
-  await expect(minimap).toBeVisible();
-  await expect(minimap.locator(".minimap-section-block")).toHaveCount(3);
+  await expect(page.getByRole("button", { name: "Actions for Discovery" })).toBeVisible();
 
   // 3. Toggle Matrix Code Rain via telemetry button
   const matrixToggle = page.locator(".telemetry-matrix-toggle");
