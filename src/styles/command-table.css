@@ -1134,16 +1134,13 @@
   animation: cyber-chromatic-glitch 0.35s ease-out;
 }
 
-/* HOLOGRAPHIC 3D PARALLAX TILT & SPECULAR GLARE */
+/* TACTICAL HOVER HIGHLIGHT (FLAT, CRYSTAL-CLEAR READABILITY) */
 :root[data-performance="full"] .command-row {
   position: relative;
-  transform: perspective(800px) rotateX(var(--tilt-rot-x, 0deg)) rotateY(var(--tilt-rot-y, 0deg)) translateZ(0px);
-  transition: transform 0.12s ease-out, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 :root[data-performance="full"] .command-row:hover {
-  transform: perspective(800px) rotateX(var(--tilt-rot-x, 0deg)) rotateY(var(--tilt-rot-y, 0deg)) translateZ(3px);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 15%, transparent), 0 0 1px var(--accent);
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--accent) 15%, transparent), 0 0 1px var(--accent);
 }
 
 /* TACTICAL MILITARY CORNER BRACKETS */

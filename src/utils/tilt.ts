@@ -53,19 +53,9 @@ export function initDelegatedTilt(container: HTMLElement): () => void {
 
     const x = pendingEvent.clientX - rect.left;
     const y = pendingEvent.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const dx = Math.max(-1, Math.min(1, (x - centerX) / centerX));
-    const dy = Math.max(-1, Math.min(1, (y - centerY) / centerY));
-
-    const rotX = (-dy * 3.5).toFixed(2);
-    const rotY = (dx * 4.5).toFixed(2);
     const glareX = ((x / rect.width) * 100).toFixed(1);
     const glareY = ((y / rect.height) * 100).toFixed(1);
 
-    activeRow.style.setProperty("--tilt-rot-x", `${rotX}deg`);
-    activeRow.style.setProperty("--tilt-rot-y", `${rotY}deg`);
     activeRow.style.setProperty("--glare-x", `${glareX}%`);
     activeRow.style.setProperty("--glare-y", `${glareY}%`);
   };
@@ -99,8 +89,6 @@ export function initDelegatedTilt(container: HTMLElement): () => void {
 }
 
 function resetRow(row: HTMLElement): void {
-  row.style.removeProperty("--tilt-rot-x");
-  row.style.removeProperty("--tilt-rot-y");
   row.style.removeProperty("--glare-x");
   row.style.removeProperty("--glare-y");
 }
