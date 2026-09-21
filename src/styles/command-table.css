@@ -994,10 +994,15 @@
 
 :root[data-performance="full"] .command-code {
   position: relative;
-  background: var(--cyber-obsidian-bg, #070a0f);
+  background-color: var(--cyber-obsidian-bg, #070a0f);
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.22) 3px);
   border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 6px color-mix(in srgb, var(--accent) 12%, transparent);
   overflow: hidden;
+}
+
+:root[data-performance="full"] .command-code code {
+  color: #d6eef8;
 }
 
 :root[data-performance="full"] .command-code::before {
@@ -1009,6 +1014,8 @@
   height: 100%;
   background: var(--accent-bright);
   box-shadow: 0 0 8px var(--accent);
+  pointer-events: none;
+  z-index: 2;
 }
 
 :root[data-performance="full"] .command-code:hover {
@@ -1091,17 +1098,6 @@
   font-weight: bold;
 }
 
-/* CRT PHOSPHOR SCANLINES */
-:root[data-performance="full"] .command-code::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.2) 3px);
-  opacity: 0.65;
-  z-index: 1;
-}
-
 /* CHROMATIC ABERRATION GLITCH ON ROW HOVER */
 @keyframes cyber-chromatic-glitch {
   0% { transform: translate(0); text-shadow: none; }
@@ -1167,6 +1163,10 @@
   opacity: 0;
   transition: opacity 0.2s ease;
   z-index: 1;
+}
+
+:root[data-theme="light"][data-performance="full"] .command-row::after {
+  background: radial-gradient(circle 260px at var(--glare-x, 50%) var(--glare-y, 50%), color-mix(in srgb, var(--accent) 15%, transparent), transparent 75%);
 }
 
 :root[data-performance="full"] .command-row:hover::after {

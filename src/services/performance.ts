@@ -74,10 +74,10 @@ export class PerformanceController {
     this.uiScale = uiScale;
     if (mode === "low-power") {
       this.selectedStartupMode = "battery-saver";
-    } else if (mode === "full" || mode === "balanced") {
-      this.selectedStartupMode = null;
-    } else if (this.selectedStartupMode === "battery-saver") {
+    } else if (mode === "full") {
       this.selectedStartupMode = "performance";
+    } else if (mode === "balanced") {
+      this.selectedStartupMode = null;
     }
     const initial = this.chooseInitialMode();
     this.setEffective(initial.mode, initial.reason);
@@ -222,6 +222,9 @@ export class PerformanceController {
   private chooseInitialMode(): { mode: EffectivePerformanceMode; reason: string } {
     if (this.selectedStartupMode === "battery-saver" || this.selectedMode === "low-power") {
       return { mode: "low-power", reason: "Battery Saver mode selected" };
+    }
+    if (this.selectedStartupMode === "performance" || this.selectedMode === "full") {
+      return { mode: "full", reason: "Performance mode selected" };
     }
     if (this.selectedMode !== "auto") {
       return { mode: this.selectedMode, reason: `Selected ${this.selectedMode}` };

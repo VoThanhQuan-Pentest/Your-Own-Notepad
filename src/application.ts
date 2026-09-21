@@ -482,8 +482,14 @@ export class CommandVaultApplication {
     if (hasAutoPerformance) {
       this.performanceController.configure("auto", this.settings.uiScale);
     } else if (requestedPerformance === "balanced" || requestedPerformance === "full" || requestedPerformance === "low-power") {
+      this.settings.performanceMode = requestedPerformance;
       this.performanceController.configure(requestedPerformance, this.settings.uiScale);
     } else {
+      if (mode === "performance") {
+        this.settings.performanceMode = "full";
+      } else if (mode === "battery-saver") {
+        this.settings.performanceMode = "low-power";
+      }
       this.performanceController.applyStartupMode(mode);
     }
     this.performanceProfile = this.performanceController.profile();
@@ -2266,10 +2272,14 @@ export class CommandVaultApplication {
     const performanceField = element("label", "form-field");
     performanceField.append(element("span", undefined, "Performance mode"));
     const performanceMode = element("select");
+    const activePerformanceMode =
+      this.settings.performanceMode === "auto" && this.performanceProfile.mode === "full"
+        ? "full"
+        : this.settings.performanceMode;
     performanceModes.forEach((mode) => {
       const option = element("option", undefined, performanceModeLabel(mode));
       option.value = mode;
-      option.selected = mode === this.settings.performanceMode;
+      option.selected = mode === activePerformanceMode;
       performanceMode.append(option);
     });
     performanceField.append(performanceMode);
@@ -2320,7 +2330,7 @@ export class CommandVaultApplication {
     startupModeSelect.addEventListener("change", () => {
       if (startupModeSelect.value === "battery-saver") {
         performanceMode.value = "low-power";
-      } else if (startupModeSelect.value === "performance" && performanceMode.value === "low-power") {
+      } else if (startupModeSelect.value === "performance" && performanceMode.value !== "full") {
         performanceMode.value = "full";
       }
     });

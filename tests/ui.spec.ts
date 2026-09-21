@@ -1073,3 +1073,29 @@ test("PHASE 57: prefers-reduced-motion overrides animations in Performance mode"
   await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
 });
+
+test("persists Performance mode and cyber UI when switching theme color", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+
+  // Open settings and switch to PURPLE accent
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await page.getByRole("radio", { name: "PURPLE" }).check({ force: true });
+  await page.getByRole("button", { name: "SAVE", exact: true }).click();
+
+  await expect(page.locator("html")).toHaveAttribute("data-accent", "purple");
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+  await expect(page.locator(".telemetry-button")).toBeVisible();
+  await expect(page.locator(".tactical-telemetry-bar")).toBeVisible();
+
+  // Open settings and switch to LIGHT theme with GREEN accent
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await page.getByRole("radio", { name: "LIGHT" }).check({ force: true });
+  await page.getByRole("radio", { name: "GREEN" }).check({ force: true });
+  await page.getByRole("button", { name: "SAVE", exact: true }).click();
+
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("html")).toHaveAttribute("data-accent", "green");
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+  await expect(page.locator(".telemetry-button")).toBeVisible();
+});

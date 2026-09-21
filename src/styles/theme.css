@@ -280,6 +280,11 @@
   --cyber-laser-pulse: 0 0 16px color-mix(in srgb, var(--accent-bright) 70%, transparent);
 }
 
+:root[data-theme="light"][data-performance="full"] {
+  --cyber-obsidian-bg: #0e1726;
+  --cyber-border-glow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
 :root[data-performance="low-power"] {
   --accent-glow: none !important;
   --favorite-glow: none !important;

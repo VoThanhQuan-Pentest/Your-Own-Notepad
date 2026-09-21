@@ -14,7 +14,16 @@ let ctx: CanvasRenderingContext2D | null = null;
 let sparks: Spark[] = [];
 let animId: number | null = null;
 
-const SPARK_COLORS = ["#00e5ff", "#00ff9d", "#ffffff", "#ffd166", "#bd93f9"];
+function getSparkColors(): string[] {
+  if (typeof document === "undefined") {
+    return ["#00e5ff", "#00ff9d", "#ffffff", "#ffd166", "#bd93f9"];
+  }
+  const style = getComputedStyle(document.documentElement);
+  const accent = style.getPropertyValue("--accent").trim() || "#00e5ff";
+  const bright = style.getPropertyValue("--accent-bright").trim() || "#5ceaff";
+  const favorite = style.getPropertyValue("--favorite").trim() || "#00ff9d";
+  return [accent, bright, favorite, "#ffffff", "#ffd166"];
+}
 
 function isFullPerformance(): boolean {
   return (
@@ -61,6 +70,7 @@ export function triggerSparkBurst(clientX: number, clientY: number): void {
   const startX = (clientX - rect.left) * dpr;
   const startY = (clientY - rect.top) * dpr;
 
+  const colors = getSparkColors();
   const count = 16 + Math.floor(Math.random() * 8);
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -71,7 +81,7 @@ export function triggerSparkBurst(clientX: number, clientY: number): void {
       y: startY,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)] as string,
+      color: colors[Math.floor(Math.random() * colors.length)] as string,
       size: (1.5 + Math.random() * 1.5) * dpr,
       life: maxLife,
       maxLife,

@@ -490,39 +490,54 @@
   margin-left: 24px;
 }
 
-:root[data-performance="full"] .reactor-ring {
+.reactor-ring {
   position: absolute;
   border-radius: 50%;
   border: 1.5px solid var(--accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
-:root[data-performance="full"] .ring-outer {
+.ring-outer {
   width: 86px;
   height: 86px;
   border-style: dashed;
-  animation: reactor-spin-3d 12s linear infinite;
 }
 
-:root[data-performance="full"] .ring-mid {
+.ring-mid {
   width: 64px;
   height: 64px;
   border-color: var(--accent-bright, #00e5ff);
-  animation: reactor-spin-rev 8s linear infinite;
 }
 
-:root[data-performance="full"] .ring-inner {
+.ring-inner {
   width: 44px;
   height: 44px;
-  border-color: #00ff9d;
-  animation: reactor-spin-3d 5s linear infinite;
+  border-color: var(--accent-secondary, #00ff9d);
 }
 
-:root[data-performance="full"] .reactor-plasma-core {
+.reactor-plasma-core {
   width: 20px;
   height: 20px;
   border-radius: 50%;
   background: radial-gradient(circle, #ffffff 0%, var(--accent) 60%, transparent 100%);
+}
+
+:root[data-performance="full"] .reactor-ring {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+:root[data-performance="full"] .ring-outer {
+  animation: reactor-spin-3d 12s linear infinite;
+}
+
+:root[data-performance="full"] .ring-mid {
+  animation: reactor-spin-rev 8s linear infinite;
+}
+
+:root[data-performance="full"] .ring-inner {
+  animation: reactor-spin-3d 5s linear infinite;
+}
+
+:root[data-performance="full"] .reactor-plasma-core {
   box-shadow: 0 0 16px var(--accent-bright, #00e5ff);
   animation: reactor-pulse 2s ease-in-out infinite;
 }
