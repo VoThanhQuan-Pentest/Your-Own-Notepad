@@ -9,17 +9,19 @@
   --text-main: #d8dee9;
   --text-secondary: #8b949e;
   --text-muted: #687583;
-  --accent: #00c8e8;
-  --accent-hover: #23d3ed;
+  --accent: #00d4f0;
+  --accent-hover: #38e5fc;
   --accent-secondary: #8b5cf6;
-  --accent-bright: #23d3ed;
+  --accent-bright: #5ceaff;
+  --accent-glow: 0 0 14px rgb(0 212 240 / 60%);
   --danger: #f26d78;
   --danger-text: #f5a3aa;
   --success: #78dba9;
   --warning: #f1c15a;
-  --favorite: #f472b6;
-  --favorite-hover: #f9a8d4;
-  --favorite-soft: rgb(244 114 182 / 10%);
+  --favorite: #00f5ff;
+  --favorite-hover: #80faff;
+  --favorite-soft: rgb(0 245 255 / 16%);
+  --favorite-glow: 0 0 14px rgb(0 245 255 / 75%);
   --highlight-gold: #f5c451;
   --highlight-gold-soft: rgb(245 196 81 / 16%);
   --highlight-orange: #fb923c;
@@ -58,39 +60,76 @@
   --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+:root[data-accent="cyan"] {
+  --accent: #00d4f0;
+  --accent-hover: #38e5fc;
+  --accent-secondary: #8b5cf6;
+  --accent-bright: #5ceaff;
+  --accent-glow: 0 0 14px rgb(0 212 240 / 60%);
+  --favorite: #00f5ff;
+  --favorite-hover: #80faff;
+  --favorite-soft: rgb(0 245 255 / 16%);
+  --favorite-glow: 0 0 14px rgb(0 245 255 / 75%);
+}
+
 :root[data-accent="blue"] {
-  --accent: #60a5fa;
-  --accent-hover: #93c5fd;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
   --accent-secondary: #22d3ee;
   --accent-bright: #93c5fd;
+  --accent-glow: 0 0 14px rgb(59 130 246 / 60%);
+  --favorite: #38bdf8;
+  --favorite-hover: #7dd3fc;
+  --favorite-soft: rgb(56 189 248 / 16%);
+  --favorite-glow: 0 0 14px rgb(56 189 248 / 75%);
 }
 
 :root[data-accent="purple"] {
-  --accent: #a78bfa;
-  --accent-hover: #c4b5fd;
+  --accent: #a855f7;
+  --accent-hover: #c084fc;
   --accent-secondary: #f472b6;
-  --accent-bright: #c4b5fd;
+  --accent-bright: #e9d5ff;
+  --accent-glow: 0 0 14px rgb(168 85 247 / 60%);
+  --favorite: #e879f9;
+  --favorite-hover: #f0abfc;
+  --favorite-soft: rgb(232 121 249 / 16%);
+  --favorite-glow: 0 0 14px rgb(232 121 249 / 75%);
 }
 
 :root[data-accent="green"] {
-  --accent: #34d399;
-  --accent-hover: #6ee7b7;
+  --accent: #10b981;
+  --accent-hover: #34d399;
   --accent-secondary: #22d3ee;
   --accent-bright: #6ee7b7;
+  --accent-glow: 0 0 14px rgb(16 185 129 / 60%);
+  --favorite: #00ff9d;
+  --favorite-hover: #66ffbe;
+  --favorite-soft: rgb(0 255 157 / 16%);
+  --favorite-glow: 0 0 14px rgb(0 255 157 / 75%);
 }
 
 :root[data-accent="orange"] {
-  --accent: #fb923c;
-  --accent-hover: #fdba74;
+  --accent: #f97316;
+  --accent-hover: #fb923c;
   --accent-secondary: #facc15;
-  --accent-bright: #fdba74;
+  --accent-bright: #fed7aa;
+  --accent-glow: 0 0 14px rgb(249 115 22 / 60%);
+  --favorite: #ffaa22;
+  --favorite-hover: #ffc866;
+  --favorite-soft: rgb(255 170 34 / 16%);
+  --favorite-glow: 0 0 14px rgb(255 170 34 / 75%);
 }
 
 :root[data-accent="pink"] {
-  --accent: #f472b6;
-  --accent-hover: #f9a8d4;
+  --accent: #ec4899;
+  --accent-hover: #f472b6;
   --accent-secondary: #a78bfa;
-  --accent-bright: #f9a8d4;
+  --accent-bright: #fbcfe8;
+  --accent-glow: 0 0 14px rgb(236 72 153 / 60%);
+  --favorite: #ff2d87;
+  --favorite-hover: #ff66a8;
+  --favorite-soft: rgb(255 45 135 / 16%);
+  --favorite-glow: 0 0 14px rgb(255 45 135 / 75%);
 }
 
 :root[data-theme="light"] {
@@ -104,17 +143,19 @@
   --text-main: #1f2937;
   --text-secondary: #4b5563;
   --text-muted: #687586;
-  --accent: #087f9a;
-  --accent-hover: #06697f;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
   --accent-secondary: #6d28d9;
-  --accent-bright: #06697f;
+  --accent-bright: #0284c7;
+  --accent-glow: 0 0 10px rgb(2 132 199 / 40%);
   --danger: #c2414b;
   --danger-text: #a61b29;
   --success: #047857;
   --warning: #a16207;
-  --favorite: #be185d;
-  --favorite-hover: #9d174d;
-  --favorite-soft: rgb(190 24 93 / 9%);
+  --favorite: #0284c7;
+  --favorite-hover: #0369a1;
+  --favorite-soft: rgb(2 132 199 / 14%);
+  --favorite-glow: 0 0 10px rgb(2 132 199 / 40%);
   --highlight-gold: #a16207;
   --highlight-gold-soft: rgb(161 98 7 / 14%);
   --highlight-orange: #c2410c;
@@ -129,11 +170,28 @@
   --shadow-menu: rgb(15 23 42 / 22%);
 }
 
+:root[data-theme="light"][data-accent="cyan"] {
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-secondary: #6d28d9;
+  --accent-bright: #0284c7;
+  --accent-glow: 0 0 10px rgb(2 132 199 / 40%);
+  --favorite: #0284c7;
+  --favorite-hover: #0369a1;
+  --favorite-soft: rgb(2 132 199 / 14%);
+  --favorite-glow: 0 0 10px rgb(2 132 199 / 40%);
+}
+
 :root[data-theme="light"][data-accent="blue"] {
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
   --accent-secondary: #0891b2;
   --accent-bright: #1d4ed8;
+  --accent-glow: 0 0 10px rgb(37 99 235 / 40%);
+  --favorite: #2563eb;
+  --favorite-hover: #1d4ed8;
+  --favorite-soft: rgb(37 99 235 / 14%);
+  --favorite-glow: 0 0 10px rgb(37 99 235 / 40%);
 }
 
 :root[data-theme="light"][data-accent="purple"] {
@@ -141,6 +199,11 @@
   --accent-hover: #6d28d9;
   --accent-secondary: #be185d;
   --accent-bright: #6d28d9;
+  --accent-glow: 0 0 10px rgb(124 58 237 / 40%);
+  --favorite: #9333ea;
+  --favorite-hover: #7c3aed;
+  --favorite-soft: rgb(147 51 234 / 14%);
+  --favorite-glow: 0 0 10px rgb(147 51 234 / 40%);
 }
 
 :root[data-theme="light"][data-accent="green"] {
@@ -148,6 +211,11 @@
   --accent-hover: #065f46;
   --accent-secondary: #0e7490;
   --accent-bright: #065f46;
+  --accent-glow: 0 0 10px rgb(4 120 87 / 40%);
+  --favorite: #059669;
+  --favorite-hover: #047857;
+  --favorite-soft: rgb(5 150 105 / 14%);
+  --favorite-glow: 0 0 10px rgb(5 150 105 / 40%);
 }
 
 :root[data-theme="light"][data-accent="orange"] {
@@ -155,6 +223,11 @@
   --accent-hover: #9a3412;
   --accent-secondary: #a16207;
   --accent-bright: #9a3412;
+  --accent-glow: 0 0 10px rgb(194 65 12 / 40%);
+  --favorite: #ea580c;
+  --favorite-hover: #c2410c;
+  --favorite-soft: rgb(234 88 12 / 14%);
+  --favorite-glow: 0 0 10px rgb(234 88 12 / 40%);
 }
 
 :root[data-theme="light"][data-accent="pink"] {
@@ -162,6 +235,11 @@
   --accent-hover: #9d174d;
   --accent-secondary: #7c3aed;
   --accent-bright: #9d174d;
+  --accent-glow: 0 0 10px rgb(190 24 93 / 40%);
+  --favorite: #db2777;
+  --favorite-hover: #be185d;
+  --favorite-soft: rgb(219 39 119 / 14%);
+  --favorite-glow: 0 0 10px rgb(219 39 119 / 40%);
 }
 
 :root[data-custom-theme="true"] {
@@ -175,10 +253,40 @@
   --text-secondary: color-mix(in srgb, var(--custom-text) 72%, var(--custom-background) 28%);
   --text-muted: color-mix(in srgb, var(--custom-text) 55%, var(--custom-background) 45%);
   --accent: var(--custom-accent);
-  --accent-hover: color-mix(in srgb, var(--custom-accent) 80%, var(--custom-text) 20%);
+  --accent-hover: color-mix(in srgb, var(--custom-accent) 80%, #ffffff 20%);
   --accent-secondary: color-mix(in srgb, var(--custom-accent) 65%, var(--custom-text) 35%);
-  --accent-bright: color-mix(in srgb, var(--custom-accent) 82%, var(--custom-text) 18%);
+  --accent-bright: color-mix(in srgb, var(--custom-accent) 75%, #ffffff 25%);
+  --accent-glow: 0 0 14px color-mix(in srgb, var(--custom-accent) 60%, transparent);
   --code-bg: color-mix(in srgb, var(--custom-background) 96%, var(--custom-text) 4%);
   --code-text: color-mix(in srgb, var(--custom-accent) 70%, var(--custom-text) 30%);
   --example-text: color-mix(in srgb, var(--custom-text) 84%, var(--custom-background) 16%);
+  --favorite: color-mix(in srgb, var(--custom-accent) 76%, #ffffff 24%);
+  --favorite-hover: color-mix(in srgb, var(--custom-accent) 55%, #ffffff 45%);
+  --favorite-soft: color-mix(in srgb, var(--favorite) 16%, transparent);
+  --favorite-glow: 0 0 14px color-mix(in srgb, var(--favorite) 75%, transparent);
 }
+
+:root[data-theme="light"][data-custom-theme="true"] {
+  --favorite: color-mix(in srgb, var(--custom-accent) 85%, #000000 15%);
+  --favorite-hover: color-mix(in srgb, var(--custom-accent) 70%, #000000 30%);
+  --favorite-soft: color-mix(in srgb, var(--custom-accent) 14%, transparent);
+  --favorite-glow: 0 0 10px color-mix(in srgb, var(--favorite) 45%, transparent);
+}
+
+:root[data-performance="full"] {
+  --cyber-obsidian-bg: #070a0f;
+  --ambient-aurora: radial-gradient(ellipse 70% 50% at 20% 0%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 75%);
+  --cyber-border-glow: 0 0 10px color-mix(in srgb, var(--accent) 32%, transparent);
+  --cyber-laser-pulse: 0 0 16px color-mix(in srgb, var(--accent-bright) 70%, transparent);
+}
+
+:root[data-performance="low-power"] {
+  --accent-glow: none !important;
+  --favorite-glow: none !important;
+  --cyber-obsidian-bg: var(--code-bg);
+  --ambient-aurora: none !important;
+  --cyber-border-glow: none !important;
+  --cyber-laser-pulse: none !important;
+}
+
+

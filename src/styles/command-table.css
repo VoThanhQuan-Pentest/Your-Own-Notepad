@@ -965,3 +965,242 @@
 .virtual-rows {
   min-width: 0;
 }
+
+/* ==========================================================================
+   PERFORMANCE MODE - FULL CYBERPUNK SUITE (COMMAND & WORKSPACE)
+   ========================================================================== */
+
+:root[data-performance="full"] .file-header {
+  background-image: var(--ambient-aurora);
+  background-repeat: no-repeat;
+  background-position: top left;
+  border-bottom-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+:root[data-performance="full"] .file-title-group h1 {
+  text-shadow: 0 0 16px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+:root[data-performance="full"] .command-row {
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+:root[data-performance="full"] .command-row:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  box-shadow: 0 6px 20px -4px color-mix(in srgb, var(--accent) 16%, transparent),
+              0 0 1px color-mix(in srgb, var(--accent-bright) 40%, transparent);
+}
+
+:root[data-performance="full"] .command-code {
+  position: relative;
+  background: var(--cyber-obsidian-bg, #070a0f);
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 6px color-mix(in srgb, var(--accent) 12%, transparent);
+  overflow: hidden;
+}
+
+:root[data-performance="full"] .command-code::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+:root[data-performance="full"] .command-code:hover {
+  border-color: color-mix(in srgb, var(--accent-bright) 45%, transparent);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 10px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* CYBER PULSE COPY - LASER SWEEP ANIMATION */
+@keyframes cyber-laser-sweep {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(200%);
+    opacity: 0;
+  }
+}
+
+:root[data-performance="full"] .command-code.code-copied-pulse::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--accent-bright) 80%, white) 50%, transparent 100%);
+  animation: cyber-laser-sweep 0.65s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+:root[data-performance="full"] .action-button.primary-action.copied,
+:root[data-performance="full"] .example-copy.copied {
+  background: color-mix(in srgb, var(--success) 22%, var(--bg-panel)) !important;
+  border-color: var(--success) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--success) 70%, transparent) !important;
+  transform: scale(1.05);
+}
+
+/* HIGH-TECH CHAMFERED BADGES */
+:root[data-performance="full"] .section-highlight-badge {
+  clip-path: polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%);
+  box-shadow: 0 0 8px currentColor;
+  letter-spacing: 0.06em;
+}
+
+/* REAL-TIME TERMINAL SYNTAX HIGHLIGHTING (FULL PERFORMANCE) */
+:root[data-performance="full"] .syntax-cmd {
+  color: var(--accent-bright, #00e5ff);
+  font-weight: 600;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+:root[data-performance="full"] .syntax-flag {
+  color: #00ff9d;
+  font-weight: 500;
+}
+
+:root[data-performance="full"] .syntax-string {
+  color: #ffd166;
+}
+
+:root[data-performance="full"] .syntax-target {
+  color: #bd93f9;
+  text-decoration: underline;
+  text-decoration-color: rgba(189, 147, 249, 0.4);
+  text-underline-offset: 2px;
+}
+
+:root[data-performance="full"] .syntax-var {
+  color: #ff9f43;
+}
+
+:root[data-performance="full"] .syntax-op {
+  color: #ff5555;
+  font-weight: bold;
+}
+
+/* CRT PHOSPHOR SCANLINES */
+:root[data-performance="full"] .command-code::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.2) 3px);
+  opacity: 0.65;
+  z-index: 1;
+}
+
+/* CHROMATIC ABERRATION GLITCH ON ROW HOVER */
+@keyframes cyber-chromatic-glitch {
+  0% { transform: translate(0); text-shadow: none; }
+  20% { transform: translate(-1.5px, 0.8px); text-shadow: -1.5px 0 #ff0055, 1.5px 0 #00ffff; }
+  40% { transform: translate(1px, -0.8px); text-shadow: 1px 0 #00ffff, -1px 0 #ff0055; }
+  60% { transform: translate(-0.5px, 0.4px); text-shadow: -0.5px 0 #ff0055, 0.5px 0 #00ffff; }
+  80% { transform: translate(0.5px, -0.4px); text-shadow: 0.5px 0 #00ffff, -0.5px 0 #ff0055; }
+  100% { transform: translate(0); text-shadow: none; }
+}
+
+:root[data-performance="full"] .command-row:hover .command-name {
+  animation: cyber-chromatic-glitch 0.35s ease-out;
+}
+
+/* HOLOGRAPHIC 3D PARALLAX TILT & SPECULAR GLARE */
+:root[data-performance="full"] .command-row {
+  position: relative;
+  transform: perspective(800px) rotateX(var(--tilt-rot-x, 0deg)) rotateY(var(--tilt-rot-y, 0deg)) translateZ(0px);
+  transition: transform 0.12s ease-out, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+:root[data-performance="full"] .command-row:hover {
+  transform: perspective(800px) rotateX(var(--tilt-rot-x, 0deg)) rotateY(var(--tilt-rot-y, 0deg)) translateZ(3px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 15%, transparent), 0 0 1px var(--accent);
+}
+
+/* TACTICAL MILITARY CORNER BRACKETS */
+:root[data-performance="full"] .command-row::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  border-radius: 4px;
+  background:
+    linear-gradient(to right, var(--accent) 8px, transparent 8px) top left,
+    linear-gradient(to bottom, var(--accent) 8px, transparent 8px) top left,
+    linear-gradient(to left, var(--accent) 8px, transparent 8px) top right,
+    linear-gradient(to bottom, var(--accent) 8px, transparent 8px) top right,
+    linear-gradient(to right, var(--accent) 8px, transparent 8px) bottom left,
+    linear-gradient(to top, var(--accent) 8px, transparent 8px) bottom left,
+    linear-gradient(to left, var(--accent) 8px, transparent 8px) bottom right,
+    linear-gradient(to top, var(--accent) 8px, transparent 8px) bottom right;
+  background-repeat: no-repeat;
+  background-size: 8px 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: scale(1.015);
+  z-index: 2;
+}
+
+:root[data-performance="full"] .command-row:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* SPECULAR GLARE LAYER */
+:root[data-performance="full"] .command-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle 260px at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, 0.05), transparent 75%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+}
+
+:root[data-performance="full"] .command-row:hover::after {
+  opacity: 1;
+}
+
+
+/* SAVE POWER MODE - COMPLETE SUPPRESSION OF CYBER EFFECTS */
+:root[data-performance="low-power"] .command-row,
+:root[data-performance="low-power"] .command-row:hover,
+:root[data-performance="low-power"] .command-code,
+:root[data-performance="low-power"] .command-code:hover,
+:root[data-performance="low-power"] .file-header,
+:root[data-performance="low-power"] .file-title-group h1,
+:root[data-performance="low-power"] .action-button.primary-action.copied,
+:root[data-performance="low-power"] .section-highlight-badge,
+:root[data-performance="low-power"] .command-code code span,
+:root[data-performance="low-power"] .example-copy code span {
+  transform: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  background-image: none !important;
+  color: inherit !important;
+  font-weight: normal !important;
+  text-decoration: none !important;
+}
+
+:root[data-performance="low-power"] .command-code::before,
+:root[data-performance="low-power"] .command-code.code-copied-pulse::after,
+:root[data-performance="low-power"] .command-row::before,
+:root[data-performance="low-power"] .command-row::after {
+  display: none !important;
+  animation: none !important;
+}
+
+

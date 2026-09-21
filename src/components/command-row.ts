@@ -1,5 +1,6 @@
 import type { CommandEntry } from "../models/command-file";
 import { button, element } from "../utils/dom";
+import { renderHighlightedCommand } from "../utils/syntax";
 
 export interface CommandRowHandle {
   element: HTMLElement;
@@ -87,8 +88,13 @@ export function createCommandRow(
   menu.hidden = selection?.active ?? false;
   commandHeader.append(menu);
 
+  const isFullPerf =
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.performance === "full";
   const codeScroller = element("div", "command-code");
-  codeScroller.append(element("code", undefined, command.command));
+  const codeElement = element("code");
+  renderHighlightedCommand(codeElement, command.command, isFullPerf);
+  codeScroller.append(codeElement);
   const commandActions = element("div", "command-actions");
   const copyButton = button("action-button primary-action", "COPY");
   copyButton.addEventListener("click", () => callbacks.onCopy(command.command, copyButton));

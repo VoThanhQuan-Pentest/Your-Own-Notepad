@@ -8,6 +8,7 @@ import type { CommandRowCallbacks } from "./command-row";
 import type { SectionHighlightLevel } from "../models/settings";
 import type { EffectivePerformanceProfile } from "../services/performance";
 import { openMenu } from "./menu";
+import { scrambleText } from "../utils/scramble";
 
 export interface CommandTableCallbacks {
   onUndo(): void;
@@ -123,7 +124,15 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
   }
 
   function update(nextFile: CommandFile, nextOptions: CommandTableOptions): void {
-    title.textContent = nextFile.title.toUpperCase();
+    const nextTitle = nextFile.title.toUpperCase();
+    title.setAttribute("aria-label", nextTitle);
+    if (title.textContent !== nextTitle) {
+      if (nextOptions.performanceProfile.mode === "full") {
+        scrambleText(title, nextTitle, 280);
+      } else {
+        title.textContent = nextTitle;
+      }
+    }
     description.textContent = nextFile.description ?? "";
     description.hidden = !nextFile.description;
     undo.disabled = !nextOptions.canUndo;

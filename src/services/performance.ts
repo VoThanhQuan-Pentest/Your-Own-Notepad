@@ -74,6 +74,8 @@ export class PerformanceController {
     this.uiScale = uiScale;
     if (mode === "low-power") {
       this.selectedStartupMode = "battery-saver";
+    } else if (mode === "full" || mode === "balanced") {
+      this.selectedStartupMode = null;
     } else if (this.selectedStartupMode === "battery-saver") {
       this.selectedStartupMode = "performance";
     }

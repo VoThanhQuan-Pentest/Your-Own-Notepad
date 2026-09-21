@@ -31,7 +31,19 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
       ? "Indexing your local vault…"
       : "Your command library is ready when you are.",
   );
-  hero.append(eyebrow, title, subtitle);
+  const heroLeft = element("div", "welcome-hero-text");
+  heroLeft.append(eyebrow, title, subtitle);
+
+  const reactor = element("div", "quantum-core-reactor");
+  reactor.setAttribute("aria-hidden", "true");
+  reactor.append(
+    element("div", "reactor-ring ring-outer"),
+    element("div", "reactor-ring ring-mid"),
+    element("div", "reactor-ring ring-inner"),
+    element("div", "reactor-plasma-core"),
+  );
+  hero.append(heroLeft, reactor);
+
 
   const grid = element("div", "dashboard-grid");
   const continueCard = element("section", "dashboard-card dashboard-continue");

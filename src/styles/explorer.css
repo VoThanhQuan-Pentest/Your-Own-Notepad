@@ -46,10 +46,14 @@
 
 .quick-access-group {
   margin-bottom: 8px;
-  padding: 5px 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--favorite) 25%, var(--border));
-  border-radius: 10px;
-  background: linear-gradient(145deg, var(--favorite-soft), transparent 68%);
+  padding: 6px 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--favorite) 22%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--favorite) 5%, transparent);
+}
+
+.quick-access-group:hover {
+  border-color: color-mix(in srgb, var(--favorite) 36%, var(--border));
 }
 
 .quick-access-heading {
@@ -59,26 +63,28 @@
   height: 28px;
   padding: 0 4px;
   background: transparent;
-  color: color-mix(in srgb, var(--favorite) 76%, var(--text-secondary));
+  color: var(--favorite);
   font-size: var(--font-caption);
-  font-weight: 720;
-  letter-spacing: 0.1em;
+  font-weight: 750;
+  letter-spacing: 0.12em;
   text-align: left;
   cursor: pointer;
 }
 
 .quick-access-heading:hover {
-  color: var(--text-main);
+  color: var(--favorite-hover);
 }
 
 .quick-access-count {
   margin-left: auto;
   min-width: 20px;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--favorite) 13%, var(--bg-main));
+  background: color-mix(in srgb, var(--favorite) 15%, var(--bg-main));
+  border: 1px solid color-mix(in srgb, var(--favorite) 28%, transparent);
   color: var(--favorite-hover);
   font-family: var(--font-code);
+  font-weight: 700;
   text-align: center;
   letter-spacing: 0;
 }
@@ -114,10 +120,11 @@
   min-width: 0;
   min-height: 30px;
   border-radius: var(--radius-sm);
+  border: 1px solid transparent;
 }
 
 .quick-access-row:hover {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--favorite) 10%, var(--bg-hover));
 }
 
 .quick-access-main {
@@ -135,6 +142,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  transition: color 140ms ease, text-shadow 140ms ease;
 }
 
 .quick-access-main > span {
@@ -149,10 +157,6 @@
   height: 12px;
   margin-right: 7px;
   color: var(--favorite);
-}
-
-.quick-access-row:hover .quick-access-main {
-  color: var(--text-main);
 }
 
 .quick-access-action,
@@ -177,40 +181,90 @@
   font-size: 13px;
 }
 
-.quick-access-action:hover,
-.quick-access-remove:hover {
+.quick-access-action:hover {
   background: var(--bg-secondary);
   color: var(--accent-hover);
 }
 
+.quick-access-remove:hover {
+  background: var(--bg-secondary);
+  color: var(--favorite-hover);
+}
+
 .favorite-remove {
   color: var(--favorite);
+  cursor: pointer;
 }
 
 .favorite-remove:hover {
   color: var(--favorite-hover);
-  transform: scale(1.06);
 }
 
 .tree-entry-row {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   min-width: 0;
   border-radius: var(--radius-sm);
+  border: 1px solid transparent;
 }
 
-.tree-entry-row:hover,
-.tree-entry-row.selected {
+.tree-entry-row:hover:not(.selected):not(.active) {
   background: var(--bg-hover);
 }
 
+.tree-entry-row.selected {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-secondary));
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.tree-entry-row.selected::before {
+  content: "";
+  width: 3px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-right: 6px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.tree-entry-row.selected .tree-folder {
+  color: var(--text-main);
+  font-weight: 650;
+}
+
+.tree-entry-row.selected .tree-kind-icon,
+.tree-entry-row.selected .tree-disclosure {
+  color: var(--accent-hover);
+}
+
 .tree-entry-row.active {
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
+  background: color-mix(in srgb, var(--accent) 11%, var(--bg-secondary));
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.tree-entry-row.active::before {
+  content: "";
+  width: 3px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-right: 6px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.tree-entry-row.active .tree-file {
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+.tree-entry-row.active .tree-kind-icon {
+  color: var(--accent-hover);
 }
 
 .tree-entry-row.loading {
-  background: color-mix(in srgb, var(--accent) 6%, var(--bg-secondary));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
 }
 
 .tree-folder,
@@ -223,6 +277,7 @@
   color: var(--text-secondary);
   text-align: left;
   cursor: pointer;
+  transition: color 140ms ease, text-shadow 140ms ease;
 }
 
 .tree-folder {
@@ -238,23 +293,9 @@
   font-size: var(--font-tree);
 }
 
-.tree-entry-row:hover .tree-folder,
-.tree-entry-row:hover .tree-file {
+.tree-entry-row:hover:not(.selected):not(.active) .tree-folder,
+.tree-entry-row:hover:not(.selected):not(.active) .tree-file {
   color: var(--text-main);
-}
-
-.tree-entry-row.active .tree-file {
-  color: var(--accent-hover);
-}
-
-.tree-entry-row.active::before {
-  width: 2px;
-  height: 15px;
-  flex: 0 0 auto;
-  margin-right: 6px;
-  border-radius: 99px;
-  background: var(--accent);
-  content: "";
 }
 
 .tree-disclosure {
@@ -262,7 +303,7 @@
   height: 14px;
   margin-right: 3px;
   color: var(--text-muted);
-  transition: transform 140ms ease, color 140ms ease;
+  transition: transform 140ms ease, color 140ms ease, filter 140ms ease;
 }
 
 .tree-disclosure.expanded {
@@ -275,16 +316,17 @@
   height: 15px;
   margin-right: 6px;
   color: var(--text-muted);
+  transition: color 140ms ease, filter 140ms ease;
 }
 
 .icon-folder,
 .icon-folder-open {
-  fill: color-mix(in srgb, currentColor 12%, transparent);
+  fill: color-mix(in srgb, currentColor 14%, transparent);
 }
 
 .tree-entry-row.active .tree-kind-icon,
 .tree-entry-row.selected .tree-kind-icon {
-  color: var(--accent-hover);
+  color: var(--accent-bright);
 }
 
 .tree-label,
@@ -330,9 +372,8 @@
   place-items: center;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: color-mix(in srgb, var(--favorite) 64%, var(--text-muted));
+  color: color-mix(in srgb, var(--favorite) 50%, var(--text-muted));
   cursor: pointer;
-  transition: transform 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
 .tree-favorite-toggle .ui-icon {
@@ -346,17 +387,285 @@
 
 .tree-favorite-toggle.selected .icon-heart path {
   fill: currentColor;
+  stroke: currentColor;
 }
 
 .tree-favorite-toggle:hover,
 .tree-favorite-toggle:focus-visible {
-  background: color-mix(in srgb, var(--favorite) 11%, var(--bg-secondary));
+  background: color-mix(in srgb, var(--favorite) 12%, var(--bg-secondary));
   color: var(--favorite-hover);
-  transform: scale(1.06);
 }
 
 .tree-favorite-toggle:active {
   transform: scale(0.94);
+}
+
+/* ==========================================================================
+   PERFORMANCE MODE ONLY - NEON LIGHTING & GLOW EFFECTS
+   Activated strictly in Performance mode to maximize aesthetics without
+   impacting battery-saver or balanced performance.
+   ========================================================================== */
+
+:root[data-performance="full"] .quick-access-group {
+  border-color: color-mix(in srgb, var(--favorite) 45%, var(--border));
+  background: linear-gradient(145deg, var(--favorite-soft), transparent 75%);
+  box-shadow: inset 0 0 18px color-mix(in srgb, var(--favorite) 12%, transparent),
+              0 0 14px color-mix(in srgb, var(--favorite) 14%, transparent);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+:root[data-performance="full"] .quick-access-group:hover {
+  border-color: color-mix(in srgb, var(--favorite) 65%, var(--border));
+  box-shadow: inset 0 0 22px color-mix(in srgb, var(--favorite) 18%, transparent),
+              0 0 18px color-mix(in srgb, var(--favorite) 22%, transparent);
+}
+
+:root[data-performance="full"] .quick-access-heading {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--favorite) 60%, transparent);
+  transition: color 140ms ease, text-shadow 140ms ease;
+}
+
+:root[data-performance="full"] .quick-access-heading:hover {
+  color: var(--favorite-hover);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--favorite) 85%, transparent);
+}
+
+:root[data-performance="full"] .quick-access-count {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--favorite) 35%, transparent);
+}
+
+:root[data-performance="full"] .quick-favorite-icon {
+  filter: drop-shadow(0 0 5px var(--favorite));
+  transition: filter 140ms ease;
+}
+
+:root[data-performance="full"] .quick-access-row {
+  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+:root[data-performance="full"] .quick-access-row:hover {
+  background: color-mix(in srgb, var(--favorite) 14%, var(--bg-hover));
+  border-color: color-mix(in srgb, var(--favorite) 45%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--favorite) 22%, transparent);
+}
+
+:root[data-performance="full"] .quick-access-row:hover .quick-access-main {
+  color: #ffffff;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--favorite) 60%, transparent);
+}
+
+:root[data-performance="full"] .quick-access-row:hover .quick-favorite-icon {
+  filter: drop-shadow(0 0 8px var(--favorite-hover));
+}
+
+:root[data-performance="full"] .quick-access-action:hover {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+:root[data-performance="full"] .quick-access-remove:hover {
+  filter: drop-shadow(0 0 8px var(--favorite));
+}
+
+:root[data-performance="full"] .favorite-remove {
+  transition: color 120ms ease, transform 120ms ease, filter 120ms ease;
+}
+
+:root[data-performance="full"] .favorite-remove:hover {
+  filter: drop-shadow(0 0 8px var(--favorite));
+  transform: scale(1.12);
+}
+
+:root[data-performance="full"] .tree-entry-row {
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+:root[data-performance="full"] .tree-entry-row:hover:not(.selected):not(.active) {
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-hover));
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* THƯ MỤC ĐƯỢC CHỌN: SÁNG BỪNG ĐÈN NEON */
+:root[data-performance="full"] .tree-entry-row.selected {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 26%, var(--bg-secondary)), color-mix(in srgb, var(--accent) 12%, var(--bg-main)));
+  border-color: color-mix(in srgb, var(--accent-bright) 65%, transparent);
+  box-shadow: inset 0 0 16px color-mix(in srgb, var(--accent) 28%, transparent),
+              0 0 16px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+:root[data-performance="full"] .tree-entry-row.selected::before {
+  height: 18px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent-bright), 0 0 16px var(--accent);
+}
+
+:root[data-performance="full"] .tree-entry-row.selected .tree-folder {
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-bright) 75%, transparent);
+}
+
+:root[data-performance="full"] .tree-entry-row.selected .tree-kind-icon {
+  color: var(--accent-bright);
+  filter: drop-shadow(0 0 8px var(--accent-bright));
+}
+
+:root[data-performance="full"] .tree-entry-row.selected .tree-disclosure {
+  color: var(--accent-bright);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+
+/* TẬP TIN HOẠT ĐỘNG: SÁNG ĐÈN NEON ĐỒNG BỘ */
+:root[data-performance="full"] .tree-entry-row.active {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, var(--bg-secondary)), color-mix(in srgb, var(--accent) 10%, var(--bg-main)));
+  border-color: color-mix(in srgb, var(--accent-bright) 55%, transparent);
+  box-shadow: inset 0 0 14px color-mix(in srgb, var(--accent) 24%, transparent),
+              0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+:root[data-performance="full"] .tree-entry-row.active::before {
+  height: 18px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent-bright), 0 0 16px var(--accent);
+}
+
+:root[data-performance="full"] .tree-entry-row.active .tree-file {
+  color: #ffffff;
+  font-weight: 650;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--accent-bright) 70%, transparent);
+}
+
+:root[data-performance="full"] .tree-entry-row.active .tree-kind-icon {
+  color: var(--accent-bright);
+  filter: drop-shadow(0 0 8px var(--accent-bright));
+}
+
+:root[data-performance="full"] .tree-favorite-toggle {
+  transition: transform 120ms ease, background-color 120ms ease, color 120ms ease, filter 120ms ease;
+}
+
+:root[data-performance="full"] .tree-favorite-toggle.selected {
+  filter: drop-shadow(0 0 6px var(--favorite));
+}
+
+:root[data-performance="full"] .tree-favorite-toggle:hover,
+:root[data-performance="full"] .tree-favorite-toggle:focus-visible {
+  background: color-mix(in srgb, var(--favorite) 16%, var(--bg-secondary));
+  filter: drop-shadow(0 0 8px var(--favorite));
+  transform: scale(1.14);
+}
+
+@keyframes favorite-shockwave {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--favorite) 80%, transparent);
+    transform: scale(0.92);
+  }
+  50% {
+    transform: scale(1.22);
+  }
+  100% {
+    box-shadow: 0 0 0 12px transparent;
+    transform: scale(1);
+  }
+}
+
+:root[data-performance="full"] .tree-favorite-toggle:active {
+  animation: favorite-shockwave 0.35s ease-out;
+}
+
+:root[data-theme="light"][data-performance="full"] .tree-entry-row.selected,
+:root[data-theme="light"][data-performance="full"] .tree-entry-row.active {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, #ffffff), color-mix(in srgb, var(--accent) 8%, #ffffff));
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: inset 0 0 12px color-mix(in srgb, var(--accent) 15%, transparent),
+              0 0 8px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+:root[data-theme="light"][data-performance="full"] .tree-entry-row.selected .tree-folder,
+:root[data-theme="light"][data-performance="full"] .tree-entry-row.active .tree-file {
+  color: var(--accent-hover);
+  text-shadow: none;
+}
+
+/* ==========================================================================
+   SAVE POWER / BATTERY SAVER MODE - ZERO SHADOWS, ZERO GLOW, ZERO OVERHEAD
+   Avoids all lag, frame drops, and crash risks on low-resource machines.
+   ========================================================================== */
+
+:root[data-performance="low-power"] .tree-entry-row,
+:root[data-performance="low-power"] .tree-entry-row.selected,
+:root[data-performance="low-power"] .tree-entry-row.active,
+:root[data-performance="low-power"] .tree-entry-row:hover,
+:root[data-performance="low-power"] .quick-access-group,
+:root[data-performance="low-power"] .quick-access-group:hover,
+:root[data-performance="low-power"] .quick-access-count,
+:root[data-performance="low-power"] .quick-access-row,
+:root[data-performance="low-power"] .quick-access-row:hover,
+:root[data-performance="low-power"] .quick-access-action:hover,
+:root[data-performance="low-power"] .quick-access-remove:hover {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+:root[data-performance="low-power"] .tree-entry-row.selected {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+}
+
+:root[data-performance="low-power"] .tree-entry-row.selected::before {
+  width: 3px;
+  height: 16px;
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .tree-entry-row.selected .tree-folder {
+  color: var(--text-main) !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .tree-entry-row.active {
+  background: var(--bg-hover) !important;
+  border: 1px solid transparent !important;
+}
+
+:root[data-performance="low-power"] .tree-entry-row.active::before {
+  width: 2px;
+  height: 15px;
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .tree-entry-row.active .tree-file {
+  color: var(--accent) !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .quick-access-group {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .quick-access-count {
+  background: var(--bg-hover) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary) !important;
+  box-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .quick-heading-icon,
+:root[data-performance="low-power"] .quick-favorite-icon,
+:root[data-performance="low-power"] .tree-favorite-toggle,
+:root[data-performance="low-power"] .tree-favorite-toggle.selected,
+:root[data-performance="low-power"] .tree-entry-row .tree-kind-icon,
+:root[data-performance="low-power"] .tree-entry-row .tree-disclosure,
+:root[data-performance="low-power"] .favorite-remove {
+  filter: none !important;
+  transform: none !important;
 }
 
 .tree-entry-row:hover .tree-entry-menu,

@@ -541,7 +541,9 @@ test("uses readable Welcome dashboard microcopy", async ({ page }) => {
 test("preserves Explorer scroll anchors and focus across tree and file renders", async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 600 });
   await page.goto(`${FIXTURE_URL}&large-tree`);
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
   const explorer = page.locator(".explorer-content");
+  await expect.poll(async () => explorer.evaluate((element) => element.clientHeight)).toBeGreaterThan(100);
   const folderRow = page.locator("[data-entry-path$='/Long Folder 20']");
   const folder = folderRow.getByRole("button", { name: "Long Folder 20", exact: true });
   await folder.evaluate((element) => element.scrollIntoView({ block: "center" }));
@@ -557,6 +559,7 @@ test("preserves Explorer scroll anchors and focus across tree and file renders",
   await expect(folder).toHaveAttribute("aria-expanded", "true");
   const fileRow = page.locator("[data-entry-path$='/Long Folder 20/Long File 20.cmdnote']");
   const file = fileRow.getByRole("button", { name: "Long File 20", exact: true });
+  await expect(file).toBeVisible();
   await file.evaluate((element) => element.scrollIntoView({ block: "center" }));
   const fileTop = await fileRow.evaluate((row) => row.getBoundingClientRect().top);
   await file.click();

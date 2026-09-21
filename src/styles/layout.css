@@ -1,6 +1,6 @@
 .app-shell {
   display: grid;
-  grid-template-rows: var(--header-height) minmax(0, 1fr);
+  grid-template-rows: var(--header-height) minmax(0, 1fr) auto;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -283,6 +283,19 @@
   background-size: 28px 28px;
 }
 
+:root[data-performance="full"] .workspace {
+  background-image:
+    radial-gradient(circle 480px at var(--mouse-x, 50%) var(--mouse-y, 50%), color-mix(in srgb, var(--accent) 7.5%, transparent) 0%, transparent 80%),
+    linear-gradient(color-mix(in srgb, var(--accent) 7%, var(--border)) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 7%, var(--border)) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+}
+
+:root[data-performance="low-power"] .workspace {
+  background-image: none !important;
+}
+
+
 .workspace.file-transitioning {
   display: block;
   isolation: isolate;
@@ -451,10 +464,88 @@
 }
 
 .welcome-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   max-width: 1180px;
   margin: 0 auto 26px;
   animation: dashboard-enter 360ms ease-out both;
 }
+
+.welcome-hero-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.quantum-core-reactor {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 600px;
+  margin-left: 24px;
+}
+
+:root[data-performance="full"] .reactor-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+:root[data-performance="full"] .ring-outer {
+  width: 86px;
+  height: 86px;
+  border-style: dashed;
+  animation: reactor-spin-3d 12s linear infinite;
+}
+
+:root[data-performance="full"] .ring-mid {
+  width: 64px;
+  height: 64px;
+  border-color: var(--accent-bright, #00e5ff);
+  animation: reactor-spin-rev 8s linear infinite;
+}
+
+:root[data-performance="full"] .ring-inner {
+  width: 44px;
+  height: 44px;
+  border-color: #00ff9d;
+  animation: reactor-spin-3d 5s linear infinite;
+}
+
+:root[data-performance="full"] .reactor-plasma-core {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, var(--accent) 60%, transparent 100%);
+  box-shadow: 0 0 16px var(--accent-bright, #00e5ff);
+  animation: reactor-pulse 2s ease-in-out infinite;
+}
+
+@keyframes reactor-spin-3d {
+  0% { transform: rotateX(65deg) rotateY(15deg) rotateZ(0deg); }
+  100% { transform: rotateX(65deg) rotateY(15deg) rotateZ(360deg); }
+}
+
+@keyframes reactor-spin-rev {
+  0% { transform: rotateX(-45deg) rotateY(35deg) rotateZ(360deg); }
+  100% { transform: rotateX(-45deg) rotateY(35deg) rotateZ(0deg); }
+}
+
+@keyframes reactor-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 24px var(--accent-bright, #00e5ff); }
+}
+
+:root[data-performance="low-power"] .quantum-core-reactor {
+  display: none !important;
+}
+
 
 .welcome-hero h1 {
   margin-top: 7px;
@@ -647,6 +738,8 @@
   animation: none !important;
   transition-duration: 0ms !important;
   scroll-behavior: auto !important;
+  text-shadow: none !important;
+  filter: none !important;
 }
 
 :root[data-performance="low-power"] .workspace {
@@ -961,3 +1054,263 @@
 .startup-last-used strong {
   color: var(--text-secondary);
 }
+
+/* ==========================================================================
+   PERFORMANCE MODE - FULL CYBERPUNK SUITE (LAYOUT & HEADER)
+   ========================================================================== */
+
+@keyframes cyber-metallic-sheen {
+  0%, 75% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+:root[data-performance="full"] .brand-title {
+  background: linear-gradient(
+    105deg,
+    var(--text-main) 0%,
+    var(--text-main) 35%,
+    var(--accent-bright) 50%,
+    var(--text-main) 65%,
+    var(--text-main) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: cyber-metallic-sheen 8s ease infinite;
+}
+
+:root[data-performance="full"] .brand-mark {
+  box-shadow: 0 0 10px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 40%, transparent);
+  border-color: var(--accent-bright);
+}
+
+:root[data-performance="full"] .search-control {
+  background: color-mix(in srgb, var(--bg-main) 75%, transparent);
+  backdrop-filter: blur(12px);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+:root[data-performance="full"] .search-control:focus-within {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 1px var(--accent-bright),
+              0 0 16px color-mix(in srgb, var(--accent) 45%, transparent),
+              inset 0 0 8px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+:root[data-performance="full"] .search-control kbd {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-panel));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent-bright);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-performance="full"] .profile-chip {
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+:root[data-performance="full"] .profile-chip:hover {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+:root[data-performance="full"] .profile-avatar {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+:root[data-performance="full"] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:root[data-performance="full"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:root[data-performance="full"] *::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 140ms ease;
+}
+
+:root[data-performance="full"] *::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+:root[data-performance="full"] .file-header-actions .button-primary,
+:root[data-performance="full"] .file-add-section,
+:root[data-performance="full"] .file-add-table {
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+:root[data-performance="full"] .file-header-actions .button-primary:hover,
+:root[data-performance="full"] .file-add-section:hover,
+:root[data-performance="full"] .file-add-table:hover {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  transform: translateY(-1px);
+}
+
+:root[data-performance="full"] .file-header-actions .button-primary:active,
+:root[data-performance="full"] .file-add-section:active,
+:root[data-performance="full"] .file-add-table:active {
+  transform: translateY(1px);
+}
+
+/* SAVE POWER OVERRIDES FOR LAYOUT */
+:root[data-performance="low-power"] .brand-title {
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+  animation: none !important;
+}
+
+:root[data-performance="low-power"] .brand-mark,
+:root[data-performance="low-power"] .search-control,
+:root[data-performance="low-power"] .search-control:focus-within,
+:root[data-performance="low-power"] .search-control kbd,
+:root[data-performance="low-power"] .profile-chip,
+:root[data-performance="low-power"] .profile-chip:hover,
+:root[data-performance="low-power"] .profile-avatar,
+:root[data-performance="low-power"] .file-header-actions .button-primary,
+:root[data-performance="low-power"] .file-add-section,
+:root[data-performance="low-power"] .file-add-table {
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+
+/* TACTICAL HUD TELEMETRY BAR */
+.tactical-telemetry-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  padding: 0 14px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-code);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  user-select: none;
+  z-index: 5;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.telemetry-segment {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.telemetry-label {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+}
+
+.telemetry-beacon {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--success);
+  flex-shrink: 0;
+}
+
+:root[data-performance="full"] .telemetry-beacon {
+  box-shadow: 0 0 8px var(--success);
+  animation: telemetry-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+:root[data-performance="full"] .tactical-telemetry-bar {
+  border-top: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-panel) 95%, transparent) 0%, color-mix(in srgb, var(--bg-main) 98%, transparent) 100%);
+}
+
+:root[data-performance="full"] .telemetry-label {
+  text-shadow: 0 0 6px color-mix(in srgb, var(--text-muted) 35%, transparent);
+}
+
+@keyframes telemetry-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+:root[data-performance="low-power"] .telemetry-beacon {
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-performance="low-power"] .tactical-telemetry-bar {
+  background: var(--bg-panel) !important;
+  box-shadow: none !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+.telemetry-button {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 4px;
+  color: var(--accent-hover);
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 1px 7px;
+  margin-right: 6px;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: all 0.15s ease;
+}
+
+.telemetry-button:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.telemetry-button.muted {
+  color: var(--text-muted);
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
+  opacity: 0.65;
+}
+
+:root[data-performance="full"] .workspace::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+:root[data-performance="low-power"] .workspace::after {
+  display: none !important;
+}
+
+:root[data-performance="low-power"] .telemetry-button {
+  box-shadow: none !important;
+  border-color: var(--border) !important;
+}
+
+
+

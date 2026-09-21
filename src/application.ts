@@ -67,6 +67,19 @@ import {
 } from "./services/performance";
 import { chooseWorkspace } from "./services/workspace";
 import { restoreWindowSize } from "./services/window";
+import {
+  playLaserChirp,
+  playEnergyPulse,
+  playServoClick,
+  playPneumaticHiss,
+  playTimeWarp,
+  playTacticalBlip,
+  isAudioMuted,
+  toggleAudioMuted,
+} from "./services/audio";
+import { initDelegatedTilt } from "./utils/tilt";
+import { triggerSparkBurst } from "./utils/particles";
+
 import { button, element } from "./utils/dom";
 import { contrastRatio, mixHex } from "./utils/color";
 import { SessionHistory } from "./utils/history";
@@ -134,7 +147,7 @@ export class CommandVaultApplication {
   private explorer: HTMLElement | null = null;
   private explorerRenderGeneration = 0;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.11.0";
+  private appVersion = "0.16.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -170,6 +183,10 @@ export class CommandVaultApplication {
   private workspaceLoading = false;
   private startupState: AppStartupState = "initializing";
   private workspaceInitializationStarted = false;
+  private telemetryBar: HTMLElement | null = null;
+  private telemetryFpsFrameId: number | null = null;
+  private mouseSpotlightCleanup: (() => void) | null = null;
+  private tiltCleanup: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -178,6 +195,7 @@ export class CommandVaultApplication {
         if (this.startupState === "choosing-mode") {
           return;
         }
+        playTacticalBlip();
         this.queueSearch(query);
       },
       onHome: () => {
@@ -192,6 +210,10 @@ export class CommandVaultApplication {
       this.performanceProfile = profile;
       if (profile.mode === "low-power") this.cancelFileTransition();
       this.activeTable?.setPerformanceProfile(profile);
+      this.installMouseSpotlight();
+      this.installTilt();
+      this.startTelemetryFps();
+      this.updateTelemetryStats();
     });
     this.performanceController.onFallbackNotification((message) => {
       this.showPerformanceNotice(message);
@@ -200,6 +222,7 @@ export class CommandVaultApplication {
 
   async start(): Promise<void> {
     this.renderShell();
+    this.installTilt();
     this.renderLoading("Loading Command Vault…");
     try {
       this.settings = await loadSettings();
@@ -236,7 +259,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.11.0 (development)";
+      this.appVersion = "0.16.0 (development)";
     }
 
     if (!this.settings.displayName && this.skipWelcome) {
@@ -256,9 +279,156 @@ export class CommandVaultApplication {
   private renderShell(): void {
     const shell = element("div", "app-shell");
     this.body.append(this.workspace);
-    shell.append(this.toolbar.element, this.body);
+    const telemetry = this.createTelemetryBar();
+    shell.append(this.toolbar.element, this.body, telemetry);
     this.root.replaceChildren(shell);
   }
+
+  private createTelemetryBar(): HTMLElement {
+    const bar = element("footer", "tactical-telemetry-bar");
+
+    const left = element("div", "telemetry-segment telemetry-security");
+    const beacon = element("span", "telemetry-beacon");
+    const securityText = element("span", "telemetry-label", "VAULT: SECURE // AIRGAPPED");
+    left.append(beacon, securityText);
+
+    const center = element("div", "telemetry-segment telemetry-stats");
+    const statsText = element("span", "telemetry-label telemetry-stats-label");
+    center.append(statsText);
+
+    const right = element("div", "telemetry-segment telemetry-engine");
+    const audioToggle = button(
+      `telemetry-button telemetry-audio-toggle${isAudioMuted() ? " muted" : ""}`,
+      isAudioMuted() ? "AUDIO: OFF" : "AUDIO: ON",
+    );
+    audioToggle.setAttribute("aria-label", "Toggle sound effects");
+    audioToggle.title = "Toggle cyberpunk sound effects";
+    audioToggle.addEventListener("click", () => {
+      const muted = toggleAudioMuted();
+      audioToggle.textContent = muted ? "AUDIO: OFF" : "AUDIO: ON";
+      audioToggle.classList.toggle("muted", muted);
+    });
+
+    const engineText = element("span", "telemetry-label telemetry-engine-label");
+    right.append(audioToggle, engineText);
+
+    bar.append(left, center, right);
+    this.telemetryBar = bar;
+    this.updateTelemetryStats();
+    return bar;
+  }
+
+  private updateTelemetryStats(): void {
+    if (!this.telemetryBar) {
+      return;
+    }
+    const statsLabel = this.telemetryBar.querySelector<HTMLElement>(".telemetry-stats-label");
+    const engineLabel = this.telemetryBar.querySelector<HTMLElement>(".telemetry-engine-label");
+    if (!statsLabel || !engineLabel) {
+      return;
+    }
+
+    let totalCommands = 0;
+    for (const file of this.files.values()) {
+      for (const section of file.sections) {
+        totalCommands += section.commands.length;
+      }
+    }
+    const fileCount = this.files.size;
+    statsLabel.textContent = `SYSTEM: ${fileCount} ${fileCount === 1 ? "FILE" : "FILES"} // ${totalCommands} CMDS`;
+
+    const mode = this.performanceProfile.mode;
+    if (mode === "low-power") {
+      engineLabel.textContent = "ENGINE: BATTERY SAVER // ECO";
+    } else if (mode === "balanced") {
+      engineLabel.textContent = "ENGINE: BALANCED // 60 FPS";
+    } else {
+      engineLabel.textContent = "ENGINE: FULL PERFORMANCE // 60 FPS";
+    }
+  }
+
+  private startTelemetryFps(): void {
+    this.stopTelemetryFps();
+    if (this.performanceProfile.mode !== "full") {
+      return;
+    }
+
+    let frames = 0;
+    let lastTime = performance.now();
+
+    const frameLoop = (now: number) => {
+      frames++;
+      if (now - lastTime >= 1000) {
+        const fps = Math.round((frames * 1000) / (now - lastTime));
+        frames = 0;
+        lastTime = now;
+        const engineLabel = this.telemetryBar?.querySelector<HTMLElement>(".telemetry-engine-label");
+        if (engineLabel && this.performanceProfile.mode === "full") {
+          engineLabel.textContent = `ENGINE: FULL // ${fps} FPS`;
+        }
+      }
+      this.telemetryFpsFrameId = window.requestAnimationFrame(frameLoop);
+    };
+    this.telemetryFpsFrameId = window.requestAnimationFrame(frameLoop);
+  }
+
+  private stopTelemetryFps(): void {
+    if (this.telemetryFpsFrameId !== null) {
+      window.cancelAnimationFrame(this.telemetryFpsFrameId);
+      this.telemetryFpsFrameId = null;
+    }
+  }
+
+  private installMouseSpotlight(): void {
+    if (this.mouseSpotlightCleanup) {
+      this.mouseSpotlightCleanup();
+      this.mouseSpotlightCleanup = null;
+    }
+
+    if (this.performanceProfile.mode !== "full") {
+      return;
+    }
+
+    let rafId: number | null = null;
+    let pendingX = 0;
+    let pendingY = 0;
+
+    const onPointerMove = (e: PointerEvent) => {
+      pendingX = e.clientX;
+      pendingY = e.clientY;
+      if (rafId === null) {
+        rafId = window.requestAnimationFrame(() => {
+          rafId = null;
+          this.workspace.style.setProperty("--mouse-x", `${pendingX}px`);
+          this.workspace.style.setProperty("--mouse-y", `${pendingY}px`);
+        });
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+
+    this.mouseSpotlightCleanup = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      this.workspace.style.removeProperty("--mouse-x");
+      this.workspace.style.removeProperty("--mouse-y");
+    };
+  }
+
+  private installTilt(): void {
+    if (this.tiltCleanup) {
+      this.tiltCleanup();
+      this.tiltCleanup = null;
+    }
+    if (this.performanceProfile.mode !== "full") {
+      return;
+    }
+    this.tiltCleanup = initDelegatedTilt(this.workspace);
+  }
+
 
   private async handleStartupFlow(): Promise<void> {
     const searchParams = new URLSearchParams(window.location.search);
@@ -311,8 +481,8 @@ export class CommandVaultApplication {
     const hasAutoPerformance = new URLSearchParams(window.location.search).has("auto-performance");
     if (hasAutoPerformance) {
       this.performanceController.configure("auto", this.settings.uiScale);
-    } else if (requestedPerformance === "balanced") {
-      this.performanceController.configure("balanced", this.settings.uiScale);
+    } else if (requestedPerformance === "balanced" || requestedPerformance === "full" || requestedPerformance === "low-power") {
+      this.performanceController.configure(requestedPerformance, this.settings.uiScale);
     } else {
       this.performanceController.applyStartupMode(mode);
     }
@@ -464,6 +634,9 @@ export class CommandVaultApplication {
   private toggleFavorite(item: FavoriteItem): void {
     const key = favoriteKey(item);
     const exists = this.settings.favorites.some((favorite) => favoriteKey(favorite) === key);
+    if (!exists) {
+      playEnergyPulse();
+    }
     this.settings.favorites = exists
       ? this.settings.favorites.filter((favorite) => favoriteKey(favorite) !== key)
       : [item, ...this.settings.favorites].slice(0, 50);
@@ -1100,12 +1273,21 @@ export class CommandVaultApplication {
       sectionHighlightLevel: (section) => this.sectionHighlightLevel(section.id),
       performanceProfile: this.performanceProfile,
       callbacks: {
-        onUndo: () => void this.undoCurrentFile(),
-        onRedo: () => void this.redoCurrentFile(),
+        onUndo: () => {
+          playTimeWarp(false);
+          void this.undoCurrentFile();
+        },
+        onRedo: () => {
+          playTimeWarp(true);
+          void this.redoCurrentFile();
+        },
         onAddSection: () => void this.addSection(),
         onAddTable: () => void this.addSection("table"),
         onAddCommand: (sectionId) => void this.addCommand(sectionId),
-        onSectionToggle: (sectionId, isExpanded) => this.rememberSection(sectionId, isExpanded),
+        onSectionToggle: (sectionId, isExpanded) => {
+          playPneumaticHiss(isExpanded);
+          this.rememberSection(sectionId, isExpanded);
+        },
         onExampleColumnToggle: (sectionId, visible) =>
           this.setExampleColumnVisible(sectionId, visible),
         onSectionHighlightToggle: (sectionId, level) =>
@@ -1222,6 +1404,7 @@ export class CommandVaultApplication {
   }
 
   private selectFolder(path: string): void {
+    playServoClick();
     this.selectedFolder = path;
     if (this.expandedFolders.has(path)) {
       this.expandedFolders.delete(path);
@@ -1945,6 +2128,9 @@ export class CommandVaultApplication {
   private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
     try {
       await copyText(value);
+      playLaserChirp();
+      const rect = trigger.getBoundingClientRect();
+      triggerSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
       if (trigger.classList.contains("example-copy")) {
         trigger.classList.add("copied");
         window.setTimeout(() => trigger.classList.remove("copied"), 1200);
@@ -1952,9 +2138,17 @@ export class CommandVaultApplication {
       }
       const previous = trigger.textContent;
       trigger.textContent = "COPIED";
+      trigger.classList.add("copied");
+      const row = trigger.closest(".command-row");
+      const codeBlock = row?.querySelector<HTMLElement>(".command-code");
+      if (codeBlock) {
+        codeBlock.classList.add("code-copied-pulse");
+        window.setTimeout(() => codeBlock.classList.remove("code-copied-pulse"), 800);
+      }
       window.setTimeout(() => {
         if (trigger.isConnected) {
           trigger.textContent = previous;
+          trigger.classList.remove("copied");
         }
       }, 1200);
     } catch (error) {
