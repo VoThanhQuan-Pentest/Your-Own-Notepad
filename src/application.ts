@@ -74,6 +74,7 @@ import {
   playPneumaticHiss,
   playTimeWarp,
   playTacticalBlip,
+  playEmpDistortion,
   isAudioMuted,
   toggleAudioMuted,
   getAudioFrequencyData,
@@ -84,6 +85,7 @@ import { triggerSparkBurst, triggerHexShockwave } from "./utils/particles";
 import { triggerTargetReticle } from "./utils/reticle";
 import { runBootSequence } from "./components/boot-sequence";
 import { initGridCanvas, stopGridCanvas } from "./utils/grid-canvas";
+import { toggleMatrixRain, isMatrixRainActive } from "./utils/matrix-rain";
 
 import { button, element } from "./utils/dom";
 import { contrastRatio, mixHex } from "./utils/color";
@@ -376,6 +378,19 @@ export class CommandVaultApplication {
     };
     window.requestAnimationFrame(animateVisualizer);
 
+    const matrixToggle = button(
+      `telemetry-button telemetry-matrix-toggle${isMatrixRainActive() ? " active" : ""}`,
+      isMatrixRainActive() ? "MATRIX: ON" : "MATRIX: OFF",
+    );
+    matrixToggle.setAttribute("aria-label", "Toggle Matrix rain overlay");
+    matrixToggle.title = "Toggle Matrix Digital Rain stream (Ctrl+Alt+M)";
+    matrixToggle.addEventListener("click", () => {
+      const active = toggleMatrixRain();
+      matrixToggle.textContent = active ? "MATRIX: ON" : "MATRIX: OFF";
+      matrixToggle.classList.toggle("active", active);
+      playTacticalBlip();
+    });
+
     const audioToggle = button(
       `telemetry-button telemetry-audio-toggle${isAudioMuted() ? " muted" : ""}`,
       isAudioMuted() ? "AUDIO: OFF" : "AUDIO: ON",
@@ -389,7 +404,7 @@ export class CommandVaultApplication {
     });
 
     const engineText = element("span", "telemetry-label telemetry-engine-label");
-    right.append(visualizer, audioToggle, engineText);
+    right.append(visualizer, matrixToggle, audioToggle, engineText);
 
     bar.append(left, center, right);
     this.telemetryBar = bar;
@@ -2458,7 +2473,7 @@ export class CommandVaultApplication {
       this.settings.themeMode,
       this.settings.accentTheme,
       this.settings.customThemes,
-      (mode, accent, customThemes) => this.applyTheme(mode, accent, customThemes),
+      (mode, accent, customThemes) => this.applyTheme(mode, accent, customThemes, true),
     );
     const sizes = element("div", "form-columns");
     const uiScale = scaleField(form, this.settings.uiScale);
@@ -2537,7 +2552,7 @@ export class CommandVaultApplication {
         },
       ],
       false,
-      () => this.applyTheme(originalThemeMode, originalAccentTheme, originalCustomThemes),
+      () => this.applyTheme(originalThemeMode, originalAccentTheme, originalCustomThemes, true),
     );
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -2566,7 +2581,11 @@ export class CommandVaultApplication {
     this.applyTheme(this.settings.themeMode, this.settings.accentTheme, this.settings.customThemes);
   }
 
-  private applyTheme(mode: ThemeMode, accent: AccentTheme, customThemes: CustomThemes): void {
+  private applyTheme(mode: ThemeMode, accent: AccentTheme, customThemes: CustomThemes, triggerEmp = false): void {
+    const currentTheme = document.documentElement.dataset.theme;
+    const currentAccent = document.documentElement.dataset.accent;
+    const isChanged = currentTheme !== undefined && (currentTheme !== mode || currentAccent !== accent);
+
     document.documentElement.dataset.theme = mode;
     document.documentElement.dataset.accent = accent;
     const custom = customThemes[mode];
@@ -2574,6 +2593,16 @@ export class CommandVaultApplication {
     document.documentElement.style.setProperty("--custom-background", custom.background);
     document.documentElement.style.setProperty("--custom-text", custom.text);
     document.documentElement.style.setProperty("--custom-accent", custom.accent);
+
+    if (triggerEmp && isChanged && document.documentElement.dataset.performance !== "low-power") {
+      playEmpDistortion();
+      document.body.classList.remove("theme-emp-flash");
+      void document.body.offsetWidth;
+      document.body.classList.add("theme-emp-flash");
+      window.setTimeout(() => {
+        document.body.classList.remove("theme-emp-flash");
+      }, 340);
+    }
   }
 
   private setUiScale(value: number): void {
@@ -2612,6 +2641,17 @@ export class CommandVaultApplication {
         return;
       }
       const key = event.key.toLowerCase();
+      if (event.ctrlKey && event.altKey && key === "m") {
+        event.preventDefault();
+        const active = toggleMatrixRain();
+        const matrixBtn = this.telemetryBar?.querySelector(".telemetry-matrix-toggle");
+        if (matrixBtn) {
+          matrixBtn.textContent = active ? "MATRIX: ON" : "MATRIX: OFF";
+          matrixBtn.classList.toggle("active", active);
+        }
+        playTacticalBlip();
+        return;
+      }
       const activeForm = document.querySelector<HTMLFormElement>(".modal-form");
       if (document.querySelector(".modal-overlay")) {
         if (key === "s" && activeForm) {

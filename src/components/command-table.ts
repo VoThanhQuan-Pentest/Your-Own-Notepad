@@ -9,6 +9,7 @@ import type { SectionHighlightLevel } from "../models/settings";
 import type { EffectivePerformanceProfile } from "../services/performance";
 import { openMenu } from "./menu";
 import { cancelScramble, scrambleText } from "../utils/scramble";
+import { createTacticalMinimap } from "./minimap";
 
 export interface CommandTableCallbacks {
   onUndo(): void;
@@ -178,9 +179,16 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
       fragment.append(handle.element);
     });
     content.replaceChildren(fragment);
+    minimap.update(nextFile, nextOptions.expandedSections);
+    view.classList.toggle("has-minimap", nextFile.sections.length > 1);
   }
 
-  view.append(header, content);
+  const minimap = createTacticalMinimap(content, (sectionId) => {
+    handle.ensureVisible(sectionId);
+    sectionHandles.get(sectionId)?.element.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  view.append(header, content, minimap.element);
   const handle: CommandTableHandle = {
     element: view,
     update,
@@ -191,12 +199,14 @@ export function createCommandTable(file: CommandFile, options: CommandTableOptio
       sectionHandles.get(sectionId)?.ensureCommandVisible(commandId);
     },
     refreshLayout() {
+      minimap.syncScroll();
       sectionHandles.forEach((handle) => handle.refreshLayout());
     },
     setPerformanceProfile(profile) {
       sectionHandles.forEach((handle) => handle.setPerformanceProfile(profile));
     },
     dispose() {
+      minimap.dispose();
       cancelScramble(title);
       sectionHandles.forEach((handle) => handle.dispose());
       sectionHandles.clear();

@@ -420,58 +420,154 @@ export function playDecryptionTick(): void {
 }
 
 /**
- * Tactical Cyber Boot Sequence - Sub-bass power swell blooming into a cyberpunk harmonic chime
+ * Tactical Cyber Boot Sequence - 3.0s multi-phase cinematic power surge
  */
 export function playCyberBootSequence(): void {
   playSound((ctx, output, now) => {
-    // 1. Sub-bass power surge
-    const sub = ctx.createOscillator();
-    const subGain = ctx.createGain();
-    sub.type = "sawtooth";
-    sub.frequency.setValueAtTime(48, now);
-    sub.frequency.exponentialRampToValueAtTime(110, now + 0.45);
-    subGain.gain.setValueAtTime(0.01, now);
-    subGain.gain.linearRampToValueAtTime(0.35, now + 0.25);
-    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
-    sub.connect(subGain);
-    subGain.connect(output);
-    sub.start(now);
-    sub.stop(now + 0.85);
+    // Phase 1: Biometric radar pulses (0.0s - 0.9s)
+    [0.0, 0.3, 0.6].forEach((delay, idx) => {
+      const ping = ctx.createOscillator();
+      const pingGain = ctx.createGain();
+      ping.type = "sine";
+      ping.frequency.setValueAtTime(1100 + idx * 220, now + delay);
+      pingGain.gain.setValueAtTime(0.001, now + delay);
+      pingGain.gain.linearRampToValueAtTime(0.08, now + delay + 0.02);
+      pingGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.12);
+      ping.connect(pingGain);
+      pingGain.connect(output);
+      ping.start(now + delay);
+      ping.stop(now + delay + 0.13);
+    });
 
-    // 2. Harmonic chord bloom
-    const chords = [220, 329.63, 440, 659.25];
+    // Phase 2: Turbine spool-up & quantum reactor ignition (0.9s - 2.2s)
+    const turbine = ctx.createOscillator();
+    const turbineGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    turbine.type = "sawtooth";
+    turbine.frequency.setValueAtTime(45, now + 0.9);
+    turbine.frequency.exponentialRampToValueAtTime(190, now + 2.2);
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(150, now + 0.9);
+    filter.frequency.exponentialRampToValueAtTime(1600, now + 2.2);
+
+    turbineGain.gain.setValueAtTime(0.001, now + 0.9);
+    turbineGain.gain.linearRampToValueAtTime(0.24, now + 1.8);
+    turbineGain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
+
+    turbine.connect(filter);
+    filter.connect(turbineGain);
+    turbineGain.connect(output);
+    turbine.start(now + 0.9);
+    turbine.stop(now + 2.4);
+
+    // Phase 3: Majestic cyberpunk harmonic chord bloom (2.1s - 3.1s)
+    const chords = [220, 329.63, 440, 554.37, 659.25];
     chords.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq * 0.9, now);
-      osc.frequency.exponentialRampToValueAtTime(freq, now + 0.2 + idx * 0.05);
+      osc.frequency.setValueAtTime(freq * 0.92, now + 2.1);
+      osc.frequency.exponentialRampToValueAtTime(freq, now + 2.25 + idx * 0.04);
 
-      const delay = 0.12 + idx * 0.04;
-      g.gain.setValueAtTime(0.001, now);
+      const delay = 2.1 + idx * 0.04;
       g.gain.setValueAtTime(0.001, now + delay);
-      g.gain.linearRampToValueAtTime(0.18 / (idx + 1), now + delay + 0.15);
-      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      g.gain.linearRampToValueAtTime(0.20 / (idx + 1), now + delay + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 3.05);
 
       osc.connect(g);
       g.connect(output);
       osc.start(now + delay);
-      osc.stop(now + 0.92);
+      osc.stop(now + 3.1);
     });
 
-    // 3. High digital shimmer
-    const shimmer = ctx.createOscillator();
-    const shimmerGain = ctx.createGain();
-    shimmer.type = "sine";
-    shimmer.frequency.setValueAtTime(1760, now + 0.4);
-    shimmer.frequency.exponentialRampToValueAtTime(3520, now + 0.7);
-    shimmerGain.gain.setValueAtTime(0.001, now + 0.4);
-    shimmerGain.gain.linearRampToValueAtTime(0.12, now + 0.55);
-    shimmerGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
-    shimmer.connect(shimmerGain);
-    shimmerGain.connect(output);
-    shimmer.start(now + 0.4);
-    shimmer.stop(now + 0.88);
+    // High crystal confirmation chime (2.35s)
+    const chime = ctx.createOscillator();
+    const chimeGain = ctx.createGain();
+    chime.type = "sine";
+    chime.frequency.setValueAtTime(2200, now + 2.35);
+    chime.frequency.exponentialRampToValueAtTime(3520, now + 2.65);
+    chimeGain.gain.setValueAtTime(0.001, now + 2.35);
+    chimeGain.gain.linearRampToValueAtTime(0.14, now + 2.45);
+    chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+    chime.connect(chimeGain);
+    chimeGain.connect(output);
+    chime.start(now + 2.35);
+    chime.stop(now + 3.05);
+  });
+}
+
+/**
+ * Haptic mechanical keyboard switch click for search & typing
+ */
+export function playMechanicalClick(): void {
+  playSound((ctx, output, now) => {
+    // Click transient
+    const click = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    click.type = "triangle";
+    const baseFreq = 2200 + Math.random() * 400;
+    click.frequency.setValueAtTime(baseFreq, now);
+    click.frequency.exponentialRampToValueAtTime(600, now + 0.012);
+
+    clickGain.gain.setValueAtTime(0.08, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
+
+    click.connect(clickGain);
+    clickGain.connect(output);
+    click.start(now);
+    click.stop(now + 0.015);
+
+    // Bottom-out thud
+    const thud = ctx.createOscillator();
+    const thudGain = ctx.createGain();
+    thud.type = "sine";
+    thud.frequency.setValueAtTime(140 + Math.random() * 30, now + 0.004);
+    thud.frequency.exponentialRampToValueAtTime(60, now + 0.024);
+
+    thudGain.gain.setValueAtTime(0.07, now + 0.004);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+    thud.connect(thudGain);
+    thudGain.connect(output);
+    thud.start(now + 0.004);
+    thud.stop(now + 0.026);
+  });
+}
+
+/**
+ * EMP electromagnetic shockwave & cyberdeck cartridge swap sound on theme change
+ */
+export function playEmpDistortion(): void {
+  playSound((ctx, output, now) => {
+    const sweep = ctx.createOscillator();
+    const gain = ctx.createGain();
+    sweep.type = "sawtooth";
+    sweep.frequency.setValueAtTime(1800, now);
+    sweep.frequency.exponentialRampToValueAtTime(220, now + 0.22);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    sweep.connect(gain);
+    gain.connect(output);
+    sweep.start(now);
+    sweep.stop(now + 0.26);
+
+    // Mechanical slot latch
+    const latch = ctx.createOscillator();
+    const latchGain = ctx.createGain();
+    latch.type = "triangle";
+    latch.frequency.setValueAtTime(320, now + 0.12);
+    latch.frequency.exponentialRampToValueAtTime(120, now + 0.24);
+
+    latchGain.gain.setValueAtTime(0.12, now + 0.12);
+    latchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    latch.connect(latchGain);
+    latchGain.connect(output);
+    latch.start(now + 0.12);
+    latch.stop(now + 0.26);
   });
 }
 

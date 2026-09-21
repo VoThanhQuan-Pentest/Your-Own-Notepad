@@ -272,6 +272,83 @@
   100% { opacity: 0.95; color: var(--accent, #00ffff); }
 }
 
+/* Phase Banner */
+.boot-phase-banner {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent, #00ffff);
+  padding: 3px 10px;
+  background: color-mix(in srgb, var(--accent, #00ffff) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
+  border-radius: 3px;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+}
+
+/* Biometric & Core Ignition states */
+.boot-holo-center.core-igniting .boot-holo-ring {
+  animation: boot-ring-spin 1.2s linear infinite;
+  border-color: var(--accent-bright, #ffffff);
+  box-shadow: 0 0 24px var(--accent, #00ffff);
+}
+
+.boot-holo-center.core-igniting .boot-holo-inner {
+  animation: boot-ring-spin 0.6s linear infinite reverse;
+  border-color: #00ff9d;
+  box-shadow: 0 0 32px #00ff9d;
+}
+
+/* Clearance Level 5 Stamped Badge */
+.boot-clearance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border: 1.5px solid #00ff9d;
+  background: rgba(0, 255, 157, 0.12);
+  color: #00ff9d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.4), inset 0 0 10px rgba(0, 255, 157, 0.2);
+  animation: boot-badge-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes boot-badge-pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Radial Laser Shockwave Burst on Release */
+.boot-radial-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--accent, #00ffff);
+  box-shadow: 0 0 30px var(--accent, #00ffff), 0 0 60px var(--accent-bright, #5ceaff);
+  pointer-events: none;
+  animation: boot-burst-expand 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes boot-burst-expand {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+  }
+  100% {
+    width: 180vmax;
+    height: 180vmax;
+    opacity: 0;
+  }
+}
+
 /* Low-power suppression */
 :root[data-performance="low-power"] .cyber-boot-overlay {
   display: none !important;

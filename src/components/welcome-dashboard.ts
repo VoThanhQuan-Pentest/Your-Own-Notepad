@@ -1,4 +1,5 @@
 import { playReactorOverload } from "../services/audio";
+import { createCyberGlobe } from "../utils/cyber-globe";
 import { button, element } from "../utils/dom";
 import { triggerSparkBurst, triggerHexShockwave } from "../utils/particles";
 import { createIcon } from "./icons";
@@ -62,7 +63,11 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
     }, 1800);
   });
 
-  hero.append(heroLeft, reactor);
+  const globe = createCyberGlobe(100, 100);
+  const heroVisuals = element("div", "welcome-hero-visuals");
+  heroVisuals.append(globe.element, reactor);
+
+  hero.append(heroLeft, heroVisuals);
 
 
   const grid = element("div", "dashboard-grid");

@@ -478,6 +478,26 @@
   flex: 1;
 }
 
+.welcome-hero-visuals {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  margin-left: 24px;
+}
+
+.cyber-globe-container {
+  position: relative;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+.cyber-globe-container:hover {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--accent-bright) 55%, transparent));
+}
+
 .quantum-core-reactor {
   position: relative;
   width: 90px;
@@ -487,7 +507,6 @@
   align-items: center;
   justify-content: center;
   perspective: 600px;
-  margin-left: 24px;
 }
 
 .reactor-ring {
@@ -761,6 +780,16 @@
   .dashboard-grid { grid-template-columns: 1fr; }
   .profile-name { display: none; }
   .profile-chip { width: 36px; padding-right: 5px; }
+}
+
+@media (max-width: 800px) {
+  .cyber-globe-container {
+    display: none !important;
+  }
+}
+
+:root[data-performance="low-power"] .cyber-globe-container {
+  display: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1383,6 +1412,13 @@
   color: var(--text-muted);
   border-color: color-mix(in srgb, var(--border) 60%, transparent);
   opacity: 0.65;
+}
+
+.telemetry-button.active {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: var(--accent-bright);
+  color: #ffffff;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-bright) 60%, transparent);
 }
 
 :root[data-performance="full"] .workspace::after {

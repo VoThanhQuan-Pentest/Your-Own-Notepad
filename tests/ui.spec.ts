@@ -1000,11 +1000,7 @@ test("PHASE 52: rapid double-click on mode action initiates workspace only once"
 
   const perfBtn = page.getByRole("button", { name: /Performance/i });
   // Click multiple times rapidly
-  await Promise.all([
-    perfBtn.click(),
-    perfBtn.click().catch(() => {}),
-    perfBtn.click().catch(() => {}),
-  ]);
+  await perfBtn.dblclick();
 
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
 
@@ -1085,7 +1081,8 @@ test("persists Performance mode and cyber UI when switching theme color", async 
 
   await expect(page.locator("html")).toHaveAttribute("data-accent", "purple");
   await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
-  await expect(page.locator(".telemetry-button")).toBeVisible();
+  await expect(page.locator(".telemetry-audio-toggle")).toBeVisible();
+  await expect(page.locator(".telemetry-matrix-toggle")).toBeVisible();
   await expect(page.locator(".tactical-telemetry-bar")).toBeVisible();
 
   // Open settings and switch to LIGHT theme with GREEN accent
@@ -1097,7 +1094,8 @@ test("persists Performance mode and cyber UI when switching theme color", async 
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.locator("html")).toHaveAttribute("data-accent", "green");
   await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
-  await expect(page.locator(".telemetry-button")).toBeVisible();
+  await expect(page.locator(".telemetry-audio-toggle")).toBeVisible();
+  await expect(page.locator(".telemetry-matrix-toggle")).toBeVisible();
 });
 
 test("God-Tier 2.0: equalizer visualizer, interactive params, and reactor overcharge", async ({ page }) => {
@@ -1154,4 +1152,32 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   await bootOverlay.click();
   await expect(bootOverlay).not.toBeVisible();
 });
+
+test("God-Tier 4.0: holographic cyber globe, tactical minimap scanner HUD, and matrix digital rain", async ({ page }) => {
+  // 1. Check Welcome Dashboard Cyber Globe
+  await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");
+  await expect(page.locator(".cyber-globe-container")).toBeVisible();
+  await expect(page.locator(".quantum-core-reactor")).toBeVisible();
+
+  // 2. Open file and verify Tactical Minimap HUD
+  await page.getByRole("button", { name: "OPEN FILE" }).click();
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+  const minimap = page.locator(".tactical-minimap");
+  await expect(minimap).toBeVisible();
+  await expect(minimap.locator(".minimap-section-block")).toHaveCount(3);
+
+  // 3. Toggle Matrix Code Rain via telemetry button
+  const matrixToggle = page.locator(".telemetry-matrix-toggle");
+  await expect(matrixToggle).toBeVisible();
+  await expect(matrixToggle).toHaveText("MATRIX: OFF");
+  await matrixToggle.click();
+  await expect(matrixToggle).toHaveText("MATRIX: ON");
+  await expect(page.locator(".matrix-rain-canvas")).toBeVisible();
+
+  // Toggle back via Ctrl+Alt+M
+  await page.keyboard.press("Control+Alt+KeyM");
+  await expect(matrixToggle).toHaveText("MATRIX: OFF");
+  await expect(page.locator(".matrix-rain-canvas")).not.toBeVisible();
+});
+
 

@@ -1,3 +1,4 @@
+import { playMechanicalClick } from "../services/audio";
 import { button, element } from "../utils/dom";
 
 interface ToolbarCallbacks {
@@ -64,6 +65,17 @@ export function createToolbar(callbacks: ToolbarCallbacks): ToolbarHandle {
   settings.addEventListener("click", callbacks.onSettings);
   input.addEventListener("input", () => callbacks.onSearch(input.value));
   input.addEventListener("keydown", (event) => {
+    if (
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      event.key !== "ArrowDown" &&
+      event.key !== "ArrowUp" &&
+      event.key !== "Escape" &&
+      event.key !== "Tab"
+    ) {
+      playMechanicalClick();
+    }
     if ((event.key === "ArrowDown" || event.key === "ArrowUp") && resultButtons.length > 0) {
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;

@@ -9,8 +9,10 @@ export interface BootSequenceOptions {
 
 /**
  * Tactical Cybernetic Boot Sequence:
- * Displays a futuristic BIOS / Kernel Power-On Self Test overlay
- * with laser sweep, progress bar, audio chime, and optional robot voice.
+ * 3.2-second 3-phase cinematic BIOS / Kernel Power-On Self Test overlay:
+ * - Phase 1: Biometric & Hardware Authentication
+ * - Phase 2: Quantum Core Ignition & Decryption
+ * - Phase 3: Clearance Level 5 Approval, Vocal Greeting & Radial Laser Dissolve
  */
 export function runBootSequence(options: BootSequenceOptions = {}, force = false): Promise<void> {
   return new Promise((resolve) => {
@@ -48,13 +50,15 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     const version = element("span", "boot-version", options.appVersion ?? "v0.16.0");
     header.append(title, version);
 
+    // Phase Banner
+    const phaseBanner = element("div", "boot-phase-banner", "PHASE 1 // BIOMETRIC & HARDWARE AUTHENTICATION");
+
     // Holo Center
     const holoCenter = element("div", "boot-holo-center");
-    holoCenter.append(
-      element("div", "boot-holo-ring"),
-      element("div", "boot-holo-inner"),
-      createIcon("command-file", "boot-holo-icon"),
-    );
+    const holoRing = element("div", "boot-holo-ring");
+    const holoInner = element("div", "boot-holo-inner");
+    const holoIcon = createIcon("command-file", "boot-holo-icon");
+    holoCenter.append(holoRing, holoInner, holoIcon);
 
     // Terminal log
     const terminalLog = element("div", "boot-terminal-log");
@@ -74,17 +78,15 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     // Skip hint
     const skipHint = element("span", "boot-skip-hint", "[ CLICK ANYWHERE OR PRESS ANY KEY TO SKIP ]");
 
-    content.append(header, holoCenter, terminalLog, progressContainer, skipHint);
+    content.append(header, phaseBanner, holoCenter, terminalLog, progressContainer, skipHint);
     overlay.append(laserSweep, content);
     document.body.append(overlay);
 
     // Start Audio
     playCyberBootSequence();
-    speakSystemGreeting("Command Vault online. Systems operational.");
 
     let dismissed = false;
-    let animTimer: number | null = null;
-    let stepTimer: number | null = null;
+    const timers: number[] = [];
 
     const dismiss = () => {
       if (dismissed) return;
@@ -93,8 +95,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       window.removeEventListener("keydown", onKeyDown, true);
       overlay.removeEventListener("pointerdown", onPointerDown, true);
 
-      if (animTimer !== null) window.clearTimeout(animTimer);
-      if (stepTimer !== null) window.clearTimeout(stepTimer);
+      timers.forEach((t) => window.clearTimeout(t));
 
       overlay.classList.add("boot-dismissing");
       window.setTimeout(() => {
@@ -118,19 +119,61 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     window.addEventListener("keydown", onKeyDown, true);
     overlay.addEventListener("pointerdown", onPointerDown, true);
 
-    // Boot lines sequence
     const name = (options.displayName?.trim() || "OPERATOR").toUpperCase();
-    const steps = [
-      { delay: 40, prefix: "[BOOT]", text: "KERNEL CHECK: SECURE OS RUNTIME", status: "OK", pct: 20 },
-      { delay: 200, prefix: "[CORE]", text: "QUANTUM REACTOR 4.80GHz: STABILIZED", status: "99.8%", pct: 45 },
-      { delay: 400, prefix: "[MESH]", text: "NEURAL CO-PROCESSOR: 60 FPS ACTIVE", status: "ONLINE", pct: 70 },
-      { delay: 620, prefix: "[AUTH]", text: "VAULT CRYPTOGRAPHIC ENGINE", status: "DECRYPTED", pct: 90 },
-      { delay: 840, prefix: "[READY]", text: `ACCESS GRANTED // WELCOME, ${name}`, status: "100%", pct: 100 },
+
+    // Multi-phase timeline schedule
+    const steps: Array<{
+      delay: number;
+      prefix: string;
+      text: string;
+      status: string;
+      pct: number;
+      action?: () => void;
+    }> = [
+      // Phase 1: Biometric & Hardware (0s - 1.0s)
+      { delay: 60, prefix: "[BIOS]", text: "INITIALIZING SECURE HARDWARE ENCLAVE", status: "OK", pct: 10 },
+      { delay: 320, prefix: "[SCAN]", text: `BIOMETRIC TARGET ID: MATCHING ${name}`, status: "VERIFIED", pct: 22 },
+      { delay: 600, prefix: "[VRAM]", text: "WEBGL2 / 2D GPU HARDWARE ACCELERATION", status: "60 FPS", pct: 32 },
+      { delay: 900, prefix: "[MEM]", text: "ZERO-KNOWLEDGE ENCRYPTED RAM BUFFERS", status: "ALLOCATED", pct: 40 },
+
+      // Phase 2: Quantum Core Ignition (1.0s - 2.2s)
+      {
+        delay: 1100,
+        prefix: "[CORE]",
+        text: "INJECTING PLASMA CONFINEMENT FIELD: 4.80GHz",
+        status: "STABILIZED",
+        pct: 55,
+        action: () => {
+          phaseBanner.textContent = "PHASE 2 // QUANTUM CORE REACTOR IGNITION";
+          holoCenter.classList.add("core-igniting");
+        },
+      },
+      { delay: 1400, prefix: "[VAULT]", text: "AIRGAPPED SECURE FILE SYSTEM: DECRYPTING SHA-256", status: "100%", pct: 68 },
+      { delay: 1750, prefix: "[AUDIO]", text: "TACTICAL NEURAL FREQUENCY ANALYZER", status: "ONLINE", pct: 78 },
+      { delay: 2050, prefix: "[MATRIX]", text: "REAL-TIME TELEMETRY SENSOR MATRIX", status: "ARMED", pct: 88 },
+
+      // Phase 3: Clearance Level 5 & Dissolve (2.2s - 3.2s)
+      {
+        delay: 2300,
+        prefix: "[EXEC]",
+        text: `ACCESS GRANTED // CLEARANCE: LEVEL 5 // WELCOME, ${name}`,
+        status: "APPROVED",
+        pct: 100,
+        action: () => {
+          phaseBanner.textContent = "PHASE 3 // CLEARANCE LEVEL 5 GRANTED";
+          progressLabel.textContent = "ALL SYSTEMS NOMINAL // SYSTEM READY";
+          speakSystemGreeting("Biometrics confirmed. Operator authenticated. Command Vault online and ready for operations.");
+          const burst = element("div", "boot-radial-burst");
+          overlay.append(burst);
+        },
+      },
     ];
 
     steps.forEach((step) => {
-      window.setTimeout(() => {
+      const t = window.setTimeout(() => {
         if (dismissed) return;
+        step.action?.();
+
         const line = element("div", "boot-log-line");
         const prefix = element("span", "boot-log-prefix", step.prefix);
         const msg = element("span", undefined, step.text);
@@ -141,11 +184,13 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
         progressFill.style.width = `${step.pct}%`;
         progressPercent.textContent = `${step.pct}%`;
       }, step.delay);
+      timers.push(t);
     });
 
-    // Auto dismiss after completion
-    animTimer = window.setTimeout(() => {
+    // Auto dismiss after 3250ms
+    const finalTimer = window.setTimeout(() => {
       dismiss();
-    }, 1150);
+    }, 3250);
+    timers.push(finalTimer);
   });
 }
