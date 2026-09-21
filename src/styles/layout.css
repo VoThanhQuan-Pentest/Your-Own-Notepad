@@ -1338,6 +1338,21 @@
   box-shadow: 0 0 6px var(--accent-bright);
 }
 
+.telemetry-oscilloscope {
+  display: inline-block;
+  width: 44px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 2px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+:root[data-performance="full"] .telemetry-oscilloscope {
+  box-shadow: 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
 :root[data-performance="low-power"] .telemetry-visualizer {
   display: none !important;
 }

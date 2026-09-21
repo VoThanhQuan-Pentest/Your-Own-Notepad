@@ -88,6 +88,14 @@ export function getAudioFrequencyData(targetArray: Uint8Array): void {
   analyserNode.getByteFrequencyData(targetArray);
 }
 
+export function getAudioTimeDomainData(targetArray: Uint8Array): void {
+  if (!analyserNode) {
+    targetArray.fill(128);
+    return;
+  }
+  analyserNode.getByteTimeDomainData(targetArray);
+}
+
 function isAudioEnabled(): boolean {
   if (isMuted) return false;
   if (typeof document === "undefined") return false;
@@ -409,4 +417,91 @@ export function playDecryptionTick(): void {
     osc.start(now);
     osc.stop(now + 0.018);
   });
+}
+
+/**
+ * Tactical Cyber Boot Sequence - Sub-bass power swell blooming into a cyberpunk harmonic chime
+ */
+export function playCyberBootSequence(): void {
+  playSound((ctx, output, now) => {
+    // 1. Sub-bass power surge
+    const sub = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    sub.type = "sawtooth";
+    sub.frequency.setValueAtTime(48, now);
+    sub.frequency.exponentialRampToValueAtTime(110, now + 0.45);
+    subGain.gain.setValueAtTime(0.01, now);
+    subGain.gain.linearRampToValueAtTime(0.35, now + 0.25);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+    sub.connect(subGain);
+    subGain.connect(output);
+    sub.start(now);
+    sub.stop(now + 0.85);
+
+    // 2. Harmonic chord bloom
+    const chords = [220, 329.63, 440, 659.25];
+    chords.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq * 0.9, now);
+      osc.frequency.exponentialRampToValueAtTime(freq, now + 0.2 + idx * 0.05);
+
+      const delay = 0.12 + idx * 0.04;
+      g.gain.setValueAtTime(0.001, now);
+      g.gain.setValueAtTime(0.001, now + delay);
+      g.gain.linearRampToValueAtTime(0.18 / (idx + 1), now + delay + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+      osc.connect(g);
+      g.connect(output);
+      osc.start(now + delay);
+      osc.stop(now + 0.92);
+    });
+
+    // 3. High digital shimmer
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmer.type = "sine";
+    shimmer.frequency.setValueAtTime(1760, now + 0.4);
+    shimmer.frequency.exponentialRampToValueAtTime(3520, now + 0.7);
+    shimmerGain.gain.setValueAtTime(0.001, now + 0.4);
+    shimmerGain.gain.linearRampToValueAtTime(0.12, now + 0.55);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(output);
+    shimmer.start(now + 0.4);
+    shimmer.stop(now + 0.88);
+  });
+}
+
+/**
+ * Robot vocal synthesis greeting using Web Speech Synthesis API
+ */
+export function speakSystemGreeting(text: string): void {
+  if (!isAudioEnabled()) return;
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.volume = 0.75;
+    utterance.rate = 1.02;
+    utterance.pitch = 0.88; // Deep tactical cybernetic tone
+
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(
+      (v) =>
+        v.lang.startsWith("en") &&
+        (v.name.includes("Male") || v.name.includes("Natural") || v.name.includes("Robot")),
+    ) || voices.find((v) => v.lang.startsWith("en"));
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    // Speech synthesis error should not disrupt application
+  }
 }

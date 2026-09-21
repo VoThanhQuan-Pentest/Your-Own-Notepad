@@ -51,7 +51,7 @@ export interface CommandTableHandle {
 }
 
 export function createCommandTable(file: CommandFile, options: CommandTableOptions): CommandTableHandle {
-  const view = element("div", "file-view");
+  const view = element("div", "file-view command-table-cascade");
   const header = element("header", "file-header");
   const titleGroup = element("div", "file-title-group");
   const title = element("h1");

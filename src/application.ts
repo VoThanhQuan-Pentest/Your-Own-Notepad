@@ -77,9 +77,12 @@ import {
   isAudioMuted,
   toggleAudioMuted,
   getAudioFrequencyData,
+  getAudioTimeDomainData,
 } from "./services/audio";
 import { initDelegatedTilt } from "./utils/tilt";
-import { triggerSparkBurst } from "./utils/particles";
+import { triggerSparkBurst, triggerHexShockwave } from "./utils/particles";
+import { triggerTargetReticle } from "./utils/reticle";
+import { runBootSequence } from "./components/boot-sequence";
 import { initGridCanvas, stopGridCanvas } from "./utils/grid-canvas";
 
 import { button, element } from "./utils/dom";
@@ -272,6 +275,13 @@ export class CommandVaultApplication {
       await this.collectDisplayName();
     }
 
+    if (!this.skipWelcome && this.performanceProfile.mode !== "low-power") {
+      await runBootSequence({
+        displayName: this.settings.displayName,
+        appVersion: this.appVersion,
+      });
+    }
+
     await this.handleStartupFlow();
   }
 
@@ -310,19 +320,56 @@ export class CommandVaultApplication {
       eqBars.push(b);
     }
 
+    const oscCanvas = document.createElement("canvas");
+    oscCanvas.className = "telemetry-oscilloscope";
+    oscCanvas.width = 44;
+    oscCanvas.height = 14;
+    oscCanvas.setAttribute("aria-hidden", "true");
+    const oscCtx = oscCanvas.getContext("2d");
+    visualizer.append(oscCanvas);
+
     const freqData = new Uint8Array(16);
+    const timeData = new Uint8Array(32);
     const animateVisualizer = () => {
       if (!this.telemetryBar || !this.telemetryBar.isConnected) return;
       if (this.performanceProfile.mode === "full" && !isAudioMuted()) {
         getAudioFrequencyData(freqData);
+        getAudioTimeDomainData(timeData);
         for (let i = 0; i < 7; i++) {
           const val = freqData[i * 2] ?? 0;
           const h = Math.max(2, Math.floor((val / 255) * 13));
           eqBars[i]!.style.height = `${h}px`;
         }
+        if (oscCtx) {
+          oscCtx.clearRect(0, 0, 44, 14);
+          const style = getComputedStyle(document.documentElement);
+          const accent = style.getPropertyValue("--accent").trim() || "#00d4f0";
+          oscCtx.strokeStyle = accent;
+          oscCtx.lineWidth = 1.2;
+          oscCtx.beginPath();
+          const sliceWidth = 44 / 32;
+          let x = 0;
+          for (let i = 0; i < 32; i++) {
+            const v = (timeData[i] ?? 128) / 128.0;
+            const y = (v * 14) / 2;
+            if (i === 0) oscCtx.moveTo(x, y);
+            else oscCtx.lineTo(x, y);
+            x += sliceWidth;
+          }
+          oscCtx.stroke();
+        }
       } else {
         for (let i = 0; i < 7; i++) {
           eqBars[i]!.style.height = "2px";
+        }
+        if (oscCtx) {
+          oscCtx.clearRect(0, 0, 44, 14);
+          oscCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+          oscCtx.lineWidth = 1;
+          oscCtx.beginPath();
+          oscCtx.moveTo(0, 7);
+          oscCtx.lineTo(44, 7);
+          oscCtx.stroke();
         }
       }
       window.requestAnimationFrame(animateVisualizer);
@@ -1379,6 +1426,11 @@ export class CommandVaultApplication {
 
     if (focus?.commandId || focus?.sectionId) {
       queueMicrotask(() => this.focusCommandTable(table, focus));
+    } else if (animateTransition && this.performanceProfile.mode === "full") {
+      const header = table.element.querySelector<HTMLElement>(".file-title-group");
+      if (header) {
+        window.setTimeout(() => triggerTargetReticle(header), 140);
+      }
     }
     finishDiagnostic();
   }
@@ -1390,7 +1442,12 @@ export class CommandVaultApplication {
       : `[data-section-id="${CSS.escape(focus.sectionId as string)}"]`;
     const target = table.element.querySelector<HTMLElement>(selector);
     target?.scrollIntoView({ block: "center" });
-    if (focus.commandId) target?.classList.add("search-highlight");
+    if (focus.commandId) {
+      target?.classList.add("search-highlight");
+      if (target && this.performanceProfile.mode === "full") {
+        triggerTargetReticle(target);
+      }
+    }
   }
 
   private transitionFileView(
@@ -2178,7 +2235,10 @@ export class CommandVaultApplication {
   private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
     playLaserChirp();
     const rect = trigger.getBoundingClientRect();
-    triggerSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerSparkBurst(cx, cy);
+    triggerHexShockwave(cx, cy);
     try {
       await copyText(value);
       if (trigger.classList.contains("example-copy")) {
@@ -2308,9 +2368,21 @@ export class CommandVaultApplication {
     workspaceField.append(workspaceRow);
     form.append(workspaceField);
 
-    const versionField = element("label", "form-field");
+    const versionField = element("div", "form-field");
     versionField.append(element("span", undefined, "Command Vault version"));
-    versionField.append(element("code", "settings-version", this.appVersion));
+    const versionRow = element("div", "settings-workspace-row");
+    versionRow.append(element("code", "settings-version", this.appVersion));
+    const replayBoot = button("inline-button", "REPLAY BOOT");
+    replayBoot.title = "Replay the cybernetic boot sequence";
+    replayBoot.addEventListener("click", () => {
+      modal.close();
+      void runBootSequence({
+        displayName: this.settings.displayName,
+        appVersion: this.appVersion,
+      }, true);
+    });
+    versionRow.append(replayBoot);
+    versionField.append(versionRow);
     form.append(versionField);
 
     const performanceField = element("label", "form-field");

@@ -9,9 +9,20 @@ interface Spark {
   maxLife: number;
 }
 
+interface HexWave {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  color: string;
+  maxLife: number;
+  life: number;
+}
+
 let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 let sparks: Spark[] = [];
+let hexWaves: HexWave[] = [];
 let animId: number | null = null;
 
 function getSparkColors(): string[] {
@@ -93,6 +104,46 @@ export function triggerSparkBurst(clientX: number, clientY: number): void {
   }
 }
 
+export function triggerHexShockwave(clientX: number, clientY: number): void {
+  if (!isFullPerformance()) return;
+
+  const c = ensureCanvas();
+  if (!c || !ctx) return;
+
+  const rect = c.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const startX = (clientX - rect.left) * dpr;
+  const startY = (clientY - rect.top) * dpr;
+
+  const style = typeof document !== "undefined" ? getComputedStyle(document.documentElement) : null;
+  const accent = style?.getPropertyValue("--accent").trim() || "#00e5ff";
+  const bright = style?.getPropertyValue("--accent-bright").trim() || "#5ceaff";
+
+  hexWaves.push({
+    x: startX,
+    y: startY,
+    radius: 0,
+    maxRadius: 85 * dpr,
+    color: accent,
+    maxLife: 26,
+    life: 26,
+  });
+
+  hexWaves.push({
+    x: startX,
+    y: startY,
+    radius: 0,
+    maxRadius: 135 * dpr,
+    color: bright,
+    maxLife: 34,
+    life: 34,
+  });
+
+  if (animId === null) {
+    animId = window.requestAnimationFrame(renderLoop);
+  }
+}
+
 function renderLoop(): void {
   if (!canvas || !ctx) {
     animId = null;
@@ -101,6 +152,7 @@ function renderLoop(): void {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Render sparks
   for (let i = sparks.length - 1; i >= 0; i--) {
     const s = sparks[i] as Spark;
     s.life -= 1;
@@ -129,7 +181,38 @@ function renderLoop(): void {
     ctx.restore();
   }
 
-  if (sparks.length > 0) {
+  // Render hexagonal shockwaves
+  for (let i = hexWaves.length - 1; i >= 0; i--) {
+    const hw = hexWaves[i] as HexWave;
+    hw.life -= 1;
+    if (hw.life <= 0) {
+      hexWaves.splice(i, 1);
+      continue;
+    }
+
+    const t = 1 - hw.life / hw.maxLife; // 0 -> 1
+    const r = hw.maxRadius * Math.sin((t * Math.PI) / 2);
+    const alpha = (1 - t) * 0.75;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = hw.color;
+    ctx.lineWidth = Math.max(1, 2.5 * (1 - t));
+
+    ctx.beginPath();
+    for (let j = 0; j < 6; j++) {
+      const angle = (j * Math.PI) / 3;
+      const hx = hw.x + Math.cos(angle) * r;
+      const hy = hw.y + Math.sin(angle) * r;
+      if (j === 0) ctx.moveTo(hx, hy);
+      else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (sparks.length > 0 || hexWaves.length > 0) {
     animId = window.requestAnimationFrame(renderLoop);
   } else {
     ctx.clearRect(0, 0, canvas.width, canvas.height);

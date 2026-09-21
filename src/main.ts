@@ -5,6 +5,7 @@ import "./styles/explorer.css";
 import "./styles/command-table.css";
 import "./styles/modal.css";
 import "./styles/search.css";
+import "./styles/boot-sequence.css";
 
 import { CommandVaultApplication } from "./application";
 

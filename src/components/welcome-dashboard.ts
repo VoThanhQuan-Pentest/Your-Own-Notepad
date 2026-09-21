@@ -1,6 +1,6 @@
 import { playReactorOverload } from "../services/audio";
 import { button, element } from "../utils/dom";
-import { triggerSparkBurst } from "../utils/particles";
+import { triggerSparkBurst, triggerHexShockwave } from "../utils/particles";
 import { createIcon } from "./icons";
 
 export interface DashboardFavorite {
@@ -54,6 +54,7 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     triggerSparkBurst(cx, cy);
+    triggerHexShockwave(cx, cy);
     window.setTimeout(() => triggerSparkBurst(cx - 20, cy + 12), 120);
     window.setTimeout(() => triggerSparkBurst(cx + 20, cy - 12), 240);
     window.setTimeout(() => {

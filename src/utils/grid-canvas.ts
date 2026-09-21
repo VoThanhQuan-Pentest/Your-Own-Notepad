@@ -4,6 +4,7 @@ let animId: number | null = null;
 let mouseX = -9999;
 let mouseY = -9999;
 let targetWorkspace: HTMLElement | null = null;
+let radarAngle = 0;
 
 interface Node {
   x: number;
@@ -15,7 +16,18 @@ interface Node {
   radius: number;
 }
 
+interface Mote {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+  pulsePhase: number;
+}
+
 const nodes: Node[] = [];
+const motes: Mote[] = [];
 const NODE_SPACING = 75;
 const MAX_CONNECT_DIST = 95;
 
@@ -46,6 +58,21 @@ function initNodes(width: number, height: number): void {
       });
     }
   }
+
+  // Initialize quantum motes
+  motes.length = 0;
+  const moteCount = Math.min(28, Math.max(12, Math.floor((width * height) / 45000)));
+  for (let i = 0; i < moteCount; i++) {
+    motes.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.45,
+      vy: (Math.random() - 0.5) * 0.45,
+      size: 1.2 + Math.random() * 2.0,
+      alpha: 0.15 + Math.random() * 0.25,
+      pulsePhase: Math.random() * Math.PI * 2,
+    });
+  }
 }
 
 function resize(): void {
@@ -73,12 +100,79 @@ function render(): void {
   }
 
   const rect = targetWorkspace.getBoundingClientRect();
-  ctx.clearRect(0, 0, rect.width, rect.height);
+  const width = rect.width;
+  const height = rect.height;
+  ctx.clearRect(0, 0, width, height);
 
   const style = getComputedStyle(document.documentElement);
   const accent = style.getPropertyValue("--accent").trim() || "#00d4f0";
 
-  // Draw connecting threads near mouse
+  // Center coordinates for radar
+  const cx = width / 2;
+  const cy = height / 2;
+  const maxRadius = Math.sqrt(cx * cx + cy * cy);
+
+  // Advance radar beam
+  radarAngle = (radarAngle + 0.008) % (Math.PI * 2);
+
+  // 1. Draw Radar Sweep Sector (faint tactical trail)
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(radarAngle);
+
+  // Trailing soft cone
+  const coneGrad = ctx.createLinearGradient(0, 0, maxRadius, 0);
+  coneGrad.addColorStop(0, "rgba(255,255,255,0.015)");
+  coneGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = coneGrad;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, maxRadius, -0.32, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Sharp leading laser line
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(maxRadius, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // 2. Draw Quantum Motes (ambient plasma dust)
+  const moteCount = motes.length;
+  for (let m = 0; m < moteCount; m++) {
+    const mote = motes[m] as Mote;
+    mote.x += mote.vx;
+    mote.y += mote.vy;
+    mote.pulsePhase += 0.025;
+
+    // Boundary wrap
+    if (mote.x < -10) mote.x = width + 10;
+    else if (mote.x > width + 10) mote.x = -10;
+    if (mote.y < -10) mote.y = height + 10;
+    else if (mote.y > height + 10) mote.y = -10;
+
+    // Mouse repulsion
+    const dxM = mouseX - mote.x;
+    const dyM = mouseY - mote.y;
+    const distM = Math.sqrt(dxM * dxM + dyM * dyM);
+    if (distM < 110) {
+      mote.x -= (dxM / distM) * 1.5;
+      mote.y -= (dyM / distM) * 1.5;
+    }
+
+    const pulsAlpha = mote.alpha * (0.8 + 0.3 * Math.sin(mote.pulsePhase));
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = pulsAlpha;
+    ctx.beginPath();
+    ctx.arc(mote.x, mote.y, mote.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 3. Draw Nodes & Connections with radar illumination
   ctx.lineWidth = 0.8;
   const nodeCount = nodes.length;
 
@@ -97,9 +191,16 @@ function render(): void {
     const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
 
     // Mouse proximity repulsion/glow
-    let nodeAlpha = 0.15;
+    let nodeAlpha = 0.12;
     if (distMouse < 160) {
-      nodeAlpha = 0.15 + (1 - distMouse / 160) * 0.55;
+      nodeAlpha = 0.12 + (1 - distMouse / 160) * 0.55;
+    }
+
+    // Radar illumination check
+    const angleToNode = (Math.atan2(node.y - cy, node.x - cx) + Math.PI * 2) % (Math.PI * 2);
+    let angleDiff = (radarAngle - angleToNode + Math.PI * 2) % (Math.PI * 2);
+    if (angleDiff < 0.28) {
+      nodeAlpha = Math.max(nodeAlpha, 0.45 * (1 - angleDiff / 0.28));
     }
 
     ctx.fillStyle = accent;

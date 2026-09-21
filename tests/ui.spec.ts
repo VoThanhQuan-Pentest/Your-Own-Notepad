@@ -1126,3 +1126,32 @@ test("God-Tier 2.0: equalizer visualizer, interactive params, and reactor overch
   await expect(reactor).toHaveClass(/overcharged/);
 });
 
+test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave canvas", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "full");
+
+  // Oscilloscope canvas in telemetry visualizer
+  const oscilloscope = page.locator(".telemetry-oscilloscope");
+  await expect(oscilloscope).toBeVisible();
+
+  // Wait for workspace ready
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+
+  // Settings: REPLAY BOOT button
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const replayBootBtn = page.getByRole("button", { name: "REPLAY BOOT" });
+  await expect(replayBootBtn).toBeVisible();
+  await replayBootBtn.click();
+
+  // Boot sequence overlay appears and can be dismissed
+  const bootOverlay = page.locator(".cyber-boot-overlay");
+  await expect(bootOverlay).toBeVisible();
+  await expect(page.locator(".boot-laser-sweep")).toBeVisible();
+  await expect(page.locator(".boot-title")).toContainText("COMMAND VAULT // TACTICAL SECURE KERNEL");
+
+  // Click to dismiss immediately
+  await bootOverlay.click();
+  await expect(bootOverlay).not.toBeVisible();
+});
+

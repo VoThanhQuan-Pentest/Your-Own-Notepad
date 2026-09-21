@@ -173,6 +173,7 @@ export function createVirtualRows(options: VirtualRowsOptions): VirtualRowsHandl
     for (let index = start; index < end; index += 1) {
       const row = options.renderRow(index);
       row.dataset.virtualIndex = String(index);
+      row.style.setProperty("--row-index", String(index - start));
       fragment.append(row);
       observer.observe(row);
     }
