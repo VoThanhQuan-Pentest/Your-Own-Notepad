@@ -1,7 +1,20 @@
 export const themeModes = ["dark", "light"] as const;
 export type ThemeMode = (typeof themeModes)[number];
 
-export const accentThemes = ["cyan", "blue", "purple", "green", "orange", "pink"] as const;
+export const accentThemes = [
+  "cyan",
+  "blue",
+  "purple",
+  "green",
+  "orange",
+  "pink",
+  "crimson",
+  "gold",
+  "lime",
+  "ice",
+  "indigo",
+  "ruby",
+] as const;
 export type AccentTheme = (typeof accentThemes)[number];
 
 export const performanceModes = ["auto", "full", "balanced", "low-power"] as const;

@@ -132,6 +132,78 @@
   --favorite-glow: 0 0 14px rgb(255 45 135 / 75%);
 }
 
+:root[data-accent="crimson"] {
+  --accent: #ff0055;
+  --accent-hover: #ff3377;
+  --accent-secondary: #f43f5e;
+  --accent-bright: #ff6699;
+  --accent-glow: 0 0 14px rgb(255 0 85 / 65%);
+  --favorite: #ff2a6d;
+  --favorite-hover: #ff5c8a;
+  --favorite-soft: rgb(255 42 109 / 18%);
+  --favorite-glow: 0 0 14px rgb(255 42 109 / 75%);
+}
+
+:root[data-accent="gold"] {
+  --accent: #ffd000;
+  --accent-hover: #ffe043;
+  --accent-secondary: #f59e0b;
+  --accent-bright: #fff07c;
+  --accent-glow: 0 0 14px rgb(255 208 0 / 60%);
+  --favorite: #ffdd33;
+  --favorite-hover: #ffee77;
+  --favorite-soft: rgb(255 221 51 / 16%);
+  --favorite-glow: 0 0 14px rgb(255 221 51 / 75%);
+}
+
+:root[data-accent="lime"] {
+  --accent: #00ff66;
+  --accent-hover: #33ff85;
+  --accent-secondary: #10b981;
+  --accent-bright: #80ffa3;
+  --accent-glow: 0 0 14px rgb(0 255 102 / 60%);
+  --favorite: #00ff88;
+  --favorite-hover: #66ffaa;
+  --favorite-soft: rgb(0 255 136 / 16%);
+  --favorite-glow: 0 0 14px rgb(0 255 136 / 75%);
+}
+
+:root[data-accent="ice"] {
+  --accent: #00f0ff;
+  --accent-hover: #4df4ff;
+  --accent-secondary: #38bdf8;
+  --accent-bright: #99f8ff;
+  --accent-glow: 0 0 14px rgb(0 240 255 / 65%);
+  --favorite: #38e1ff;
+  --favorite-hover: #80ebff;
+  --favorite-soft: rgb(56 225 255 / 16%);
+  --favorite-glow: 0 0 14px rgb(56 225 255 / 75%);
+}
+
+:root[data-accent="indigo"] {
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-secondary: #c084fc;
+  --accent-bright: #a5b4fc;
+  --accent-glow: 0 0 14px rgb(99 102 241 / 60%);
+  --favorite: #818cf8;
+  --favorite-hover: #a5b4fc;
+  --favorite-soft: rgb(129 140 248 / 16%);
+  --favorite-glow: 0 0 14px rgb(129 140 248 / 75%);
+}
+
+:root[data-accent="ruby"] {
+  --accent: #f43f5e;
+  --accent-hover: #fb7185;
+  --accent-secondary: #ec4899;
+  --accent-bright: #fda4af;
+  --accent-glow: 0 0 14px rgb(244 63 94 / 60%);
+  --favorite: #fb7185;
+  --favorite-hover: #fda4af;
+  --favorite-soft: rgb(251 113 133 / 16%);
+  --favorite-glow: 0 0 14px rgb(251 113 133 / 75%);
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
   --bg-main: #f5f7fa;
@@ -240,6 +312,78 @@
   --favorite-hover: #be185d;
   --favorite-soft: rgb(219 39 119 / 14%);
   --favorite-glow: 0 0 10px rgb(219 39 119 / 40%);
+}
+
+:root[data-theme="light"][data-accent="crimson"] {
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --accent-secondary: #9f1239;
+  --accent-bright: #f43f5e;
+  --accent-glow: 0 0 10px rgb(225 29 72 / 35%);
+  --favorite: #be123c;
+  --favorite-hover: #9f1239;
+  --favorite-soft: rgb(225 29 72 / 12%);
+  --favorite-glow: 0 0 10px rgb(190 18 60 / 45%);
+}
+
+:root[data-theme="light"][data-accent="gold"] {
+  --accent: #b45309;
+  --accent-hover: #92400e;
+  --accent-secondary: #78350f;
+  --accent-bright: #d97706;
+  --accent-glow: 0 0 10px rgb(180 83 9 / 35%);
+  --favorite: #92400e;
+  --favorite-hover: #78350f;
+  --favorite-soft: rgb(180 83 9 / 12%);
+  --favorite-glow: 0 0 10px rgb(146 64 14 / 45%);
+}
+
+:root[data-theme="light"][data-accent="lime"] {
+  --accent: #15803d;
+  --accent-hover: #166534;
+  --accent-secondary: #14532d;
+  --accent-bright: #22c55e;
+  --accent-glow: 0 0 10px rgb(21 128 61 / 35%);
+  --favorite: #166534;
+  --favorite-hover: #14532d;
+  --favorite-soft: rgb(21 128 61 / 12%);
+  --favorite-glow: 0 0 10px rgb(22 101 52 / 45%);
+}
+
+:root[data-theme="light"][data-accent="ice"] {
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-secondary: #075985;
+  --accent-bright: #38bdf8;
+  --accent-glow: 0 0 10px rgb(2 132 199 / 35%);
+  --favorite: #0369a1;
+  --favorite-hover: #075985;
+  --favorite-soft: rgb(2 132 199 / 12%);
+  --favorite-glow: 0 0 10px rgb(3 105 161 / 45%);
+}
+
+:root[data-theme="light"][data-accent="indigo"] {
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-secondary: #312e81;
+  --accent-bright: #6366f1;
+  --accent-glow: 0 0 10px rgb(67 56 202 / 35%);
+  --favorite: #3730a3;
+  --favorite-hover: #312e81;
+  --favorite-soft: rgb(67 56 202 / 12%);
+  --favorite-glow: 0 0 10px rgb(55 48 163 / 45%);
+}
+
+:root[data-theme="light"][data-accent="ruby"] {
+  --accent: #be123c;
+  --accent-hover: #9f1239;
+  --accent-secondary: #881337;
+  --accent-bright: #e11d48;
+  --accent-glow: 0 0 10px rgb(190 18 60 / 35%);
+  --favorite: #9f1239;
+  --favorite-hover: #881337;
+  --favorite-soft: rgb(190 18 60 / 12%);
+  --favorite-glow: 0 0 10px rgb(159 18 57 / 45%);
 }
 
 :root[data-custom-theme="true"] {

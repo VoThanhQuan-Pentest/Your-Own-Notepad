@@ -34,6 +34,12 @@ pub(crate) enum AccentTheme {
     Green,
     Orange,
     Pink,
+    Crimson,
+    Gold,
+    Lime,
+    Ice,
+    Indigo,
+    Ruby,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

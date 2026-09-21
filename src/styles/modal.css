@@ -493,9 +493,15 @@
 
 .theme-accent-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   min-width: 0;
   gap: 7px;
+}
+
+@media (max-width: 580px) {
+  .theme-accent-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .theme-accent-option {
@@ -545,6 +551,36 @@
 
 .theme-accent-swatch.pink {
   background: #ec4899;
+}
+
+.theme-accent-swatch.crimson {
+  background: #ff0055;
+  box-shadow: 0 0 6px rgba(255, 0, 85, 0.4);
+}
+
+.theme-accent-swatch.gold {
+  background: #ffd000;
+  box-shadow: 0 0 6px rgba(255, 208, 0, 0.4);
+}
+
+.theme-accent-swatch.lime {
+  background: #00ff66;
+  box-shadow: 0 0 6px rgba(0, 255, 102, 0.4);
+}
+
+.theme-accent-swatch.ice {
+  background: #00f0ff;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+}
+
+.theme-accent-swatch.indigo {
+  background: #6366f1;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.4);
+}
+
+.theme-accent-swatch.ruby {
+  background: #f43f5e;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.4);
 }
 
 .theme-accent-name {
