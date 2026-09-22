@@ -69,6 +69,16 @@ export type StartupModePreference = (typeof startupModePreferences)[number];
 export const startupPerformanceModes = ["battery-saver", "performance"] as const;
 export type StartupPerformanceMode = (typeof startupPerformanceModes)[number];
 
+export const bootSequenceStyles = [
+  "mechanical-iris",
+  "blast-door",
+  "void-slash",
+  "reactor-core",
+  "glass-shatter",
+  "random",
+] as const;
+export type BootSequenceStyle = (typeof bootSequenceStyles)[number];
+
 export interface AppSettings {
   displayName: string | null;
   lastWorkspace: string | null;
@@ -90,6 +100,7 @@ export interface AppSettings {
   startupModePreference: StartupModePreference;
   lastStartupMode: StartupPerformanceMode | null;
   startupInProgress: boolean;
+  bootSequenceStyle: BootSequenceStyle;
 }
 
 export const defaultSettings: AppSettings = {
@@ -113,6 +124,7 @@ export const defaultSettings: AppSettings = {
   startupModePreference: "ask",
   lastStartupMode: null,
   startupInProgress: false,
+  bootSequenceStyle: "mechanical-iris",
 };
 
 export function isThemeMode(value: unknown): value is ThemeMode {
@@ -133,6 +145,27 @@ export function isStartupModePreference(value: unknown): value is StartupModePre
 
 export function isStartupPerformanceMode(value: unknown): value is StartupPerformanceMode {
   return startupPerformanceModes.includes(value as StartupPerformanceMode);
+}
+
+export function isBootSequenceStyle(value: unknown): value is BootSequenceStyle {
+  return bootSequenceStyles.includes(value as BootSequenceStyle);
+}
+
+export function bootSequenceStyleLabel(style: BootSequenceStyle): string {
+  switch (style) {
+    case "mechanical-iris":
+      return "Mechanical Iris Aperture (Cửa sập quang học)";
+    case "blast-door":
+      return "Massive Vault Blast Door (Cánh cổng Titan)";
+    case "void-slash":
+      return "Dimensional Void Slash (Nhát cắt không gian)";
+    case "reactor-core":
+      return "Tokamak Reactor Supernova (Lõi phản ứng)";
+    case "glass-shatter":
+      return "Ballistic Glass Shatter (Vách kính cường lực)";
+    case "random":
+      return "Random / Surprise Me (Ngẫu nhiên)";
+  }
 }
 
 export function isHexColor(value: unknown): value is string {

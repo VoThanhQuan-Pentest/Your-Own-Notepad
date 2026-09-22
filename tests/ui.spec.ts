@@ -1178,6 +1178,86 @@ test("v0.17.0: Mechanical Iris Aperture dilate and breach sequence", async ({ pa
   await expect(bootOverlay).not.toBeVisible();
 });
 
+test("v0.17.0: Configurable opening intro effects in Settings and multi-style replay", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+
+  // 1. Open settings and check dropdown options
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  const bootSelect = page.getByLabel("Opening intro effect");
+  await expect(bootSelect).toBeVisible();
+  await expect(bootSelect).toHaveValue("mechanical-iris");
+
+  // 2. Select Massive Vault Blast Door and test immediate replay preview
+  await bootSelect.selectOption("blast-door");
+  await page.getByRole("button", { name: "REPLAY BOOT" }).click();
+
+  const blastOverlay = page.locator(".cyber-boot-overlay");
+  await expect(blastOverlay).toBeVisible();
+  await expect(page.locator(".vault-blast-gate")).toBeVisible();
+  await expect(page.locator(".vault-core-button")).toBeVisible();
+  await expect(page.locator(".boot-title-label")).toContainText("COMMAND VAULT");
+  await page.keyboard.press("Escape");
+  await expect(blastOverlay).not.toBeVisible();
+
+  // 3. Open settings again, select Void Slash and test replay
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const bootSelect2 = page.getByLabel("Opening intro effect");
+  await bootSelect2.selectOption("void-slash");
+  await page.getByRole("button", { name: "REPLAY BOOT" }).click();
+
+  const voidOverlay = page.locator(".cyber-boot-overlay");
+  await expect(voidOverlay).toBeVisible();
+  await expect(page.locator(".void-slash-screen")).toBeVisible();
+  await expect(page.locator(".void-singularity")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(voidOverlay).not.toBeVisible();
+
+  // 4. Open settings, select Tokamak Reactor and test replay
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const bootSelect3 = page.getByLabel("Opening intro effect");
+  await bootSelect3.selectOption("reactor-core");
+  await page.getByRole("button", { name: "REPLAY BOOT" }).click();
+
+  const reactorOverlay = page.locator(".cyber-boot-overlay");
+  await expect(reactorOverlay).toBeVisible();
+  await expect(page.locator(".reactor-chamber")).toBeVisible();
+  await expect(page.locator(".reactor-actuator-btn")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(reactorOverlay).not.toBeVisible();
+
+  // 5. Open settings, select Ballistic Glass Shatter and test replay
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const bootSelect4 = page.getByLabel("Opening intro effect");
+  await bootSelect4.selectOption("glass-shatter");
+  await page.getByRole("button", { name: "REPLAY BOOT" }).click();
+
+  const glassOverlay = page.locator(".cyber-boot-overlay");
+  await expect(glassOverlay).toBeVisible();
+  await expect(page.locator(".ballistic-glass-pane")).toBeVisible();
+  await expect(page.locator(".kinetic-breach-btn")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(glassOverlay).not.toBeVisible();
+
+  // 6. Save setting and verify persistence
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const bootSelect5 = page.getByLabel("Opening intro effect");
+  await bootSelect5.selectOption("blast-door");
+  await page.getByRole("button", { name: "SAVE" }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+
+  await page.getByRole("button", { name: "Open settings" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByLabel("Opening intro effect")).toHaveValue("blast-door");
+  await page.getByRole("button", { name: "CANCEL" }).click();
+});
+
 test("God-Tier 4.0: holographic cyber globe and matrix digital rain", async ({ page }) => {
   // 1. Check Welcome Dashboard Cyber Globe
   await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");

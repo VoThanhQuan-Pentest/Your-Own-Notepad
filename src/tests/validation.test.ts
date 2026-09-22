@@ -665,24 +665,29 @@ test("PHASE 1: Startup mode preferences and settings normalization", () => {
   equal(defaults.startupModePreference, "ask");
   equal(defaults.lastStartupMode, null);
   equal(defaults.startupInProgress, false);
+  equal(defaults.bootSequenceStyle, "mechanical-iris");
 
   const custom = normalizeSettings({
     startupModePreference: "battery-saver",
     lastStartupMode: "performance",
     startupInProgress: true,
+    bootSequenceStyle: "blast-door",
   });
   equal(custom.startupModePreference, "battery-saver");
   equal(custom.lastStartupMode, "performance");
   equal(custom.startupInProgress, true);
+  equal(custom.bootSequenceStyle, "blast-door");
 
   const invalid = normalizeSettings({
     startupModePreference: "invalid" as any,
     lastStartupMode: "invalid" as any,
     startupInProgress: "yes" as any,
+    bootSequenceStyle: "unknown-style" as any,
   });
   equal(invalid.startupModePreference, "ask");
   equal(invalid.lastStartupMode, null);
   equal(invalid.startupInProgress, false);
+  equal(invalid.bootSequenceStyle, "mechanical-iris");
 });
 
 test("PHASE 2 & 3: PerformanceController runtime profiles and startup modes", () => {

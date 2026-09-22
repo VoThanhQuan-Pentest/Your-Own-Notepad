@@ -12,6 +12,7 @@ import {
   sectionHighlightKey,
   isStartupModePreference,
   isStartupPerformanceMode,
+  isBootSequenceStyle,
   isThemeMode,
   type AppSettings,
 } from "../models/settings";
@@ -74,6 +75,9 @@ export function normalizeSettings(value: Partial<AppSettings>): AppSettings {
     startupInProgress: typeof value.startupInProgress === "boolean"
       ? value.startupInProgress
       : false,
+    bootSequenceStyle: isBootSequenceStyle(value.bootSequenceStyle)
+      ? value.bootSequenceStyle
+      : defaultSettings.bootSequenceStyle,
   };
 }
 

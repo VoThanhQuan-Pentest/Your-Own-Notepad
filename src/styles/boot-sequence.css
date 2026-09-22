@@ -1,9 +1,10 @@
 /* ==========================================================================
-   COMMAND VAULT v0.17.0 - MECHANICAL IRIS APERTURE (STYLE 5)
-   Cinematic Concentric Shutter Blades & Radial Optical Dilation
+   COMMAND VAULT v0.17.0 - CINEMATIC INTRO SUITE
+   5 High-Tech Brutalist Clearance Sequences + Unified Brand Typography
    ========================================================================== */
 
-.cyber-boot-overlay.iris-aperture-overlay {
+/* Universal Boot Overlay Base */
+.cyber-boot-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
@@ -19,14 +20,59 @@
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cyber-boot-overlay.iris-overlay-fadeout {
+.cyber-boot-overlay.iris-overlay-fadeout,
+.cyber-boot-overlay.blast-overlay-fadeout,
+.cyber-boot-overlay.void-overlay-fadeout,
+.cyber-boot-overlay.reactor-overlay-fadeout,
+.cyber-boot-overlay.glass-overlay-fadeout {
   opacity: 0;
   pointer-events: none;
 }
 
 /* ==========================================================================
-   STAGE & RADIANT FLASH
+   UNIFIED BRAND TYPOGRAPHY (COMMAND VAULT + WELCOME BACK)
+   Clean minimalist layout with zero clutter badges or hints
    ========================================================================== */
+.boot-brand-group {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  text-align: center;
+  z-index: 35;
+}
+
+.boot-title-label {
+  font-family: var(--font-code, monospace);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: #ffffff;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 12px rgba(0, 240, 255, 0.9),
+    0 0 24px rgba(0, 240, 255, 0.45);
+}
+
+.boot-welcome-label {
+  font-family: var(--font-code, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #00f0ff;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
+}
+
+/* ==========================================================================
+   STYLE 1: MECHANICAL IRIS APERTURE (Cửa Sập Màng Chắn Quang Học)
+   ========================================================================== */
+.cyber-boot-overlay.iris-aperture-overlay {
+  background: #020409;
+}
+
 .iris-stage {
   position: relative;
   width: 100vw;
@@ -58,9 +104,6 @@
   opacity: 1;
 }
 
-/* ==========================================================================
-   THE MECHANICAL IRIS APERTURE CONTAINER
-   ========================================================================== */
 .iris-aperture-container {
   position: relative;
   width: 700px;
@@ -84,9 +127,6 @@
   100% { transform: translate(0, 0); }
 }
 
-/* ==========================================================================
-   OUTER ARMORED CHASSIS & PERIMETER CLAMPS
-   ========================================================================== */
 .iris-outer-chassis {
   position: absolute;
   inset: 0;
@@ -140,9 +180,6 @@
   box-shadow: 0 0 12px #00ff9d;
 }
 
-/* ==========================================================================
-   8 INTERLOCKING TITANIUM SHUTTER BLADES
-   ========================================================================== */
 .iris-blades-container {
   position: absolute;
   inset: 14px;
@@ -187,14 +224,11 @@
   transform: rotate(45deg);
 }
 
-/* Radial Dilation of Iris Blades */
-.iris-aperture-container.iris-opening .iris-blade {
+.iris-aperture-container.iris-opening .iris-blade,
+.iris-aperture-container.iris-dilating .iris-blade {
   transform: rotate(calc(var(--blade-angle, 0deg) + 40deg)) translate(330px, 330px);
 }
 
-/* ==========================================================================
-   CENTRAL APERTURE HUB & TRIGGER ASSEMBLY
-   ========================================================================== */
 .iris-hub-assembly {
   position: relative;
   z-index: 30;
@@ -206,13 +240,13 @@
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-.iris-aperture-container.iris-opening .iris-hub-assembly {
+.iris-aperture-container.iris-opening .iris-hub-assembly,
+.iris-aperture-container.iris-dilating .iris-hub-assembly {
   opacity: 0;
   transform: scale(1.35);
   pointer-events: none;
 }
 
-/* Rotating Crosshair Ring */
 .iris-crosshair-ring {
   position: absolute;
   width: 230px;
@@ -231,7 +265,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* Actuator Trigger Button */
 .iris-actuator-btn {
   width: 125px;
   height: 125px;
@@ -276,33 +309,1178 @@
   filter: drop-shadow(0 0 12px #00ff9d);
 }
 
-/* Minimalist Clean Brand Group */
-.iris-brand-group {
-  margin-top: 36px;
+/* ==========================================================================
+   STYLE 2: MASSIVE CYBER BLAST DOOR (Cánh Cổng Titan Cơ Khí)
+   ========================================================================== */
+.cyber-boot-overlay.blast-door-overlay {
+  background: #020408;
+}
+
+.blast-bg-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+.vault-breach-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(0, 240, 255, 0.85) 45%, rgba(5, 12, 24, 0) 75%);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vault-breach-light.breach-blooming {
+  opacity: 1;
+}
+
+.vault-blast-gate {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.vault-blast-gate.gate-shaking {
+  animation: blast-gate-shake 0.38s ease-in-out;
+}
+
+@keyframes blast-gate-shake {
+  0% { transform: translate(0, 0); }
+  15% { transform: translate(-4px, 2px); }
+  30% { transform: translate(4px, -3px); }
+  45% { transform: translate(-3px, -2px); }
+  60% { transform: translate(3px, 2px); }
+  75% { transform: translate(-2px, 1px); }
+  90% { transform: translate(1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+.vault-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.4%;
+  z-index: 20;
+  background: linear-gradient(135deg, #181e28 0%, #0d121a 45%, #151b24 100%);
+  box-shadow:
+    inset 0 0 90px rgba(0, 0, 0, 0.85),
+    0 0 50px rgba(0, 0, 0, 0.95);
+  transition: transform 1.15s cubic-bezier(0.7, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.vault-panel-left {
+  left: 0;
+  border-right: 3px solid #243042;
+}
+
+.vault-panel-right {
+  right: 0;
+  border-left: 3px solid #243042;
+}
+
+.vault-blast-gate.gate-opening .vault-panel-left {
+  transform: translateX(-104%);
+}
+
+.vault-blast-gate.gate-opening .vault-panel-right {
+  transform: translateX(104%);
+}
+
+.panel-armor-plate {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.85;
+}
+
+.panel-stencil {
+  position: absolute;
+  top: 28px;
+  font-family: var(--font-code, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: rgba(112, 133, 160, 0.4);
+  text-transform: uppercase;
+}
+
+.vault-panel-left .panel-stencil { left: 40px; }
+.vault-panel-right .panel-stencil { right: 40px; text-align: right; }
+
+.panel-hazard-stripe {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  opacity: 0.65;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 240, 255, 0.3) 0,
+    rgba(0, 240, 255, 0.3) 12px,
+    rgba(10, 15, 25, 0.95) 12px,
+    rgba(10, 15, 25, 0.95) 24px
+  );
+}
+
+.vault-panel-left .panel-hazard-stripe { right: 18px; }
+.vault-panel-right .panel-hazard-stripe { left: 18px; }
+
+.panel-teeth-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  color: #0d121a;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
+  z-index: 22;
+}
+
+.teeth-left { right: -2px; }
+.teeth-right { left: -2px; }
+
+.teeth-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.vault-hydraulic-piston {
+  position: absolute;
+  width: 200px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  z-index: 25;
+}
+
+.piston-tl { top: 60px; left: 40px; }
+.piston-bl { bottom: 60px; left: 40px; }
+.piston-tr { top: 60px; right: 40px; flex-direction: row-reverse; }
+.piston-br { bottom: 60px; right: 40px; flex-direction: row-reverse; }
+
+.piston-mount {
+  width: 24px;
+  height: 44px;
+  background: #2a3544;
+  border: 1px solid #48566a;
+  border-radius: 3px;
+  box-shadow: inset 0 0 6px #000;
+}
+
+.piston-cylinder {
+  width: 110px;
+  height: 32px;
+  background: linear-gradient(180deg, #3d4a5c 0%, #151c26 50%, #2b3644 100%);
+  border-radius: 4px;
+  border: 1px solid #506177;
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.piston-rod {
+  width: 60px;
+  height: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #a8b6c6 40%, #e2e8f0 70%, #64748b 100%);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  border-radius: 2px;
+}
+
+.piston-tl .piston-rod,
+.piston-bl .piston-rod { transform: translateX(10px); }
+.piston-tr .piston-rod,
+.piston-br .piston-rod { transform: translateX(-10px); }
+
+.vault-blast-gate.gate-disengaging .piston-tl .piston-rod,
+.vault-blast-gate.gate-disengaging .piston-bl .piston-rod { transform: translateX(-26px); }
+.vault-blast-gate.gate-disengaging .piston-tr .piston-rod,
+.vault-blast-gate.gate-disengaging .piston-br .piston-rod { transform: translateX(26px); }
+
+.piston-led {
+  position: absolute;
+  top: calc(50% - 5px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff4757;
+  box-shadow: 0 0 12px #ff4757;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.piston-tl .piston-led,
+.piston-bl .piston-led { right: 10px; }
+.piston-tr .piston-led,
+.piston-br .piston-led { left: 10px; }
+
+.vault-blast-gate.gate-disengaging .piston-led {
+  background: #00ff9d;
+  box-shadow: 0 0 14px #00ff9d;
+}
+
+.piston-label {
+  font-size: 0.55rem;
+  color: #7085a0;
+  margin: 0 8px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+}
+
+.vault-seam-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  background: #00f0ff;
+  box-shadow:
+    0 0 16px #00f0ff,
+    0 0 32px rgba(0, 240, 255, 0.7);
+  z-index: 22;
+  transition: opacity 0.3s ease;
+}
+
+.vault-blast-gate.gate-opening .vault-seam-glow {
+  opacity: 0;
+}
+
+.vault-core-assembly {
+  position: relative;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  pointer-events: auto;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.vault-blast-gate.gate-opening .vault-core-assembly {
+  opacity: 0;
+  transform: scale(1.15);
   pointer-events: none;
-  text-align: center;
 }
 
-.iris-title-label {
-  font-size: 1.15rem;
-  font-weight: 900;
-  letter-spacing: 0.28em;
-  color: #ffffff;
-  text-shadow:
-    0 0 12px rgba(0, 240, 255, 0.9),
-    0 0 24px rgba(0, 240, 255, 0.45);
-  text-transform: uppercase;
+.core-hazard-ring {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 4px dashed rgba(0, 240, 255, 0.35);
+  box-shadow:
+    0 0 30px rgba(0, 240, 255, 0.2),
+    inset 0 0 30px rgba(0, 240, 255, 0.15);
+  animation: core-hazard-rotate 35s linear infinite;
+  pointer-events: none;
 }
 
-.iris-welcome-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
+@keyframes core-hazard-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.core-locking-dogs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.locking-dog {
+  position: absolute;
+  background: linear-gradient(180deg, #ffaa00, #b37400);
+  border: 1px solid #ffcc00;
+  box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
+  border-radius: 3px;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.35s;
+}
+
+.dog-top { top: -46px; left: calc(50% - 8px); width: 16px; height: 44px; }
+.dog-bottom { bottom: -46px; left: calc(50% - 8px); width: 16px; height: 44px; }
+.dog-left { left: -46px; top: calc(50% - 8px); width: 44px; height: 16px; }
+.dog-right { right: -46px; top: calc(50% - 8px); width: 44px; height: 16px; }
+
+.vault-blast-gate.gate-dogs-released .dog-top { transform: translateY(-26px) rotate(45deg); opacity: 0; }
+.vault-blast-gate.gate-dogs-released .dog-bottom { transform: translateY(26px) rotate(-45deg); opacity: 0; }
+.vault-blast-gate.gate-dogs-released .dog-left { transform: translateX(-26px) rotate(-45deg); opacity: 0; }
+.vault-blast-gate.gate-dogs-released .dog-right { transform: translateX(26px) rotate(45deg); opacity: 0; }
+
+.vault-core-button {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1c2636 0%, #0d121a 70%, #05070a 100%);
+  border: 3px solid #00f0ff;
+  box-shadow:
+    0 0 30px rgba(0, 240, 255, 0.45),
+    inset 0 0 25px rgba(0, 240, 255, 0.25);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.vault-core-button:hover,
+.vault-core-button:focus-visible {
+  transform: scale(1.05);
+  border-color: #00ff9d;
+  box-shadow:
+    0 0 45px rgba(0, 255, 157, 0.65),
+    inset 0 0 35px rgba(0, 255, 157, 0.35);
+}
+
+.vault-core-button:active {
+  transform: scale(0.96);
+}
+
+.core-btn-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, transparent 70%);
+  animation: core-halo-pulse 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes core-halo-pulse {
+  from { opacity: 0.4; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1.08); }
+}
+
+.core-svg-icon {
+  width: 64px;
+  height: 64px;
   color: #00f0ff;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
-  text-transform: uppercase;
+  filter: drop-shadow(0 0 10px #00f0ff);
+  transition: color 0.3s, filter 0.3s;
+}
+
+.vault-core-button:hover .core-svg-icon {
+  color: #00ff9d;
+  filter: drop-shadow(0 0 14px #00ff9d);
+}
+
+/* ==========================================================================
+   STYLE 3: DIMENSIONAL VOID SLASH (Nhát Cắt Không Gian)
+   ========================================================================== */
+.cyber-boot-overlay.void-slash-overlay {
+  background: #010204;
+  cursor: crosshair;
+}
+
+.void-slash-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  --slash-angle: -25deg;
+}
+
+.void-slash-screen.void-screen-shaking {
+  animation: void-shake 0.35s ease-in-out;
+}
+
+@keyframes void-shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-5px, 3px) rotate(-0.3deg); }
+  40% { transform: translate(5px, -4px) rotate(0.4deg); }
+  60% { transform: translate(-3px, -2px) rotate(-0.2deg); }
+  80% { transform: translate(3px, 2px) rotate(0.2deg); }
+  100% { transform: translate(0, 0); }
+}
+
+.void-dust-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.void-particle {
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #00f0ff;
+  opacity: 0.3;
+  box-shadow: 0 0 6px #00f0ff;
+  animation: void-particle-float var(--dur, 4s) ease-in-out infinite alternate var(--delay, 0s);
+}
+
+@keyframes void-particle-float {
+  from { transform: translateY(0px) scale(0.8); opacity: 0.2; }
+  to { transform: translateY(-18px) scale(1.4); opacity: 0.6; }
+}
+
+.void-breach-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(0, 240, 255, 0.9) 30%,
+    rgba(180, 0, 255, 0.7) 60%,
+    rgba(1, 2, 4, 0) 85%
+  );
+  opacity: 0;
+  transition: opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.void-breach-light.breach-blooming {
+  opacity: 1;
+}
+
+.void-half {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.void-half-top {
+  background: linear-gradient(135deg, #070b14 0%, #010204 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 38%, 0 62%);
+  border-bottom: 2px solid rgba(0, 240, 255, 0.4);
+}
+
+.void-half-bottom {
+  background: linear-gradient(135deg, #010204 0%, #080c16 100%);
+  clip-path: polygon(0 62%, 100% 38%, 100% 100%, 0 100%);
+  border-top: 2px solid rgba(180, 0, 255, 0.4);
+}
+
+.void-slash-screen.reality-torn .void-half-top,
+.void-slash-screen.rift-opening .void-half-top {
+  transform: translate(-125%, -125%);
+}
+
+.void-slash-screen.reality-torn .void-half-bottom,
+.void-slash-screen.rift-opening .void-half-bottom {
+  transform: translate(125%, 125%);
+}
+
+.void-slash-blade {
+  position: absolute;
+  top: calc(50% - 2.5px);
+  left: -30vw;
+  width: 160vw;
+  height: 5px;
+  z-index: 25;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #00f0ff 25%,
+    #ffffff 50%,
+    #b400ff 75%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 25px #00f0ff,
+    0 0 50px #b400ff,
+    0 0 75px #ffffff;
+  transform: rotate(var(--slash-angle, -25deg)) scaleX(0);
+  opacity: 0;
+  transition: transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.12s ease;
+}
+
+.void-slash-blade.blade-striking {
+  opacity: 1;
+  transform: rotate(var(--slash-angle, -25deg)) scaleX(1);
+}
+
+.void-slash-screen.reality-torn .void-slash-blade {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.spatial-shard-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 22;
+}
+
+.spatial-shard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 240, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.7);
+  clip-path: polygon(50% 0%, 100% 70%, 20% 100%);
+  opacity: 0;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s;
+}
+
+.void-slash-screen.reality-torn .shard-0 { transform: translate(-140px, -180px) rotate(120deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-1 { transform: translate(160px, -140px) rotate(-80deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-2 { transform: translate(-220px, 90px) rotate(45deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-3 { transform: translate(200px, 160px) rotate(-130deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-4 { transform: translate(-80px, -240px) rotate(200deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-5 { transform: translate(110px, -220px) rotate(-60deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-6 { transform: translate(-190px, 200px) rotate(90deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-7 { transform: translate(240px, 60px) rotate(-160deg); opacity: 1; }
+
+.void-singularity-assembly {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.void-slash-screen.reality-torn .void-singularity-assembly {
+  opacity: 0;
+  transform: scale(0.2);
+  pointer-events: none;
+}
+
+.singularity-accretion-ring {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 240, 255, 0.45);
+  box-shadow:
+    0 0 30px rgba(180, 0, 255, 0.25),
+    inset 0 0 30px rgba(0, 240, 255, 0.2);
+  animation: singularity-ring-rotate 22s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes singularity-ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.void-singularity {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #020306 0%, #0a0f1d 60%, #1c0f33 100%);
+  border: 2px solid #00f0ff;
+  box-shadow:
+    0 0 35px rgba(0, 240, 255, 0.75),
+    0 0 70px rgba(180, 0, 255, 0.45);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  outline: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+
+.void-singularity:hover,
+.void-singularity:focus-visible {
+  transform: scale(1.15);
+  border-color: #ffffff;
+  box-shadow:
+    0 0 50px rgba(0, 240, 255, 1),
+    0 0 100px rgba(180, 0, 255, 0.8);
+}
+
+.void-singularity:active {
+  transform: scale(0.92);
+}
+
+.singularity-core-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.5) 0%, transparent 70%);
+  animation: singularity-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes singularity-pulse {
+  from { transform: scale(0.8); opacity: 0.4; }
+  to { transform: scale(1.3); opacity: 0.9; }
+}
+
+.singularity-core-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 16px #ffffff,
+    0 0 32px #00f0ff;
+  z-index: 2;
+}
+
+/* ==========================================================================
+   STYLE 4: TOKAMAK REACTOR CORE SUPERNOVA (Lõi Phản Ứng Quá Tải)
+   ========================================================================== */
+.cyber-boot-overlay.reactor-core-overlay {
+  background: #02050b;
+}
+
+.reactor-stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.reactor-supernova-blast {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    circle at center,
+    #ffffff 0%,
+    #00f0ff 25%,
+    #0055ff 55%,
+    rgba(2, 5, 11, 0) 85%
+  );
+  opacity: 0;
+  transition: opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.reactor-supernova-blast.supernova-blooming {
+  opacity: 1;
+}
+
+.reactor-flux-grid {
+  position: absolute;
+  width: 620px;
+  height: 620px;
+  border-radius: 50%;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(0, 240, 255, 0.09) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.65;
+  z-index: 1;
+}
+
+.reactor-chamber {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.6s ease, opacity 0.6s ease;
+}
+
+.reactor-chamber.chamber-shaking {
+  animation: reactor-vibrate 0.36s ease-in-out infinite;
+}
+
+@keyframes reactor-vibrate {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-4px, 3px); }
+  40% { transform: translate(4px, -3px); }
+  60% { transform: translate(-3px, -2px); }
+  80% { transform: translate(3px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+.reactor-chamber.reactor-dissolving {
+  opacity: 0;
+  transform: scale(1.35);
+  pointer-events: none;
+}
+
+.containment-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.5s ease;
+}
+
+.ring-outer {
+  width: 390px;
+  height: 390px;
+  border: 3px solid rgba(0, 240, 255, 0.3);
+  border-top-color: #00f0ff;
+  border-bottom-color: #00f0ff;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
+  animation: ring-rotate-cw 26s linear infinite;
+}
+
+.ring-middle {
+  width: 300px;
+  height: 300px;
+  border: 3px dashed rgba(255, 170, 0, 0.45);
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.25);
+  animation: ring-rotate-ccw 16s linear infinite;
+}
+
+.ring-inner {
+  width: 220px;
+  height: 220px;
+  border: 2px solid rgba(0, 255, 157, 0.4);
+  border-left-color: #00ff9d;
+  border-right-color: #00ff9d;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.35);
+  animation: ring-rotate-cw 10s linear infinite;
+}
+
+@keyframes ring-rotate-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ring-rotate-ccw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+.reactor-chamber.reactor-overcharging .ring-outer {
+  animation-duration: 3s;
+  box-shadow: 0 0 40px #00f0ff;
+}
+
+.reactor-chamber.reactor-overcharging .ring-middle {
+  animation-duration: 2s;
+  box-shadow: 0 0 35px #ffaa00;
+}
+
+.reactor-chamber.reactor-overcharging .ring-inner {
+  animation-duration: 1.2s;
+  box-shadow: 0 0 35px #00ff9d;
+}
+
+.reactor-chamber.reactor-critical .ring-outer {
+  transform: scale(2.4);
+  opacity: 0;
+}
+
+.reactor-chamber.reactor-critical .ring-middle {
+  transform: scale(2.0);
+  opacity: 0;
+}
+
+.reactor-chamber.reactor-critical .ring-inner {
+  transform: scale(1.6);
+  opacity: 0;
+}
+
+.reactor-core-sphere {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reactor-actuator-btn {
+  width: 145px;
+  height: 145px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #08101e 0%, #03060c 70%, #000 100%);
+  border: 3px solid #00f0ff;
+  box-shadow:
+    0 0 35px rgba(0, 240, 255, 0.65),
+    inset 0 0 25px rgba(0, 240, 255, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  outline: none;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reactor-actuator-btn:hover,
+.reactor-actuator-btn:focus-visible {
+  transform: scale(1.08);
+  border-color: #ffaa00;
+  box-shadow:
+    0 0 55px rgba(255, 170, 0, 0.85),
+    inset 0 0 35px rgba(255, 170, 0, 0.45);
+}
+
+.reactor-actuator-btn:active {
+  transform: scale(0.95);
+}
+
+.reactor-heat-haze {
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.35) 0%, transparent 70%);
+  animation: heat-haze-anim 2s ease-in-out infinite alternate;
+}
+
+@keyframes heat-haze-anim {
+  from { opacity: 0.3; transform: scale(0.88); }
+  to { opacity: 0.9; transform: scale(1.16); }
+}
+
+.reactor-plasma-orb {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #00f0ff 40%, #0044ff 85%);
+  box-shadow:
+    0 0 35px #00f0ff,
+    0 0 70px rgba(0, 85, 255, 0.7);
+  animation: plasma-orb-anim 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes plasma-orb-anim {
+  from { transform: scale(0.85); opacity: 0.8; }
+  to { transform: scale(1.15); opacity: 1; }
+}
+
+.reactor-chamber.reactor-overcharging .reactor-plasma-orb {
+  background: radial-gradient(circle, #ffffff 0%, #ffeedd 30%, #ffaa00 70%, #ff4400 100%);
+  box-shadow:
+    0 0 50px #ffaa00,
+    0 0 100px #ff4400;
+  transform: scale(1.4);
+}
+
+.reactor-svg {
+  width: 48px;
+  height: 48px;
+  color: #ffffff;
+  z-index: 2;
+  filter: drop-shadow(0 0 8px #ffffff);
+}
+
+/* ==========================================================================
+   STYLE 5: TACTICAL BALLISTIC GLASS SHATTER (Vách Kính Cường Lực Sập Nứt)
+   ========================================================================== */
+.cyber-boot-overlay.glass-breach-overlay {
+  background: rgba(2, 5, 12, 0.96);
+  backdrop-filter: blur(8px);
+  cursor: crosshair;
+}
+
+.glass-stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.glass-breach-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(0, 240, 255, 0.9) 35%,
+    rgba(0, 85, 255, 0.7) 65%,
+    rgba(2, 5, 12, 0) 85%
+  );
+  opacity: 0;
+  transition: opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-breach-flash.breach-blooming {
+  opacity: 1;
+}
+
+.ballistic-glass-pane {
+  position: absolute;
+  inset: 28px;
+  border-radius: 8px;
+  z-index: 20;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(8, 16, 30, 0.85) 45%,
+    rgba(3, 7, 16, 0.96) 100%
+  );
+  border: 2px solid rgba(0, 240, 255, 0.35);
+  box-shadow:
+    0 0 70px rgba(0, 0, 0, 0.9),
+    inset 0 0 50px rgba(0, 240, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.ballistic-glass-pane.glass-shaking {
+  animation: glass-impact-shake 0.36s ease-in-out;
+}
+
+@keyframes glass-impact-shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 4px) scale(0.99); }
+  40% { transform: translate(6px, -4px) scale(1.01); }
+  60% { transform: translate(-4px, -2px) scale(0.995); }
+  80% { transform: translate(4px, 2px) scale(1.005); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.ballistic-glass-pane.glass-shattered {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glass-reflection-glare {
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 220%;
+  height: 220%;
+  background: linear-gradient(
+    45deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.05) 46%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.05) 54%,
+    transparent 58%
+  );
+  pointer-events: none;
+  transform: rotate(-25deg);
+}
+
+.glass-bracket {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: #1c2635;
+  border: 2px solid #3d4f66;
+  box-shadow: inset 0 0 8px #000;
+  border-radius: 4px;
+  z-index: 21;
+}
+
+.bracket-tl { top: 12px; left: 12px; }
+.bracket-tr { top: 12px; right: 12px; }
+.bracket-bl { bottom: 12px; left: 12px; }
+.bracket-br { bottom: 12px; right: 12px; }
+
+.glass-fractal-cracks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 22;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+}
+
+.ballistic-glass-pane.glass-fracturing .glass-fractal-cracks {
+  opacity: 1;
+}
+
+.crack-web-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.crack-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.crack-primary {
+  stroke: #ffffff;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 8px #00f0ff);
+}
+
+.crack-secondary {
+  stroke: rgba(0, 240, 255, 0.85);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px #00f0ff);
+}
+
+.crack-ring {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 2;
+  stroke-dasharray: 8 5;
+}
+
+.glass-shards-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 24;
+}
+
+.glass-shard {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(0, 240, 255, 0.3) 50%,
+    rgba(5, 15, 30, 0.7) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 0%, 100% 65%, 15% 100%);
+  transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.5s ease;
+}
+
+.ballistic-glass-pane.glass-shattered .shard-idx-0 { transform: translate(-280px, -240px) rotate(140deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-1 { transform: translate(320px, -220px) rotate(-110deg) scale(0.7); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-2 { transform: translate(-340px, 120px) rotate(65deg) scale(0.8); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-3 { transform: translate(290px, 200px) rotate(-150deg) scale(0.65); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-4 { transform: translate(-140px, -320px) rotate(220deg) scale(0.5); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-5 { transform: translate(180px, -300px) rotate(-70deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-6 { transform: translate(-220px, 280px) rotate(115deg) scale(0.75); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-7 { transform: translate(250px, 310px) rotate(-190deg) scale(0.55); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-8 { transform: translate(-420px, -90px) rotate(80deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-9 { transform: translate(440px, -80px) rotate(-130deg) scale(0.7); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-10 { transform: translate(-80px, 380px) rotate(160deg) scale(0.5); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-11 { transform: translate(90px, 390px) rotate(-85deg) scale(0.65); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-12 { transform: translate(-360px, -360px) rotate(195deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-13 { transform: translate(380px, -350px) rotate(-165deg) scale(0.7); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-14 { transform: translate(-380px, 360px) rotate(105deg) scale(0.55); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-15 { transform: translate(390px, 370px) rotate(-145deg) scale(0.65); opacity: 1; }
+
+.kinetic-impact-assembly {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ballistic-glass-pane.glass-shattered .kinetic-impact-assembly {
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+}
+
+.kinetic-crosshair-ring {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 71, 87, 0.45);
+  box-shadow:
+    0 0 25px rgba(255, 71, 87, 0.25),
+    inset 0 0 25px rgba(255, 71, 87, 0.15);
+  animation: crosshair-spin 26s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes crosshair-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.kinetic-breach-btn {
+  width: 115px;
+  height: 115px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #20080a 0%, #0d0305 60%, #000 100%);
+  border: 3px solid #ff4757;
+  box-shadow:
+    0 0 35px rgba(255, 71, 87, 0.65),
+    inset 0 0 25px rgba(255, 71, 87, 0.35);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kinetic-breach-btn:hover,
+.kinetic-breach-btn:focus-visible {
+  transform: scale(1.12);
+  border-color: #00ff9d;
+  box-shadow:
+    0 0 55px rgba(0, 255, 157, 0.85),
+    inset 0 0 30px rgba(0, 255, 157, 0.45);
+}
+
+.kinetic-breach-btn:active {
+  transform: scale(0.94);
+}
+
+.kinetic-bullseye {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kinetic-bullseye-core {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 71, 87, 0.4) 0%, transparent 70%);
+  animation: bullseye-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes bullseye-pulse {
+  from { transform: scale(0.85); opacity: 0.5; }
+  to { transform: scale(1.25); opacity: 1; }
+}
+
+.target-crosshair-svg {
+  width: 48px;
+  height: 48px;
+  color: #ff4757;
+  filter: drop-shadow(0 0 8px #ff4757);
+  transition: color 0.2s, filter 0.2s;
+  z-index: 2;
+}
+
+.kinetic-breach-btn:hover .target-crosshair-svg {
+  color: #00ff9d;
+  filter: drop-shadow(0 0 12px #00ff9d);
 }

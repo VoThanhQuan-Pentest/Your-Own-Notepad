@@ -156,6 +156,18 @@ pub(crate) enum StartupPerformanceMode {
     Performance,
 }
 
+#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum BootSequenceStyle {
+    #[default]
+    MechanicalIris,
+    BlastDoor,
+    VoidSlash,
+    ReactorCore,
+    GlassShatter,
+    Random,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct AppSettings {
@@ -186,6 +198,8 @@ pub(crate) struct AppSettings {
     pub(crate) last_startup_mode: Option<StartupPerformanceMode>,
     #[serde(default)]
     pub(crate) startup_in_progress: bool,
+    #[serde(default)]
+    pub(crate) boot_sequence_style: BootSequenceStyle,
 }
 
 impl Default for AppSettings {
@@ -211,6 +225,7 @@ impl Default for AppSettings {
             startup_mode_preference: StartupModePreference::default(),
             last_startup_mode: None,
             startup_in_progress: false,
+            boot_sequence_style: BootSequenceStyle::default(),
         }
     }
 }
@@ -279,8 +294,9 @@ fn is_hex_color(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        AccentTheme, AppSettings, FavoriteItem, PerformanceMode, SectionHighlight,
-        SectionHighlightLevel, StartupModePreference, StartupPerformanceMode, ThemeMode,
+        AccentTheme, AppSettings, BootSequenceStyle, FavoriteItem, PerformanceMode,
+        SectionHighlight, SectionHighlightLevel, StartupModePreference,
+        StartupPerformanceMode, ThemeMode,
     };
 
     #[test]
@@ -450,5 +466,22 @@ mod tests {
         };
         let serialized = serde_json::to_value(&settings).expect("settings must serialize");
         assert_eq!(serialized["performanceMode"], "low-power");
+    }
+
+    #[test]
+    fn serializes_boot_sequence_style_with_kebab_case() {
+        let settings = AppSettings {
+            boot_sequence_style: BootSequenceStyle::MechanicalIris,
+            ..Default::default()
+        };
+        let serialized = serde_json::to_value(&settings).expect("settings must serialize");
+        assert_eq!(serialized["bootSequenceStyle"], "mechanical-iris");
+
+        let custom = AppSettings {
+            boot_sequence_style: BootSequenceStyle::BlastDoor,
+            ..Default::default()
+        };
+        let custom_serialized = serde_json::to_value(&custom).expect("settings must serialize");
+        assert_eq!(custom_serialized["bootSequenceStyle"], "blast-door");
     }
 }

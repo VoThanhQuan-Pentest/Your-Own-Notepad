@@ -34,6 +34,8 @@ import type { FilesystemEntry } from "./models/filesystem";
 import type { WorkerSearchResult } from "./models/workspace-worker";
 import {
   accentThemes,
+  bootSequenceStyles,
+  bootSequenceStyleLabel,
   defaultCustomThemes,
   defaultSettings,
   favoriteKey,
@@ -43,6 +45,7 @@ import {
   themeModes,
   type AccentTheme,
   type AppSettings,
+  type BootSequenceStyle,
   type CustomThemes,
   type FavoriteItem,
   type PerformanceMode,
@@ -627,6 +630,7 @@ export class CommandVaultApplication {
       await runBootSequence({
         displayName: this.settings.displayName,
         appVersion: this.appVersion,
+        style: this.settings.bootSequenceStyle,
       });
     }
 
@@ -2523,6 +2527,18 @@ export class CommandVaultApplication {
     workspaceField.append(workspaceRow);
     form.append(workspaceField);
 
+    const bootStyleField = element("label", "form-field");
+    bootStyleField.append(element("span", undefined, "Opening intro effect"));
+    const bootStyleSelect = element("select") as HTMLSelectElement;
+    bootSequenceStyles.forEach((style) => {
+      const option = element("option", undefined, bootSequenceStyleLabel(style)) as HTMLOptionElement;
+      option.value = style;
+      option.selected = style === this.settings.bootSequenceStyle;
+      bootStyleSelect.append(option);
+    });
+    bootStyleField.append(bootStyleSelect);
+    form.append(bootStyleField);
+
     const versionField = element("div", "form-field");
     versionField.append(element("span", undefined, "Command Vault version"));
     const versionRow = element("div", "settings-workspace-row");
@@ -2534,6 +2550,7 @@ export class CommandVaultApplication {
       void runBootSequence({
         displayName: this.settings.displayName,
         appVersion: this.appVersion,
+        style: bootStyleSelect.value as BootSequenceStyle,
       }, true);
     });
     versionRow.append(replayBoot);
@@ -2666,6 +2683,7 @@ export class CommandVaultApplication {
         customThemes: theme.customThemes(),
         performanceMode: performanceMode.value as PerformanceMode,
         startupModePreference: startupModeSelect.value as StartupModePreference,
+        bootSequenceStyle: bootStyleSelect.value as BootSequenceStyle,
         rememberExpandedSections: remember.checked,
         ...(!remember.checked ? { expandedSections: [], sectionStateFiles: [] } : {}),
       };
@@ -3301,6 +3319,7 @@ export class CommandVaultApplication {
             {
               displayName: this.settings.displayName,
               appVersion: this.appVersion,
+              style: this.settings.bootSequenceStyle,
             },
             true,
           );
