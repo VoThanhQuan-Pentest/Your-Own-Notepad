@@ -1,10 +1,10 @@
 import {
   playCyberBootSequence,
   speakSystemGreeting,
-  playMechanicalClick,
+  playPneumaticHiss,
   playServoClick,
-  playDecryptionTick,
-  playEmpDistortion,
+  playMechanicalClick,
+  playCircuitSurgeAudio,
   playLaserChirp,
 } from "../services/audio";
 import { element } from "../utils/dom";
@@ -17,14 +17,14 @@ export interface BootSequenceOptions {
 
 /**
  * Command Vault v0.17.0 - Brutalist Cybernetic Intro
- * Style 4: Vách Kính Cường Lực Sập Nứt (Tactical Stasis Breach / Ballistic Glass Shatter)
+ * Style 5: Cửa Sập Màng Chắn Quang Học (Sci-Fi Mechanical Iris Aperture)
  *
  * Cinematic Flow:
- * - Centerpiece: Frosted smoked ballistic glass pane with corner brackets & central reticle
- * - Interactive: Click central kinetic reticle OR press Space / Enter to strike
- * - Phase 1: High-velocity kinetic strike slams center, loud mechanical impact (150ms)
- * - Phase 2: Complex fractal cracks spread like lightning to all 4 corners (300ms)
- * - Phase 3: Glass pane shatters into tumbling 3D polygonal shards, revealing Workspace (900ms)
+ * - Centerpiece: 8 Interlocking Heavy Titanium Shutter Blades forming a sealed iris
+ * - Interactive: Click central aperture hub OR press Space / Enter to dilate
+ * - Phase 1: 8 perimeter clamp lugs release with pneumatic venting & servo click (250ms)
+ * - Phase 2: Shutter blades rotate and slide back into circular chassis casing (700ms)
+ * - Phase 3: Aperture dilates to 100%, radiant breach light floods screen into Workspace (800ms)
  */
 export function runBootSequence(options: BootSequenceOptions = {}, force = false): Promise<void> {
   return new Promise((resolve) => {
@@ -47,110 +47,84 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       return;
     }
 
-    const overlay = element("div", "cyber-boot-overlay glass-breach-overlay");
+    const overlay = element("div", "cyber-boot-overlay iris-aperture-overlay");
     overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-label", "Tactical Ballistic Glass Stasis Breach");
+    overlay.setAttribute("aria-label", "Mechanical Iris Shutter Clearance");
 
-    // The Glass Stage
-    const stage = element("div", "glass-stage");
+    // The Stage
+    const stage = element("div", "iris-stage");
 
-    // Radiant Breach Light Layer behind the glass
-    const breachFlash = element("div", "glass-breach-flash");
+    // Radiant Breach Light Layer behind the iris
+    const breachFlash = element("div", "iris-breach-flash");
 
-    // The Ballistic Glass Pane
-    const glassPane = element("div", "ballistic-glass-pane");
+    // The Mechanical Iris Aperture Container
+    const irisContainer = element("div", "iris-aperture-container");
 
-    // Diagonal Glass Glare Reflection
-    const glassGlare = element("div", "glass-reflection-glare");
+    // Outer Armored Chassis Frame
+    const chassisFrame = element("div", "iris-outer-chassis");
 
-    // 4 Heavy-duty Steel Corner Mounting Brackets
-    const bracketTL = element("div", "glass-bracket bracket-tl");
-    const bracketTR = element("div", "glass-bracket bracket-tr");
-    const bracketBL = element("div", "glass-bracket bracket-bl");
-    const bracketBR = element("div", "glass-bracket bracket-br");
+    // 8 Perimeter Clamp Lugs around the chassis
+    const clampsContainer = element("div", "iris-clamps-container");
+    for (let i = 0; i < 8; i++) {
+      const clamp = element("div", `iris-clamp clamp-pos-${i}`);
+      const clampLed = element("div", "clamp-led");
+      clamp.append(clampLed);
+      clampsContainer.append(clamp);
+    }
+    chassisFrame.append(clampsContainer);
 
-    // SVG Fractal Lightning Crack Web radiating from center (500x500 viewBox)
-    const crackSvg = element("div", "glass-fractal-cracks");
-    crackSvg.innerHTML = `
-      <svg viewBox="0 0 1000 1000" class="crack-web-svg" preserveAspectRatio="none">
-        <!-- Main primary fracture arteries -->
-        <path d="M500,500 L420,380 L350,290 L210,180 L80,60" class="crack-path crack-primary"/>
-        <path d="M500,500 L580,360 L690,260 L820,150 L950,50" class="crack-path crack-primary"/>
-        <path d="M500,500 L390,580 L280,670 L170,780 L50,920" class="crack-path crack-primary"/>
-        <path d="M500,500 L620,590 L740,710 L860,820 L960,940" class="crack-path crack-primary"/>
-        
-        <!-- Secondary branching fractures -->
-        <path d="M420,380 L310,410 L180,440 L40,460" class="crack-path crack-secondary"/>
-        <path d="M580,360 L660,400 L800,430 L960,450" class="crack-path crack-secondary"/>
-        <path d="M350,290 L400,210 L440,110 L460,0" class="crack-path crack-secondary"/>
-        <path d="M690,260 L630,190 L570,90 L540,0" class="crack-path crack-secondary"/>
-        <path d="M390,580 L440,680 L480,820 L500,1000" class="crack-path crack-secondary"/>
-        <path d="M620,590 L570,700 L530,830 L510,1000" class="crack-path crack-secondary"/>
-        
-        <!-- Concentric stress rings -->
-        <circle cx="500" cy="500" r="45" class="crack-ring ring-1"/>
-        <circle cx="500" cy="500" r="110" class="crack-ring ring-2"/>
-        <circle cx="500" cy="500" r="220" class="crack-ring ring-3"/>
-      </svg>
-    `;
+    // 8 Interlocking Titanium Shutter Blades
+    const bladesContainer = element("div", "iris-blades-container");
+    for (let i = 0; i < 8; i++) {
+      const blade = element("div", `iris-blade blade-idx-${i}`);
+      blade.style.setProperty("--blade-angle", `${i * 45}deg`);
 
-    // 16 3D Polygonal Shatter Shards
-    const shardContainer = element("div", "glass-shards-container");
-    for (let i = 0; i < 16; i++) {
-      const shard = element("div", `glass-shard shard-idx-${i}`);
-      shardContainer.append(shard);
+      // Blade inner graphics: CNC milled metallic plating
+      const bladeSurface = element("div", "blade-surface");
+      const bladeRib = element("div", "blade-rib");
+      blade.append(bladeSurface, bladeRib);
+      bladesContainer.append(blade);
     }
 
-    // Central Kinetic Target Reticle Assembly
-    const kineticAssembly = element("div", "kinetic-impact-assembly");
+    // Central Aperture Hub & Trigger Assembly
+    const hubAssembly = element("div", "iris-hub-assembly");
 
     // Rotating Crosshair Ring
-    const reticleRing = element("div", "kinetic-crosshair-ring");
+    const crosshairRing = element("div", "iris-crosshair-ring");
 
-    // Center Strike Actuator Button
-    const breachBtn = element("button", "kinetic-breach-btn");
-    breachBtn.setAttribute("type", "button");
-    breachBtn.setAttribute("aria-label", "Strike Ballistic Glass Stasis Shield");
+    // Center Actuator Trigger Button
+    const actuatorBtn = element("button", "iris-actuator-btn");
+    actuatorBtn.setAttribute("type", "button");
+    actuatorBtn.setAttribute("aria-label", "Dilate Mechanical Iris Shutter");
 
-    const bullseye = element("div", "kinetic-bullseye");
-    const bullseyeCore = element("div", "kinetic-bullseye-core");
-    const targetIcon = element("div", "kinetic-target-icon");
-    targetIcon.innerHTML = `
-      <svg viewBox="0 0 48 48" class="target-crosshair-svg" fill="none" stroke="currentColor" stroke-width="2.5">
-        <circle cx="24" cy="24" r="18"/>
-        <circle cx="24" cy="24" r="8"/>
-        <path d="M24 2 V12 M24 36 V46 M2 24 H12 M36 24 H46"/>
-        <circle cx="24" cy="24" r="2.5" fill="currentColor"/>
+    const lensHalo = element("div", "iris-lens-halo");
+    const lensCore = element("div", "iris-lens-core");
+    const opticIcon = element("div", "iris-optic-icon");
+    opticIcon.innerHTML = `
+      <svg viewBox="0 0 48 48" class="iris-svg-icon" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="24" cy="24" r="18" stroke-dasharray="5 3"/>
+        <polygon points="24,12 34,18 34,30 24,36 14,30 14,18"/>
+        <circle cx="24" cy="24" r="4" fill="currentColor"/>
       </svg>
     `;
-    breachBtn.append(bullseye, bullseyeCore, targetIcon);
+    actuatorBtn.append(lensHalo, lensCore, opticIcon);
 
-    const titleLabel = element("div", "kinetic-title-label", "COMMAND VAULT // STASIS SHIELD");
-    const statusBadge = element("div", "kinetic-status-badge", "[ BALLISTIC GLASS // 100% INTEGRITY ]");
-    const hintLabel = element("div", "kinetic-hint-label", "✦ CLICK RETICLE OR PRESS SPACE TO STRIKE & SHATTER ✦");
-    const skipHint = element("div", "kinetic-skip-hint", "[ ESC TO SKIP // SPACE TO STRIKE ]");
+    const titleLabel = element("div", "iris-title-label", "COMMAND VAULT // MECHANICAL IRIS");
+    const statusBadge = element("div", "iris-status-badge", "[ 8-BLADE IRIS APERTURE // SEALED ]");
+    const hintLabel = element("div", "iris-hint-label", "✦ CLICK HUB OR PRESS SPACE TO DILATE APERTURE ✦");
+    const skipHint = element("div", "iris-skip-hint", "[ ESC TO SKIP // SPACE TO DILATE ]");
 
-    kineticAssembly.append(
-      reticleRing,
-      breachBtn,
+    hubAssembly.append(
+      crosshairRing,
+      actuatorBtn,
       titleLabel,
       statusBadge,
       hintLabel,
       skipHint,
     );
 
-    glassPane.append(
-      glassGlare,
-      bracketTL,
-      bracketTR,
-      bracketBL,
-      bracketBR,
-      crackSvg,
-      shardContainer,
-      kineticAssembly,
-    );
-
-    stage.append(breachFlash, glassPane);
+    irisContainer.append(chassisFrame, bladesContainer, hubAssembly);
+    stage.append(breachFlash, irisContainer);
     overlay.append(stage);
     document.body.append(overlay);
 
@@ -159,64 +133,65 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     const timers: number[] = [];
 
     // ==========================================
-    // Kinetic Breach Execution
+    // Mechanical Iris Dilation Execution
     // ==========================================
-    function strikeGlass() {
+    function dilateIris() {
       if (running || dismissed) return;
       running = true;
 
-      // Phase 1 (t = 0ms): Heavy Kinetic Strike Impact
-      glassPane.classList.add("glass-striking", "glass-shaking");
-      statusBadge.textContent = "[ KINETIC STRIKE IMPACT // FRACTURE SPREADING ]";
-      statusBadge.classList.add("status-impact");
+      // Phase 1 (t = 0ms): Clamp Unlatch & Pneumatic Purge
+      irisContainer.classList.add("iris-unlatching", "iris-shaking");
+      statusBadge.textContent = "[ CLAMPS DISENGAGED // COMMENCING DILATION ]";
+      statusBadge.classList.add("status-unlatching");
 
-      playMechanicalClick();
+      playPneumaticHiss(true);
       playServoClick();
 
-      const rect = breachBtn.getBoundingClientRect();
+      const rect = actuatorBtn.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
-      triggerSparkBurst(cx, cy);
 
-      // Phase 2 (t = 160ms): Fractal Lightning Cracks Radiate
+      // Phase 2 (t = 240ms): Blades Rotate & Slide Back into Chassis
       const t1 = window.setTimeout(() => {
         if (dismissed) return;
-        glassPane.classList.remove("glass-shaking");
-        glassPane.classList.add("glass-cracking");
-        statusBadge.textContent = "[ STRUCTURAL INTEGRITY: 0% // CRITICAL BREACH ]";
-        statusBadge.classList.add("status-cracking");
+        irisContainer.classList.remove("iris-shaking");
+        irisContainer.classList.add("iris-opening");
+        breachFlash.classList.add("breach-blooming");
+        statusBadge.textContent = "[ APERTURE 100% DILATED // UNSEALED ]";
+        statusBadge.classList.add("status-open");
 
+        triggerSparkBurst(cx, cy);
         triggerHexShockwave(cx, cy);
-        playDecryptionTick();
+
+        playMechanicalClick();
+        playCircuitSurgeAudio();
         playLaserChirp();
-        playEmpDistortion();
-      }, 160);
+      }, 240);
       timers.push(t1);
 
-      // Phase 3 (t = 460ms): Catastrophic Glass Shatter & Rain
+      // Phase 3 (t = 880ms): Radiant Bloom & Synth Chord
       const t2 = window.setTimeout(() => {
         if (dismissed) return;
-        glassPane.classList.add("glass-shattered");
-        breachFlash.classList.add("breach-blooming");
+        irisContainer.classList.add("iris-dilated");
 
         playCyberBootSequence();
         if (options.displayName) {
           speakSystemGreeting(options.displayName);
         }
-      }, 460);
+      }, 880);
       timers.push(t2);
 
-      // Phase 4 (t = 1550ms): Smooth overlay fadeout
+      // Phase 4 (t = 1600ms): Smooth overlay fadeout
       const t3 = window.setTimeout(() => {
         if (dismissed) return;
-        overlay.classList.add("glass-overlay-fadeout");
-      }, 1550);
+        overlay.classList.add("iris-overlay-fadeout");
+      }, 1600);
       timers.push(t3);
 
-      // Phase 5 (t = 1850ms): Resolve and remove
+      // Phase 5 (t = 1880ms): Resolve and remove
       const t4 = window.setTimeout(() => {
         finish();
-      }, 1850);
+      }, 1880);
       timers.push(t4);
     }
 
@@ -229,14 +204,14 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       resolve();
     }
 
-    breachBtn.addEventListener("click", (e) => {
+    actuatorBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      strikeGlass();
+      dilateIris();
     });
 
-    glassPane.addEventListener("click", (e) => {
+    irisContainer.addEventListener("click", (e) => {
       e.stopPropagation();
-      strikeGlass();
+      dilateIris();
     });
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -249,19 +224,19 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       if (e.key === "Enter" || e.key === " ") {
         e.stopPropagation();
         e.preventDefault();
-        strikeGlass();
+        dilateIris();
         return;
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
 
-    // Auto-strike fallback after 5.0s if user is idle
-    const autoStrike = window.setTimeout(() => {
+    // Auto-dilate fallback after 5.0s if user is idle
+    const autoDilate = window.setTimeout(() => {
       if (!running && !dismissed) {
-        strikeGlass();
+        dilateIris();
       }
     }, 5000);
-    timers.push(autoStrike);
+    timers.push(autoDilate);
   });
 }

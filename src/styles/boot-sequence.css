@@ -1,26 +1,25 @@
 /* ==========================================================================
-   COMMAND VAULT v0.17.0 - TACTICAL BALLISTIC GLASS SHATTER (STYLE 4)
-   Cinematic Kinetic Strike & Structural Fracture Stasis Breach
+   COMMAND VAULT v0.17.0 - MECHANICAL IRIS APERTURE (STYLE 5)
+   Cinematic Concentric Shutter Blades & Radial Optical Dilation
    ========================================================================== */
 
-.cyber-boot-overlay.glass-breach-overlay {
+.cyber-boot-overlay.iris-aperture-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(2, 5, 12, 0.96);
-  backdrop-filter: blur(8px);
+  background: #020409;
   color: var(--text, #d0e4ff);
   font-family: var(--font-code, monospace);
   user-select: none;
-  cursor: crosshair;
+  cursor: pointer;
   overflow: hidden;
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cyber-boot-overlay.glass-overlay-fadeout {
+.cyber-boot-overlay.iris-overlay-fadeout {
   opacity: 0;
   pointer-events: none;
 }
@@ -28,7 +27,7 @@
 /* ==========================================================================
    STAGE & RADIANT FLASH
    ========================================================================== */
-.glass-stage {
+.iris-stage {
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -39,204 +38,164 @@
   z-index: 10;
 }
 
-.glass-breach-flash {
+.iris-breach-flash {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 5;
   background: radial-gradient(
-    ellipse at center,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(0, 240, 255, 0.9) 35%,
-    rgba(0, 85, 255, 0.7) 65%,
-    rgba(2, 5, 12, 0) 85%
+    circle at center,
+    #ffffff 0%,
+    #00f0ff 30%,
+    #0055ff 60%,
+    rgba(2, 4, 9, 0) 85%
   );
   opacity: 0;
-  transition: opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.glass-breach-flash.breach-blooming {
+.iris-breach-flash.breach-blooming {
   opacity: 1;
 }
 
 /* ==========================================================================
-   THE BALLISTIC GLASS PANE
+   THE MECHANICAL IRIS APERTURE CONTAINER
    ========================================================================== */
-.ballistic-glass-pane {
-  position: absolute;
-  inset: 28px;
-  border-radius: 8px;
-  z-index: 20;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(8, 16, 30, 0.85) 45%,
-    rgba(3, 7, 16, 0.96) 100%
-  );
-  border: 2px solid rgba(0, 240, 255, 0.35);
-  box-shadow:
-    0 0 70px rgba(0, 0, 0, 0.9),
-    inset 0 0 50px rgba(0, 240, 255, 0.12);
+.iris-aperture-container {
+  position: relative;
+  width: 700px;
+  height: 700px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 20;
 }
 
-.ballistic-glass-pane.glass-shaking {
-  animation: glass-impact-shake 0.36s ease-in-out;
+.iris-aperture-container.iris-shaking {
+  animation: iris-shake 0.36s ease-in-out;
 }
 
-@keyframes glass-impact-shake {
+@keyframes iris-shake {
   0% { transform: translate(0, 0); }
-  20% { transform: translate(-6px, 4px) scale(0.99); }
-  40% { transform: translate(6px, -4px) scale(1.01); }
-  60% { transform: translate(-4px, -2px) scale(0.995); }
-  80% { transform: translate(4px, 2px) scale(1.005); }
-  100% { transform: translate(0, 0) scale(1); }
+  20% { transform: translate(-4px, 3px); }
+  40% { transform: translate(4px, -3px); }
+  60% { transform: translate(-3px, -2px); }
+  80% { transform: translate(3px, 2px); }
+  100% { transform: translate(0, 0); }
 }
-
-.ballistic-glass-pane.glass-shattered {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Diagonal Specular Reflection */
-.glass-reflection-glare {
-  position: absolute;
-  top: -60%;
-  left: -60%;
-  width: 220%;
-  height: 220%;
-  background: linear-gradient(
-    45deg,
-    transparent 42%,
-    rgba(255, 255, 255, 0.05) 46%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.05) 54%,
-    transparent 58%
-  );
-  pointer-events: none;
-  transform: rotate(-25deg);
-}
-
-/* Steel Mounting Brackets */
-.glass-bracket {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  background: #1c2635;
-  border: 2px solid #3d4f66;
-  box-shadow: inset 0 0 8px #000;
-  border-radius: 4px;
-  z-index: 21;
-}
-
-.bracket-tl { top: 12px; left: 12px; }
-.bracket-tr { top: 12px; right: 12px; }
-.bracket-bl { bottom: 12px; left: 12px; }
-.bracket-br { bottom: 12px; right: 12px; }
 
 /* ==========================================================================
-   SVG FRACTAL LIGHTNING CRACKS WEB
+   OUTER ARMORED CHASSIS & PERIMETER CLAMPS
    ========================================================================== */
-.glass-fractal-cracks {
+.iris-outer-chassis {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  border-radius: 50%;
+  border: 14px solid #141d2a;
+  box-shadow:
+    0 0 70px rgba(0, 0, 0, 0.95),
+    inset 0 0 50px rgba(0, 0, 0, 0.9);
   z-index: 22;
-  opacity: 0;
-  transition: opacity 0.08s ease;
+  pointer-events: none;
 }
 
-.ballistic-glass-pane.glass-cracking .glass-fractal-cracks {
-  opacity: 1;
+.iris-clamps-container {
+  position: absolute;
+  inset: 0;
 }
 
-.crack-web-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+.iris-clamp {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background: #233044;
+  border: 1px solid #4a6385;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-.crack-path {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.clamp-pos-0 { top: 12px; left: calc(50% - 14px); }
+.clamp-pos-1 { top: 96px; right: 96px; }
+.clamp-pos-2 { top: calc(50% - 14px); right: 12px; }
+.clamp-pos-3 { bottom: 96px; right: 96px; }
+.clamp-pos-4 { bottom: 12px; left: calc(50% - 14px); }
+.clamp-pos-5 { bottom: 96px; left: 96px; }
+.clamp-pos-6 { top: calc(50% - 14px); left: 12px; }
+.clamp-pos-7 { top: 96px; left: 96px; }
+
+.clamp-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffaa00;
+  box-shadow: 0 0 8px #ffaa00;
+  transition: background 0.3s, box-shadow 0.3s;
 }
 
-.crack-primary {
-  stroke: #ffffff;
-  stroke-width: 4;
-  filter: drop-shadow(0 0 8px #00f0ff);
-}
-
-.crack-secondary {
-  stroke: rgba(0, 240, 255, 0.85);
-  stroke-width: 2.5;
-  filter: drop-shadow(0 0 6px #00f0ff);
-}
-
-.crack-ring {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.65);
-  stroke-width: 2;
-  stroke-dasharray: 8 5;
+.iris-aperture-container.iris-unlatching .clamp-led {
+  background: #00ff9d;
+  box-shadow: 0 0 12px #00ff9d;
 }
 
 /* ==========================================================================
-   3D POLYGONAL SHATTER SHARDS
+   8 INTERLOCKING TITANIUM SHUTTER BLADES
    ========================================================================== */
-.glass-shards-container {
+.iris-blades-container {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 24;
+  inset: 14px;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 15;
 }
 
-.glass-shard {
+.iris-blade {
   position: absolute;
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.5) 0%,
-    rgba(0, 240, 255, 0.3) 50%,
-    rgba(5, 15, 30, 0.7) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
-  opacity: 0;
+  width: 360px;
+  height: 360px;
+  top: calc(50% - 180px);
+  left: calc(50% - 180px);
+  transform-origin: center center;
+  pointer-events: none;
+  clip-path: polygon(50% 50%, 100% 0%, 100% 100%, 0% 100%);
+  background: linear-gradient(135deg, #1e2838 0%, #101622 55%, #182230 100%);
+  border: 1px solid rgba(0, 240, 255, 0.22);
+  box-shadow:
+    inset 0 0 35px rgba(0, 0, 0, 0.85),
+    0 4px 20px rgba(0, 0, 0, 0.9);
+  transform: rotate(var(--blade-angle, 0deg)) translate(35px, 35px);
+  transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.blade-surface {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.blade-rib {
+  position: absolute;
   top: 50%;
   left: 50%;
-  clip-path: polygon(50% 0%, 100% 65%, 15% 100%);
-  transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.5s ease;
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
+  transform: rotate(45deg);
 }
 
-/* 16 Shard Scatter Offsets */
-.ballistic-glass-pane.glass-shattered .shard-idx-0 { transform: translate(-280px, -240px) rotate(140deg) scale(0.6); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-1 { transform: translate(320px, -220px) rotate(-110deg) scale(0.7); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-2 { transform: translate(-340px, 120px) rotate(65deg) scale(0.8); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-3 { transform: translate(290px, 200px) rotate(-150deg) scale(0.65); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-4 { transform: translate(-140px, -320px) rotate(220deg) scale(0.5); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-5 { transform: translate(180px, -300px) rotate(-70deg) scale(0.6); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-6 { transform: translate(-220px, 280px) rotate(115deg) scale(0.75); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-7 { transform: translate(250px, 310px) rotate(-190deg) scale(0.55); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-8 { transform: translate(-420px, -90px) rotate(80deg) scale(0.6); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-9 { transform: translate(440px, -80px) rotate(-130deg) scale(0.7); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-10 { transform: translate(-80px, 380px) rotate(160deg) scale(0.5); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-11 { transform: translate(90px, 390px) rotate(-85deg) scale(0.65); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-12 { transform: translate(-360px, -360px) rotate(195deg) scale(0.6); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-13 { transform: translate(380px, -350px) rotate(-165deg) scale(0.7); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-14 { transform: translate(-380px, 360px) rotate(105deg) scale(0.55); opacity: 1; }
-.ballistic-glass-pane.glass-shattered .shard-idx-15 { transform: translate(390px, 370px) rotate(-145deg) scale(0.65); opacity: 1; }
+/* Radial Dilation of Iris Blades */
+.iris-aperture-container.iris-opening .iris-blade {
+  transform: rotate(calc(var(--blade-angle, 0deg) + 40deg)) translate(330px, 330px);
+}
 
 /* ==========================================================================
-   CENTRAL KINETIC TARGET ASSEMBLY
+   CENTRAL APERTURE HUB & TRIGGER ASSEMBLY
    ========================================================================== */
-.kinetic-impact-assembly {
+.iris-hub-assembly {
   position: relative;
   z-index: 30;
   display: flex;
@@ -244,44 +203,44 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-.ballistic-glass-pane.glass-shattered .kinetic-impact-assembly {
+.iris-aperture-container.iris-opening .iris-hub-assembly {
   opacity: 0;
-  transform: scale(0.6);
+  transform: scale(1.35);
   pointer-events: none;
 }
 
 /* Rotating Crosshair Ring */
-.kinetic-crosshair-ring {
+.iris-crosshair-ring {
   position: absolute;
   width: 230px;
   height: 230px;
   border-radius: 50%;
-  border: 2px dashed rgba(255, 71, 87, 0.45);
+  border: 2px dashed rgba(0, 240, 255, 0.4);
   box-shadow:
-    0 0 25px rgba(255, 71, 87, 0.25),
-    inset 0 0 25px rgba(255, 71, 87, 0.15);
-  animation: crosshair-spin 26s linear infinite;
+    0 0 25px rgba(0, 240, 255, 0.2),
+    inset 0 0 25px rgba(0, 240, 255, 0.15);
+  animation: iris-ring-spin 28s linear infinite;
   pointer-events: none;
 }
 
-@keyframes crosshair-spin {
+@keyframes iris-ring-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* Kinetic Actuator Strike Button */
-.kinetic-breach-btn {
-  width: 115px;
-  height: 115px;
+/* Actuator Trigger Button */
+.iris-actuator-btn {
+  width: 125px;
+  height: 125px;
   border-radius: 50%;
-  background: radial-gradient(circle, #20080a 0%, #0d0305 60%, #000 100%);
-  border: 3px solid #ff4757;
+  background: radial-gradient(circle, #0a1322 0%, #03060c 70%, #000 100%);
+  border: 3px solid #00f0ff;
   box-shadow:
-    0 0 35px rgba(255, 71, 87, 0.65),
-    inset 0 0 25px rgba(255, 71, 87, 0.35);
+    0 0 35px rgba(0, 240, 255, 0.65),
+    inset 0 0 25px rgba(0, 240, 255, 0.35);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -291,35 +250,34 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.kinetic-breach-btn:hover,
-.kinetic-breach-btn:focus-visible {
-  transform: scale(1.12);
+.iris-actuator-btn:hover,
+.iris-actuator-btn:focus-visible {
+  transform: scale(1.1);
   border-color: #00ff9d;
   box-shadow:
-    0 0 55px rgba(0, 255, 157, 0.85),
+    0 0 50px rgba(0, 255, 157, 0.8),
     inset 0 0 30px rgba(0, 255, 157, 0.45);
 }
 
-.kinetic-breach-btn:active {
-  transform: scale(0.94);
+.iris-actuator-btn:active {
+  transform: scale(0.95);
 }
 
-/* Target Crosshair SVG */
-.target-crosshair-svg {
+.iris-svg-icon {
   width: 52px;
   height: 52px;
-  color: #ff4757;
-  filter: drop-shadow(0 0 8px #ff4757);
+  color: #00f0ff;
+  filter: drop-shadow(0 0 8px #00f0ff);
   transition: color 0.22s, filter 0.22s;
 }
 
-.kinetic-breach-btn:hover .target-crosshair-svg {
+.iris-actuator-btn:hover .iris-svg-icon {
   color: #00ff9d;
   filter: drop-shadow(0 0 12px #00ff9d);
 }
 
 /* Labels */
-.kinetic-title-label {
+.iris-title-label {
   margin-top: 32px;
   font-size: 0.80rem;
   font-weight: 800;
@@ -329,10 +287,10 @@
   text-transform: uppercase;
 }
 
-.kinetic-status-badge {
+.iris-status-badge {
   margin-top: 10px;
   padding: 5px 18px;
-  background: rgba(5, 10, 20, 0.9);
+  background: rgba(5, 12, 24, 0.9);
   border: 1px solid rgba(0, 240, 255, 0.55);
   border-radius: 4px;
   font-size: 0.65rem;
@@ -343,19 +301,19 @@
   transition: all 0.3s ease;
 }
 
-.kinetic-status-badge.status-impact {
+.iris-status-badge.status-unlatching {
   border-color: #ffaa00;
   color: #ffaa00;
   text-shadow: 0 0 10px #ffaa00;
 }
 
-.kinetic-status-badge.status-cracking {
-  border-color: #ff4757;
-  color: #ff4757;
-  text-shadow: 0 0 12px #ff4757;
+.iris-status-badge.status-open {
+  border-color: #00ff9d;
+  color: #00ff9d;
+  text-shadow: 0 0 12px #00ff9d;
 }
 
-.kinetic-hint-label {
+.iris-hint-label {
   margin-top: 12px;
   font-size: 0.70rem;
   letter-spacing: 0.15em;
@@ -363,7 +321,7 @@
   text-align: center;
 }
 
-.kinetic-skip-hint {
+.iris-skip-hint {
   margin-top: 8px;
   font-size: 0.60rem;
   color: #64748b;
