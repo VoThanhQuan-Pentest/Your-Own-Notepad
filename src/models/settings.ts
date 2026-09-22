@@ -14,6 +14,18 @@ export const accentThemes = [
   "ice",
   "indigo",
   "ruby",
+  "emerald",
+  "amber",
+  "violet",
+  "teal",
+  "rose",
+  "magma",
+  "mint",
+  "coral",
+  "bronze",
+  "azure",
+  "fuchsia",
+  "silver",
 ] as const;
 export type AccentTheme = (typeof accentThemes)[number];
 
