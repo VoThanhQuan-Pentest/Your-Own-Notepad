@@ -617,227 +617,148 @@
    INTERACTIVE NUCLEAR IGNITION SWITCH (SAFETY COVER & IGNITION BUTTON)
    ========================================================================== */
 
-.boot-ignition-pod {
+/* ==========================================================================
+   STYLE 4: 3D FLOATING QUANTUM TESSERACT & ENERGY ORB
+   ========================================================================== */
+
+.boot-tesseract-hub {
   position: relative;
   width: 100%;
-  max-width: 290px;
-  perspective: 1000px;
+  max-width: 310px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  background: radial-gradient(circle at center, rgba(35, 22, 10, 0.85) 0%, rgba(12, 6, 2, 0.96) 100%);
-  border: 1px solid rgba(255, 170, 0, 0.5);
-  border-radius: 8px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: radial-gradient(circle at 50% 45%, rgba(0, 240, 255, 0.08) 0%, rgba(5, 12, 24, 0.92) 80%);
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
+  border-radius: 12px;
   box-shadow:
-    0 0 25px rgba(255, 170, 0, 0.2),
-    inset 0 0 20px rgba(0, 0, 0, 0.8);
+    0 0 35px rgba(0, 240, 255, 0.15),
+    inset 0 0 25px rgba(0, 0, 0, 0.85);
   margin: 4px 0;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.boot-ignition-pod.engaged-hidden {
+.boot-tesseract-hub:hover,
+.boot-tesseract-hub:focus-visible {
+  border-color: var(--accent, #00ffff);
+  box-shadow:
+    0 0 45px rgba(0, 240, 255, 0.35),
+    inset 0 0 30px rgba(0, 240, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.boot-tesseract-hub.engaged-hidden {
   opacity: 0;
-  transform: scale(0.85);
+  transform: scale(0.05);
   pointer-events: none;
+  transition: all 0.28s cubic-bezier(0.7, 0, 0.84, 0);
   display: none;
 }
 
-.ignition-hazard-strip {
-  width: 100%;
-  height: 6px;
-  background: repeating-linear-gradient(
-    45deg,
-    #ffaa00 0px,
-    #ffaa00 10px,
-    #181205 10px,
-    #181205 20px
-  );
-  border-radius: 2px;
-  opacity: 0.85;
-}
-
-.ignition-badge {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #ffaa00;
-  text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
-}
-
-/* 3D Hinge Housing */
-.ignition-hinge-assembly {
-  position: relative;
-  width: 130px;
-  height: 105px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform-style: preserve-3d;
-}
-
-/* Heavy Circular Nuclear Button inside */
-.boot-ignition-button {
-  position: relative;
-  width: 86px;
-  height: 86px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ff4d4d 0%, #b30000 65%, #4a0000 100%);
-  border: 3px solid #2a0000;
-  box-shadow:
-    0 0 0 2px rgba(255, 170, 0, 0.3),
-    0 8px 16px rgba(0, 0, 0, 0.8),
-    inset 0 2px 6px rgba(255, 255, 255, 0.4),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: not-allowed;
-  user-select: none;
-  outline: none;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 2;
-  opacity: 0.65;
-  filter: grayscale(0.4);
-}
-
-.boot-ignition-button .ignition-btn-icon {
-  font-size: 1.3rem;
-  line-height: 1;
-  filter: drop-shadow(0 0 4px #fff);
-}
-
-.boot-ignition-button .ignition-btn-label {
-  font-size: 0.55rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff;
-  text-shadow: 0 1px 3px #000;
-  margin-top: 3px;
-}
-
-/* When safety cover is open, button is ACTIVE & READY */
-.boot-ignition-pod.cover-open .boot-ignition-button {
-  cursor: pointer;
-  opacity: 1;
-  filter: none;
-  animation: ignition-pulse 1.2s ease-in-out infinite alternate;
-}
-
-@keyframes ignition-pulse {
-  0% {
-    box-shadow:
-      0 0 0 2px rgba(255, 50, 50, 0.6),
-      0 0 20px rgba(255, 40, 40, 0.6),
-      inset 0 2px 6px rgba(255, 255, 255, 0.6);
-  }
-  100% {
-    box-shadow:
-      0 0 0 4px rgba(255, 80, 80, 0.9),
-      0 0 35px rgba(255, 40, 40, 0.9),
-      inset 0 2px 8px rgba(255, 255, 255, 0.8);
-    transform: scale(1.03);
-  }
-}
-
-.boot-ignition-pod.cover-open .boot-ignition-button:hover {
-  transform: scale(1.06);
-  box-shadow: 0 0 45px rgba(255, 50, 50, 1);
-}
-
-.boot-ignition-pod.cover-open .boot-ignition-button:active {
-  transform: scale(0.92);
-  box-shadow: 0 0 15px rgba(255, 50, 50, 0.8);
-}
-
-/* Armored Safety Cover (Acrylic glass on 3D hinge) */
-.boot-safety-cover {
+/* Pedestal base glow */
+.tesseract-pedestal {
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 108px;
-  height: 108px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 200, 100, 0.22) 0%,
-    rgba(255, 170, 0, 0.08) 50%,
-    rgba(255, 255, 255, 0.15) 100%
-  );
-  border: 2px solid rgba(255, 170, 0, 0.65);
-  border-radius: 8px;
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.7),
-    inset 0 0 12px rgba(255, 170, 0, 0.25);
-  cursor: pointer;
-  z-index: 10;
-  transform-origin: top center;
-  transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.45s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 6px;
-}
-
-.boot-safety-cover:hover {
-  border-color: #ffaa00;
-  box-shadow:
-    0 0 18px rgba(255, 170, 0, 0.5),
-    inset 0 0 16px rgba(255, 170, 0, 0.4);
-}
-
-.safety-cover-hinge {
-  width: 44px;
-  height: 5px;
-  background: #333;
-  border: 1px solid #ffaa00;
-  border-radius: 3px 3px 0 0;
-}
-
-.safety-cover-tag {
-  font-size: 0.52rem;
-  font-weight: 800;
-  color: #ffaa00;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
-}
-
-.safety-cover-handle {
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(255, 170, 0, 0.3);
-  padding: 2px 7px;
-  border-radius: 3px;
-  border: 1px solid rgba(255, 170, 0, 0.5);
-  animation: cover-handle-pulse 1s infinite alternate;
-}
-
-@keyframes cover-handle-pulse {
-  from { opacity: 0.7; }
-  to { opacity: 1; transform: translateY(-1px); }
-}
-
-/* Flipped Cover state (rotated backwards in 3D) */
-.boot-ignition-pod.cover-open .boot-safety-cover {
-  transform: translateX(-50%) rotateX(-125deg);
-  box-shadow: 0 -12px 30px rgba(255, 170, 0, 0.35);
+  bottom: 46px;
+  width: 150px;
+  height: 18px;
+  background: radial-gradient(ellipse at center, rgba(0, 255, 157, 0.35) 0%, rgba(0, 240, 255, 0.1) 50%, transparent 75%);
+  border-radius: 50%;
+  filter: blur(4px);
   pointer-events: none;
+  animation: pedestal-pulse 2s ease-in-out infinite alternate;
 }
 
-.ignition-prompt-text {
+@keyframes pedestal-pulse {
+  0% { transform: scale(0.9); opacity: 0.5; }
+  100% { transform: scale(1.15); opacity: 0.95; }
+}
+
+/* 3D Concentric Orbital Rings */
+.tesseract-orbital-rings {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  width: 180px;
+  height: 180px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  perspective: 600px;
+}
+
+.tesseract-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.tesseract-ring.ring-1 {
+  transform: rotateX(68deg) rotateZ(0deg);
+  animation: tesseract-ring-spin-1 14s linear infinite;
+}
+
+.tesseract-ring.ring-2 {
+  inset: 15px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(0, 255, 157, 0.4);
+  transform: rotateY(68deg) rotateZ(0deg);
+  animation: tesseract-ring-spin-2 10s linear infinite reverse;
+}
+
+@keyframes tesseract-ring-spin-1 {
+  to { transform: rotateX(68deg) rotateZ(360deg); }
+}
+
+@keyframes tesseract-ring-spin-2 {
+  to { transform: rotateY(68deg) rotateZ(360deg); }
+}
+
+/* Canvas */
+.boot-tesseract-canvas {
+  width: 220px;
+  height: 220px;
+  display: block;
+  z-index: 2;
+  filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.45));
+  transition: transform 0.2s ease;
+}
+
+.boot-tesseract-hub:hover .boot-tesseract-canvas {
+  filter: drop-shadow(0 0 24px rgba(0, 240, 255, 0.8));
+}
+
+/* Tactical Prompts & Badges */
+.tesseract-prompt {
   font-size: 0.65rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
-  color: #ffaa00;
+  color: #00ff9d;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
   text-align: center;
-  animation: boot-hint-blink 1s ease-in-out infinite alternate;
+  z-index: 2;
+  animation: tesseract-prompt-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes tesseract-prompt-pulse {
+  0% { opacity: 0.75; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1.02); text-shadow: 0 0 14px rgba(0, 255, 157, 0.9); }
+}
+
+.tesseract-telemetry-badge {
+  font-size: 0.55rem;
+  font-family: var(--font-code, monospace);
+  letter-spacing: 0.10em;
+  color: var(--text-muted, #7085a0);
+  text-align: center;
+  z-index: 2;
 }
 
 /* Gravitational Singularity Collapse before Dissolve */

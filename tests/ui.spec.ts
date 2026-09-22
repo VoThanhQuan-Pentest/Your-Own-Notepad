@@ -1147,14 +1147,14 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   await expect(bootOverlay).toBeVisible();
   await expect(page.locator(".boot-laser-sweep")).toBeVisible();
   await expect(page.locator(".boot-title")).toContainText("COMMAND VAULT // TACTICAL SECURE KERNEL");
-  await expect(page.locator(".boot-ignition-pod")).toBeVisible();
+  await expect(page.locator(".boot-tesseract-hub")).toBeVisible();
 
   // Press Escape to dismiss immediately
   await page.keyboard.press("Escape");
   await expect(bootOverlay).not.toBeVisible();
 });
 
-test("v0.17.0: Nuclear Ignition Switch 2-step cover flip and engage", async ({ page }) => {
+test("v0.17.0: 3D Floating Quantum Tesseract Core engage and boot sequence", async ({ page }) => {
   await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
   await page.getByRole("button", { name: "Open settings" }).click();
@@ -1164,19 +1164,13 @@ test("v0.17.0: Nuclear Ignition Switch 2-step cover flip and engage", async ({ p
   const bootOverlay = page.locator(".cyber-boot-overlay");
   await expect(bootOverlay).toBeVisible();
 
-  const ignitionPod = page.locator(".boot-ignition-pod");
-  await expect(ignitionPod).toBeVisible();
-  await expect(ignitionPod).not.toHaveClass(/cover-open/);
+  const tesseractHub = page.locator(".boot-tesseract-hub");
+  await expect(tesseractHub).toBeVisible();
+  await expect(page.locator(".boot-tesseract-canvas")).toBeVisible();
 
-  // Step 1: Flip safety cover
-  const safetyCover = page.locator(".boot-safety-cover");
-  await safetyCover.click();
-  await expect(ignitionPod).toHaveClass(/cover-open/);
-
-  // Step 2: Press ignition button
-  const ignitionBtn = page.locator(".boot-ignition-button");
-  await ignitionBtn.click();
-  await expect(ignitionPod).toHaveClass(/engaged-hidden/);
+  // Click Tesseract to engage singularity
+  await tesseractHub.click();
+  await expect(tesseractHub).toHaveClass(/engaged-hidden/);
   await expect(page.locator(".boot-holo-center")).toBeVisible();
 
   // Escape to dismiss

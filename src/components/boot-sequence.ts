@@ -2,8 +2,6 @@ import {
   playCyberBootSequence,
   speakSystemGreeting,
   playBiometricAuthSound,
-  playPneumaticHiss,
-  playServoClick,
   playCircuitSurgeAudio,
   playLaserChirp,
   playEnergyPulse,
@@ -127,43 +125,38 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     }
     deckLeft.append(leftHeader, metricsList, oscCanvas, freqVisualizer);
 
-    // Center Deck: Interactive Nuclear Ignition Switch & Holographic Core
+    // Center Deck: 3D Floating Quantum Tesseract & Holographic Core
     const deckCenter = element("div", "boot-deck-center");
-    const phaseBanner = element("div", "boot-phase-banner", "STANDBY // AWAITING OPERATOR IGNITION");
+    const phaseBanner = element("div", "boot-phase-banner", "STANDBY // QUANTUM TESSERACT SINGULARITY");
 
-    // 1. Interactive Nuclear Ignition Switch Pod
-    const ignitionPod = element("div", "boot-ignition-pod");
-    const hazardStripTop = element("div", "ignition-hazard-strip");
-    const ignitionBadge = element("div", "ignition-badge", "DEFCON 1 // QUANTUM CORE IGNITION");
+    // 1. 3D Floating Quantum Tesseract Hub
+    const tesseractHub = element("div", "boot-tesseract-hub");
+    tesseractHub.setAttribute("role", "button");
+    tesseractHub.setAttribute("tabindex", "0");
+    tesseractHub.setAttribute("aria-label", "Activate Quantum Tesseract Core");
 
-    const hingeAssembly = element("div", "ignition-hinge-assembly");
+    const tesseractPedestal = element("div", "tesseract-pedestal");
+    const tesseractRings = element("div", "tesseract-orbital-rings");
+    const ring1 = element("div", "tesseract-ring ring-1");
+    const ring2 = element("div", "tesseract-ring ring-2");
+    tesseractRings.append(ring1, ring2);
 
-    // Heavy Ignition Button
-    const ignitionBtn = element("button", "boot-ignition-button");
-    ignitionBtn.type = "button";
-    ignitionBtn.title = "Engage Quantum Core";
-    const btnIcon = element("span", "ignition-btn-icon", "☢️");
-    const btnLabel = element("span", "ignition-btn-label", "ENGAGE CORE");
-    ignitionBtn.append(btnIcon, btnLabel);
+    const tesseractCanvas = element("canvas", "boot-tesseract-canvas") as HTMLCanvasElement;
+    tesseractCanvas.width = 220;
+    tesseractCanvas.height = 220;
 
-    // Safety Armored Acrylic Glass Cover (3D hinge)
-    const safetyCover = element("div", "boot-safety-cover");
-    safetyCover.title = "Click to lift safety cover";
-    const coverHinge = element("div", "safety-cover-hinge");
-    const coverTag = element("div", "safety-cover-tag", "[ SAFETY LOCK ENGAGED ]");
-    const coverHandle = element("div", "safety-cover-handle", "⏏ LIFT COVER");
-    safetyCover.append(coverHinge, coverTag, coverHandle);
-
-    hingeAssembly.append(ignitionBtn, safetyCover);
-
-    const promptText = element(
+    const tesseractPrompt = element(
       "div",
-      "ignition-prompt-text",
-      "[ 1. CLICK COVER TO LIFT ➔ 2. PRESS IGNITION BUTTON ]",
+      "tesseract-prompt",
+      "✦ CLICK TESSERACT OR PRESS SPACE TO ENGAGE ✦",
     );
-    const hazardStripBottom = element("div", "ignition-hazard-strip");
+    const tesseractBadge = element(
+      "div",
+      "tesseract-telemetry-badge",
+      "[ 4D TESSERACT // FLUX: 5.20 GHz // READY ]",
+    );
 
-    ignitionPod.append(hazardStripTop, ignitionBadge, hingeAssembly, promptText, hazardStripBottom);
+    tesseractHub.append(tesseractPedestal, tesseractRings, tesseractCanvas, tesseractPrompt, tesseractBadge);
 
     // 2. Holographic Quantum Core (revealed once engaged)
     const holoCenter = element("div", "boot-holo-center");
@@ -188,14 +181,14 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     progressContainer.append(progressHeader, progressTrack);
 
     const skipHint = element("span", "boot-skip-hint", "[ ESC TO SKIP // SPACE TO ENGAGE ]");
-    deckCenter.append(phaseBanner, ignitionPod, holoCenter, clearanceContainer, progressContainer, skipHint);
+    deckCenter.append(phaseBanner, tesseractHub, holoCenter, clearanceContainer, progressContainer, skipHint);
 
     // Right Deck: Real-time Kernel POST Stream
     const deckRight = element("div", "boot-deck-right");
     const rightHeader = element("div", "boot-deck-header", "// REAL-TIME POST STREAM");
     const terminalLog = element("div", "boot-terminal-log");
     const hexStream = element("div", "boot-hex-stream");
-    hexStream.innerHTML = `<span class="hex-addr">0x7FFE04</span> <span class="hex-bytes">48 89 E5 31 C0 48 83 EC</span> <span class="hex-tag">[STANDBY_ARMED]</span>`;
+    hexStream.innerHTML = `<span class="hex-addr">0x7FFE04</span> <span class="hex-bytes">48 89 E5 31 C0 48 83 EC</span> <span class="hex-tag">[TESSERACT_STABLE]</span>`;
     const terminalPrompt = element("div", "boot-terminal-prompt", "> _");
     deckRight.append(rightHeader, terminalLog, hexStream, terminalPrompt);
 
@@ -205,9 +198,192 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     document.body.append(overlay);
 
     let dismissed = false;
-    let coverOpen = false;
     let running = false;
+    let isHovered = false;
     const timers: number[] = [];
+
+    // ==========================================
+    // 4D Tesseract Mathematical Geometry Engine
+    // ==========================================
+    const tesseractCtx = tesseractCanvas.getContext("2d");
+    let tesseractAnimId = 0;
+
+    // 16 4D Vertices (±1, ±1, ±1, ±1)
+    const vertices4D: number[][] = [];
+    for (let i = 0; i < 16; i++) {
+      vertices4D.push([
+        i & 1 ? 1 : -1,
+        i & 2 ? 1 : -1,
+        i & 4 ? 1 : -1,
+        i & 8 ? 1 : -1,
+      ]);
+    }
+
+    // 32 Edges (differ by exactly one coordinate)
+    const tesseractEdges: Array<[number, number]> = [];
+    for (let i = 0; i < 16; i++) {
+      for (let j = i + 1; j < 16; j++) {
+        const diff = i ^ j;
+        if ((diff & (diff - 1)) === 0) {
+          tesseractEdges.push([i, j]);
+        }
+      }
+    }
+
+    // Orbiting Quantum Particle Dust
+    const quantumParticles: Array<{
+      angle: number;
+      speed: number;
+      radius: number;
+      y: number;
+      size: number;
+      alpha: number;
+    }> = [];
+    for (let i = 0; i < 28; i++) {
+      quantumParticles.push({
+        angle: Math.random() * Math.PI * 2,
+        speed: (Math.random() * 0.02 + 0.01) * (Math.random() > 0.5 ? 1 : -1),
+        radius: Math.random() * 55 + 30,
+        y: (Math.random() - 0.5) * 60,
+        size: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.6 + 0.3,
+      });
+    }
+
+    let angleXW = 0;
+    let angleZW = 0;
+    let angleXZ = 0;
+    let angleYZ = 0;
+    let collapseScale = 1.0;
+    let collapsing = false;
+
+    function renderTesseract() {
+      if (dismissed || !tesseractCtx) return;
+
+      const speedFactor = collapsing ? 5.5 : isHovered ? 2.4 : 1.0;
+      angleXW += 0.012 * speedFactor;
+      angleZW += 0.009 * speedFactor;
+      angleXZ += 0.015 * speedFactor;
+      angleYZ += 0.007 * speedFactor;
+
+      if (collapsing && collapseScale > 0.02) {
+        collapseScale -= 0.055;
+      }
+
+      const w = tesseractCanvas.width;
+      const h = tesseractCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      tesseractCtx.clearRect(0, 0, w, h);
+
+      // 1. Central Pulsing Quantum Core Glow
+      const corePulse = (Math.sin(angleXZ * 2) + 1) * 0.5;
+      const coreRadius = (18 + corePulse * 8) * collapseScale;
+      const coreGrad = tesseractCtx.createRadialGradient(cx, cy, 0, cx, cy, coreRadius);
+      coreGrad.addColorStop(0, "#ffffff");
+      coreGrad.addColorStop(0.35, "rgba(0, 240, 255, 0.85)");
+      coreGrad.addColorStop(0.7, "rgba(0, 255, 157, 0.35)");
+      coreGrad.addColorStop(1, "transparent");
+
+      tesseractCtx.fillStyle = coreGrad;
+      tesseractCtx.beginPath();
+      tesseractCtx.arc(cx, cy, coreRadius, 0, Math.PI * 2);
+      tesseractCtx.fill();
+
+      // 2. Project 4D Vertices -> 3D -> 2D
+      const cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
+      const cosZW = Math.cos(angleZW), sinZW = Math.sin(angleZW);
+      const cosXZ = Math.cos(angleXZ), sinXZ = Math.sin(angleXZ);
+      const cosYZ = Math.cos(angleYZ), sinYZ = Math.sin(angleYZ);
+
+      const projected2D: Array<{ x: number; y: number; z: number }> = [];
+
+      for (const v of vertices4D) {
+        // XW plane rotation
+        const x1 = v[0] * cosXW - v[3] * sinXW;
+        const w1 = v[0] * sinXW + v[3] * cosXW;
+
+        // ZW plane rotation
+        const z1 = v[2] * cosZW - w1 * sinZW;
+        const w2 = v[2] * sinZW + w1 * cosZW;
+
+        // XZ plane rotation
+        const x2 = x1 * cosXZ - z1 * sinXZ;
+        const z2 = x1 * sinXZ + z1 * cosXZ;
+
+        // YZ plane rotation
+        const y2 = v[1] * cosYZ - z2 * sinYZ;
+        const z3 = v[1] * sinYZ + z2 * cosYZ;
+
+        // 4D to 3D perspective projection
+        const dist4D = 2.4;
+        const scale4D = 1 / (dist4D - w2);
+        const p3X = x2 * scale4D;
+        const p3Y = y2 * scale4D;
+        const p3Z = z3 * scale4D;
+
+        // 3D to 2D perspective projection
+        const dist3D = 3.0;
+        const scale3D = 1 / (dist3D - p3Z);
+        const screenX = cx + p3X * scale3D * 190 * collapseScale;
+        const screenY = cy + p3Y * scale3D * 190 * collapseScale;
+
+        projected2D.push({ x: screenX, y: screenY, z: p3Z });
+      }
+
+      // 3. Draw 32 Tesseract Edges
+      tesseractCtx.lineWidth = isHovered ? 2.0 : 1.4;
+      tesseractCtx.shadowBlur = isHovered ? 12 : 7;
+
+      for (const [i, j] of tesseractEdges) {
+        const p1 = projected2D[i];
+        const p2 = projected2D[j];
+        if (!p1 || !p2) continue;
+
+        const avgZ = (p1.z + p2.z) / 2;
+        const alpha = Math.max(0.18, Math.min(0.95, (avgZ + 1.2) * 0.45));
+
+        tesseractCtx.strokeStyle = isHovered
+          ? `rgba(92, 234, 255, ${alpha})`
+          : `rgba(0, 240, 255, ${alpha})`;
+        tesseractCtx.shadowColor = isHovered ? "#5ceaff" : "#00f0ff";
+
+        tesseractCtx.beginPath();
+        tesseractCtx.moveTo(p1.x, p1.y);
+        tesseractCtx.lineTo(p2.x, p2.y);
+        tesseractCtx.stroke();
+      }
+
+      // 4. Draw 16 Glowing Vertices
+      for (const p of projected2D) {
+        const vRadius = (p.z > 0 ? 3.2 : 2.2) * collapseScale;
+        tesseractCtx.fillStyle = "#ffffff";
+        tesseractCtx.shadowColor = isHovered ? "#00ff9d" : "#00f0ff";
+        tesseractCtx.shadowBlur = 10;
+        tesseractCtx.beginPath();
+        tesseractCtx.arc(p.x, p.y, Math.max(1, vRadius), 0, Math.PI * 2);
+        tesseractCtx.fill();
+      }
+
+      // 5. Draw Orbiting Quantum Particles
+      for (const pt of quantumParticles) {
+        pt.angle += pt.speed * (isHovered ? 2.2 : 1.0);
+        const px = cx + Math.cos(pt.angle) * pt.radius * collapseScale;
+        const py = cy + pt.y * collapseScale + Math.sin(pt.angle) * 8;
+
+        tesseractCtx.fillStyle = `rgba(0, 255, 157, ${pt.alpha * collapseScale})`;
+        tesseractCtx.shadowColor = "#00ff9d";
+        tesseractCtx.shadowBlur = 6;
+        tesseractCtx.beginPath();
+        tesseractCtx.arc(px, py, pt.size * collapseScale, 0, Math.PI * 2);
+        tesseractCtx.fill();
+      }
+
+      tesseractCtx.shadowBlur = 0;
+      tesseractAnimId = requestAnimationFrame(renderTesseract);
+    }
+    tesseractAnimId = requestAnimationFrame(renderTesseract);
 
     function renderOsc() {
       if (dismissed || !oscCtx) return;
@@ -242,6 +418,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       dismissed = true;
 
       if (oscAnimId) cancelAnimationFrame(oscAnimId);
+      if (tesseractAnimId) cancelAnimationFrame(tesseractAnimId);
       window.removeEventListener("keydown", onKeyDown, true);
 
       timers.forEach((t) => window.clearTimeout(t));
@@ -255,21 +432,12 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       }, 260);
     };
 
-    const flipCover = () => {
-      if (coverOpen || dismissed || running) return;
-      coverOpen = true;
-      ignitionPod.classList.add("cover-open");
-      coverTag.textContent = "[ DISENGAGED ]";
-      promptText.textContent = "[ SAFETY DISENGAGED ➔ PRESS BUTTON OR ENTER ]";
-      playPneumaticHiss(true);
-      playServoClick();
-    };
-
     const engageCore = () => {
       if (running || dismissed) return;
       running = true;
+      collapsing = true;
 
-      const rect = ignitionBtn.getBoundingClientRect();
+      const rect = tesseractCanvas.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
@@ -279,23 +447,33 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       playLaserChirp();
       playCyberBootSequence();
 
-      ignitionPod.classList.add("engaged-hidden");
-      holoCenter.style.display = "flex";
-      holoCenter.classList.add("core-igniting");
+      tesseractHub.classList.add("engaged-hidden");
+      window.setTimeout(() => {
+        holoCenter.style.display = "flex";
+        holoCenter.classList.add("core-igniting");
+      }, 160);
 
       start6SecondTimeline();
     };
 
-    safetyCover.addEventListener("click", (e) => {
-      e.stopPropagation();
-      flipCover();
+    tesseractHub.addEventListener("pointerenter", () => {
+      isHovered = true;
+      playEnergyPulse();
     });
 
-    ignitionBtn.addEventListener("click", (e) => {
+    tesseractHub.addEventListener("pointerleave", () => {
+      isHovered = false;
+    });
+
+    tesseractHub.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (!coverOpen) {
-        flipCover();
-      } else {
+      engageCore();
+    });
+
+    tesseractHub.addEventListener("keydown", (e) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.stopPropagation();
+        e.preventDefault();
         engageCore();
       }
     });
@@ -309,9 +487,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       if (e.key === " " || e.key === "Enter") {
         e.stopPropagation();
         e.preventDefault();
-        if (!coverOpen) {
-          flipCover();
-        } else if (!running) {
+        if (!running) {
           engageCore();
         }
       }
@@ -322,12 +498,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     // Auto-engage fallback after 5.0 seconds if user is idle
     const autoEngageTimer = window.setTimeout(() => {
       if (!running && !dismissed) {
-        flipCover();
-        window.setTimeout(() => {
-          if (!running && !dismissed) {
-            engageCore();
-          }
-        }, 450);
+        engageCore();
       }
     }, 5000);
     timers.push(autoEngageTimer);
