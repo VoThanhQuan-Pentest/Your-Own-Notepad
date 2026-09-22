@@ -77,11 +77,7 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   const tacticalHeader = element("div", "tactical-center-header");
   const tacticalTitle = element("span", "tactical-title", "// PENTEST TARGET RECON & RADAR TELEMETRY");
 
-  const modeToggle = element("div", "tactical-mode-toggle");
-  const redBtn = button("tactical-mode-btn active red", "RED TEAM [OFFENSIVE]");
-  const blueBtn = button("tactical-mode-btn blue", "BLUE TEAM [DEFENSIVE]");
-  modeToggle.append(redBtn, blueBtn);
-  tacticalHeader.append(tacticalTitle, modeToggle);
+  tacticalHeader.append(tacticalTitle);
 
   const tacticalBody = element("div", "tactical-center-body");
 
@@ -95,24 +91,6 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   const radar = createTacticalRadar(160, targets, (target) => {
     playTacticalTargetLock();
     if (target.search) options.onSearchQuery?.(target.search);
-  });
-
-  redBtn.addEventListener("click", () => {
-    redBtn.classList.add("active");
-    blueBtn.classList.remove("active");
-    radar.setMode("red");
-    tacticalCenter.classList.remove("mode-blue");
-    tacticalCenter.classList.add("mode-red");
-    playTacticalTargetLock();
-  });
-
-  blueBtn.addEventListener("click", () => {
-    blueBtn.classList.add("active");
-    redBtn.classList.remove("active");
-    radar.setMode("blue");
-    tacticalCenter.classList.remove("mode-red");
-    tacticalCenter.classList.add("mode-blue");
-    playTacticalTargetLock();
   });
 
   const radarBox = element("div", "tactical-radar-box");

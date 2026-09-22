@@ -1186,18 +1186,13 @@ test("God-Tier 5.0: tactical pentest mission control, radar target acquisition, 
   await expect(page.locator(".tactical-radar-canvas")).toBeVisible();
   await expect(page.locator(".tactical-target-card")).toHaveCount(4);
 
-  // 2. Mode toggle Red vs Blue
-  const blueBtn = page.getByRole("button", { name: "BLUE TEAM [DEFENSIVE]" });
-  await blueBtn.click();
-  await expect(tacticalCenter).toHaveClass(/mode-blue/);
-
-  // 3. Click target node ALPHA-GATEWAY to launch quick recon search
+  // 2. Click target node ALPHA-GATEWAY to launch quick recon search
   const alphaCard = page.locator(".tactical-target-card").filter({ hasText: "ALPHA-GATEWAY" });
   await alphaCard.click();
   const searchInput = page.getByRole("combobox", { name: "Search commands" });
   await expect(searchInput).toHaveValue("nmap");
 
-  // 4. Open file and verify electric circuit surge on command copy
+  // 3. Open file and verify electric circuit surge on command copy
   await page.getByRole("button", { name: "OPEN FILE" }).click();
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
 
@@ -1237,16 +1232,25 @@ test("God-Tier 6.0: neural omni-palette and tactical payload generator", async (
   const omniModal = page.locator(".omni-palette-modal");
   await expect(omniModal).toBeVisible();
 
-  // Search in Omni-Palette
+  // Search in Omni-Palette for Matrix
   const omniInput = page.locator(".omni-search-input");
-  await omniInput.fill("Red Team");
-  const redTeamAction = page.locator(".omni-action-item").filter({ hasText: "Engage Red Team Mode" });
-  await expect(redTeamAction).toBeVisible();
+  await omniInput.fill("Matrix");
+  const matrixAction = page.locator(".omni-action-item").filter({ hasText: "Matrix Digital Rain" });
+  await expect(matrixAction).toBeVisible();
 
   // Execute action with Enter
   await page.keyboard.press("Enter");
   await expect(omniModal).toBeHidden();
-  await expect(page.locator("html")).toHaveAttribute("data-accent", "crimson");
+
+  // Open again and test Low Power mode
+  await page.keyboard.press("Control+Space");
+  await expect(omniModal).toBeVisible();
+  await omniInput.fill("Tiết kiệm pin");
+  const lowPowerAction = page.locator(".omni-action-item").filter({ hasText: "Chế độ Tiết kiệm pin" });
+  await expect(lowPowerAction).toBeVisible();
+  await page.keyboard.press("Enter");
+  await expect(omniModal).toBeHidden();
+  await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
 
   // Open again and test Esc close
   await page.keyboard.press("Control+Space");

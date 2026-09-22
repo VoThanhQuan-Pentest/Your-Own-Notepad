@@ -657,39 +657,6 @@
   color: var(--accent);
 }
 
-.tactical-mode-toggle {
-  display: flex;
-  gap: 8px;
-}
-
-.tactical-mode-btn {
-  padding: 4px 10px;
-  font-family: var(--font-code);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 160ms ease;
-}
-
-.tactical-mode-btn.active.red {
-  border-color: #ff3366;
-  background: rgba(255, 51, 102, 0.12);
-  color: #ff3366;
-  box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
-}
-
-.tactical-mode-btn.active.blue {
-  border-color: #00f0ff;
-  background: rgba(0, 240, 255, 0.12);
-  color: #00f0ff;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-}
-
 .tactical-center-body {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);

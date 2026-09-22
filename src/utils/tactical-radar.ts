@@ -1,6 +1,7 @@
 /**
  * Tactical Radar Scanner Canvas Engine
  * Simulates a high-precision military/pentest active target acquisition sonar.
+ * Adapts dynamically to the active UI accent theme with high-luminance glowing optics.
  */
 
 export interface TacticalRadarTarget {
@@ -17,8 +18,28 @@ export interface TacticalRadarTarget {
 export interface TacticalRadarHandle {
   element: HTMLCanvasElement;
   destroy: () => void;
-  setMode: (mode: "red" | "blue") => void;
+  setMode?: (mode: "red" | "blue") => void;
   pulseTarget: (id: string) => void;
+}
+
+function parseRgb(color: string): { r: number; g: number; b: number } {
+  const clean = color.replace("#", "").trim();
+  if (clean.length === 6) {
+    return {
+      r: parseInt(clean.slice(0, 2), 16),
+      g: parseInt(clean.slice(2, 4), 16),
+      b: parseInt(clean.slice(4, 6), 16),
+    };
+  }
+  return { r: 0, g: 255, b: 157 };
+}
+
+function boostBrightness(rgb: { r: number; g: number; b: number }, boost = 0.38) {
+  return {
+    r: Math.min(255, Math.round(rgb.r * (1 - boost) + 255 * boost)),
+    g: Math.min(255, Math.round(rgb.g * (1 - boost) + 255 * boost)),
+    b: Math.min(255, Math.round(rgb.b * (1 - boost) + 255 * boost)),
+  };
 }
 
 export function createTacticalRadar(
@@ -38,20 +59,14 @@ export function createTacticalRadar(
     return {
       element: canvas,
       destroy: () => {},
-      setMode: () => {},
       pulseTarget: () => {},
     };
   }
 
-  let mode: "red" | "blue" = "red";
   let sweepAngle = 0;
   let running = true;
   let animId = 0;
   const pulsedTargets = new Set<string>();
-
-  const primaryColor = () => (mode === "red" ? "#ff3366" : "#00f0ff");
-  const glowColor = () => (mode === "red" ? "rgba(255, 51, 102, 0.4)" : "rgba(0, 240, 255, 0.4)");
-  const phosphorTrail = () => (mode === "red" ? "rgba(255, 51, 102, 0.12)" : "rgba(0, 240, 255, 0.12)");
 
   const center = (size * window.devicePixelRatio) / 2;
   const radius = center - 8 * window.devicePixelRatio;
@@ -61,9 +76,22 @@ export function createTacticalRadar(
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Radar background rings
-    ctx.lineWidth = 1 * window.devicePixelRatio;
-    ctx.strokeStyle = mode === "red" ? "rgba(255, 51, 102, 0.18)" : "rgba(0, 240, 255, 0.18)";
+    // Dynamic theme color sampling with high-luminance boost
+    const style = getComputedStyle(document.documentElement);
+    const accent = style.getPropertyValue("--accent").trim() || "#00d4f0";
+    const bright = style.getPropertyValue("--accent-bright").trim() || "#5ceaff";
+
+    const brightRgb = parseRgb(bright || accent);
+    const ultraBrightRgb = boostBrightness(brightRgb, 0.38);
+
+    const ultraBright = `rgb(${ultraBrightRgb.r}, ${ultraBrightRgb.g}, ${ultraBrightRgb.b})`;
+    const glowColor = `rgba(${ultraBrightRgb.r}, ${ultraBrightRgb.g}, ${ultraBrightRgb.b}, 0.7)`;
+    const ringColor = `rgba(${brightRgb.r}, ${brightRgb.g}, ${brightRgb.b}, 0.32)`;
+    const phosphorTrail = `rgba(${brightRgb.r}, ${brightRgb.g}, ${brightRgb.b}, 0.24)`;
+
+    // 1. Radar background rings & grid
+    ctx.lineWidth = 1.2 * window.devicePixelRatio;
+    ctx.strokeStyle = ringColor;
 
     // Concentric range circles
     for (let step = 1; step <= 3; step++) {
@@ -80,41 +108,58 @@ export function createTacticalRadar(
     ctx.lineTo(center, center + radius);
     ctx.stroke();
 
-    // Diagonal coordinate tick marks
+    // Outer perimeter ring with luminous glow
+    ctx.save();
     ctx.beginPath();
     ctx.arc(center, center, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = primaryColor();
+    ctx.strokeStyle = ultraBright;
+    ctx.lineWidth = 1.5 * window.devicePixelRatio;
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 10;
     ctx.stroke();
+    ctx.restore();
 
     // 2. Sweeping Beam
     sweepAngle = (sweepAngle + 0.035) % (Math.PI * 2);
 
     const sweepGradient = ctx.createRadialGradient(center, center, 0, center, center, radius);
-    sweepGradient.addColorStop(0, "rgba(255, 255, 255, 0.15)");
-    sweepGradient.addColorStop(1, phosphorTrail());
+    sweepGradient.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+    sweepGradient.addColorStop(0.3, `rgba(${ultraBrightRgb.r}, ${ultraBrightRgb.g}, ${ultraBrightRgb.b}, 0.35)`);
+    sweepGradient.addColorStop(1, phosphorTrail);
 
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(center, center);
-    ctx.arc(center, center, radius, sweepAngle - 0.4, sweepAngle);
+    ctx.arc(center, center, radius, sweepAngle - 0.45, sweepAngle);
     ctx.closePath();
     ctx.fillStyle = sweepGradient;
     ctx.fill();
     ctx.restore();
 
-    // Beam Line
+    // Beam Line (Bright Neon with Bloom)
+    ctx.save();
     ctx.beginPath();
     ctx.moveTo(center, center);
     ctx.lineTo(
       center + Math.cos(sweepAngle) * radius,
       center + Math.sin(sweepAngle) * radius,
     );
-    ctx.strokeStyle = mode === "red" ? "#ff6688" : "#80f8ff";
-    ctx.lineWidth = 1.5 * window.devicePixelRatio;
-    ctx.shadowColor = glowColor();
-    ctx.shadowBlur = 8;
+    ctx.strokeStyle = ultraBright;
+    ctx.lineWidth = 2 * window.devicePixelRatio;
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 14;
     ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Center emitter beacon
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(center, center, 3.5 * window.devicePixelRatio, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = ultraBright;
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.restore();
 
     // 3. Targets
     targets.forEach((t) => {
@@ -123,21 +168,23 @@ export function createTacticalRadar(
 
       // Angle difference to sweep
       const angleDiff = Math.abs((sweepAngle - t.angle + Math.PI * 2) % (Math.PI * 2));
-      const isLit = angleDiff < 0.35 || pulsedTargets.has(t.id);
+      const isLit = angleDiff < 0.38 || pulsedTargets.has(t.id);
 
       ctx.save();
       ctx.beginPath();
-      ctx.arc(tx, ty, (isLit ? 5 : 3.5) * window.devicePixelRatio, 0, Math.PI * 2);
-      ctx.fillStyle = isLit ? "#ffffff" : primaryColor();
-      ctx.shadowColor = primaryColor();
-      ctx.shadowBlur = isLit ? 12 : 4;
+      ctx.arc(tx, ty, (isLit ? 5.5 : 4) * window.devicePixelRatio, 0, Math.PI * 2);
+      ctx.fillStyle = isLit ? "#ffffff" : ultraBright;
+      ctx.shadowColor = isLit ? "#ffffff" : glowColor;
+      ctx.shadowBlur = isLit ? 16 : 8;
       ctx.fill();
 
       if (isLit) {
         ctx.beginPath();
-        ctx.arc(tx, ty, 8 * window.devicePixelRatio, 0, Math.PI * 2);
-        ctx.strokeStyle = primaryColor();
-        ctx.lineWidth = 1 * window.devicePixelRatio;
+        ctx.arc(tx, ty, 9 * window.devicePixelRatio, 0, Math.PI * 2);
+        ctx.strokeStyle = ultraBright;
+        ctx.lineWidth = 1.5 * window.devicePixelRatio;
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = 10;
         ctx.stroke();
       }
       ctx.restore();
@@ -173,8 +220,8 @@ export function createTacticalRadar(
       running = false;
       cancelAnimationFrame(animId);
     },
-    setMode(newMode: "red" | "blue") {
-      mode = newMode;
+    setMode(_newMode?: "red" | "blue") {
+      // Kept for backward compatibility; radar now follows active theme color
     },
     pulseTarget(id: string) {
       pulsedTargets.add(id);

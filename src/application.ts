@@ -77,7 +77,6 @@ import {
   playTacticalBlip,
   playEmpDistortion,
   playCircuitSurgeAudio,
-  playTacticalTargetLock,
   isAudioMuted,
   toggleAudioMuted,
   getAudioFrequencyData,
@@ -3119,7 +3118,7 @@ export class CommandVaultApplication {
       {
         id: "toggle-matrix",
         category: "SYSTEM",
-        title: "Toggle Matrix Rain Canvas",
+        title: "Matrix Digital Rain",
         detail: "Ctrl+Alt+M - Cybernetic cascading background animation",
         run: () => {
           const active = toggleMatrixRain();
@@ -3134,7 +3133,7 @@ export class CommandVaultApplication {
       {
         id: "replay-boot",
         category: "SYSTEM",
-        title: "Replay Cyber Boot Sequence",
+        title: "Cyber Boot Sequence",
         detail: "Launch fullscreen cybernetic BIOS diagnostic sequence",
         run: () => {
           void runBootSequence(
@@ -3147,68 +3146,11 @@ export class CommandVaultApplication {
         },
       },
       {
-        id: "open-settings",
-        category: "SYSTEM",
-        title: "Open Tactical Settings",
-        detail: "Configure workspace, appearance, font sizes, and performance",
-        run: () => {
-          void this.openSettings();
-        },
-      },
-      {
-        id: "toggle-theme-mode",
-        category: "SYSTEM",
-        title: `Switch to ${this.settings.themeMode === "dark" ? "Light" : "Dark"} Mode`,
-        detail: "Toggle high-contrast dark or tactical light mode",
-        run: () => {
-          this.settings.themeMode = this.settings.themeMode === "dark" ? "light" : "dark";
-          this.applyTheme(this.settings.themeMode, this.settings.accentTheme, this.settings.customThemes, true);
-          void this.persistSettings(false);
-        },
-      },
-      {
-        id: "new-file",
-        category: "TOOLS",
-        title: "Create New Command File (.cmdnote)",
-        detail: "Ctrl+N - Add a new tactical command notebook",
-        run: () => {
-          void this.newFile();
-        },
-      },
-      {
-        id: "new-folder",
-        category: "TOOLS",
-        title: "Create New Folder",
-        detail: "Ctrl+Shift+N - Add a new organizational directory",
-        run: () => {
-          void this.newFolder();
-        },
-      },
-      {
-        id: "open-workspace",
-        category: "TOOLS",
-        title: "Open Workspace Directory",
-        detail: "Ctrl+O - Switch active workspace repository",
-        run: () => {
-          void this.chooseAndOpenWorkspace();
-        },
-      },
-      {
-        id: "refresh-workspace",
-        category: "TOOLS",
-        title: "Reload Workspace Filesystem",
-        detail: "Rescan all command notes and directories from disk",
-        run: () => {
-          void this.refreshWorkspaceFromUi();
-        },
-      },
-      {
-        id: "mode-red-team",
+        id: "mode-performance",
         category: "MODE",
-        title: "Engage Red Team Mode (Offensive Operations)",
-        detail: "Switch accent to Crimson with overclocked performance profile",
+        title: "Chế độ Hiệu năng cực đại (Overclock Full Power)",
+        detail: "Enable high-speed animations and responsive background workers",
         run: () => {
-          this.settings.accentTheme = "crimson";
           this.settings.performanceMode = "full";
           this.applySettings();
           void this.persistSettings(false);
@@ -3216,22 +3158,9 @@ export class CommandVaultApplication {
         },
       },
       {
-        id: "mode-blue-team",
-        category: "MODE",
-        title: "Engage Blue Team Mode (Defensive Shield)",
-        detail: "Switch accent to Cyan with tactical defense matrix",
-        run: () => {
-          this.settings.accentTheme = "cyan";
-          this.settings.performanceMode = "full";
-          this.applySettings();
-          void this.persistSettings(false);
-          playTacticalTargetLock();
-        },
-      },
-      {
         id: "mode-low-power",
         category: "MODE",
-        title: "Engage Low-Power Stealth Mode",
+        title: "Chế độ Tiết kiệm pin (Low Power Stealth Mode)",
         detail: "Suppress heavy animations to maximize battery efficiency",
         run: () => {
           this.settings.performanceMode = "low-power";
@@ -3240,27 +3169,41 @@ export class CommandVaultApplication {
         },
       },
       {
-        id: "mode-performance",
-        category: "MODE",
-        title: "Overclock Mode (Maximum Performance)",
-        detail: "Enable high-speed animations and responsive background workers",
+        id: "new-file",
+        category: "TOOLS",
+        title: "Tạo File Ghi Chú Mới (.cmdnote)",
+        detail: "Ctrl+N - Add a new tactical command notebook",
         run: () => {
-          this.settings.performanceMode = "full";
-          this.applySettings();
-          void this.persistSettings(false);
+          void this.newFile();
         },
       },
-      ...accentThemes.map((accent) => ({
-        id: `theme-accent-${accent}`,
-        category: "THEME" as const,
-        title: `Accent: ${accent.toUpperCase()}`,
-        detail: `Switch UI accent color matrix to ${accent}`,
+      {
+        id: "new-folder",
+        category: "TOOLS",
+        title: "Tạo Thư Mục Mới",
+        detail: "Ctrl+Shift+N - Add a new organizational directory",
         run: () => {
-          this.settings.accentTheme = accent;
-          this.applyTheme(this.settings.themeMode, accent, this.settings.customThemes, true);
-          void this.persistSettings(false);
+          void this.newFolder();
         },
-      })),
+      },
+      {
+        id: "open-workspace",
+        category: "TOOLS",
+        title: "Mở Thư Mục Workspace",
+        detail: "Ctrl+O - Switch active workspace repository",
+        run: () => {
+          void this.chooseAndOpenWorkspace();
+        },
+      },
+      {
+        id: "refresh-workspace",
+        category: "TOOLS",
+        title: "Quét Lại Filesystem (Reload)",
+        detail: "Rescan all command notes and directories from disk",
+        run: () => {
+          void this.refreshWorkspaceFromUi();
+        },
+      },
     ];
 
     openOmniPalette({ actions });
