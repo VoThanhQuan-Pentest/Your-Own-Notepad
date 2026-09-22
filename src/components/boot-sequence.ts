@@ -1,9 +1,10 @@
 import {
   playCyberBootSequence,
   speakSystemGreeting,
-  playReactorOverload,
+  playMechanicalClick,
+  playServoClick,
+  playDecryptionTick,
   playEmpDistortion,
-  playCircuitSurgeAudio,
   playLaserChirp,
 } from "../services/audio";
 import { element } from "../utils/dom";
@@ -16,14 +17,14 @@ export interface BootSequenceOptions {
 
 /**
  * Command Vault v0.17.0 - Brutalist Cybernetic Intro
- * Style 3: Lõi Phản Ứng Quá Tải (Reactor Core Supernova / Critical Ignition)
+ * Style 4: Vách Kính Cường Lực Sập Nứt (Tactical Stasis Breach / Ballistic Glass Shatter)
  *
  * Cinematic Flow:
- * - Centerpiece: Tokamak Fusion Reactor with 3 counter-rotating magnetic containment rings
- * - Interactive: Hold / click reactor core button to initiate criticality
- * - Phase 1: Turbine spools up, magnetic coils accelerate, plasma core turns white-hot (400ms)
- * - Phase 2: Containment dampers breach, rings shatter outward, arcs and EMP shockwaves blast (350ms)
- * - Phase 3: Supernova blast wave washes across screen, dissolving into Workspace (900ms)
+ * - Centerpiece: Frosted smoked ballistic glass pane with corner brackets & central reticle
+ * - Interactive: Click central kinetic reticle OR press Space / Enter to strike
+ * - Phase 1: High-velocity kinetic strike slams center, loud mechanical impact (150ms)
+ * - Phase 2: Complex fractal cracks spread like lightning to all 4 corners (300ms)
+ * - Phase 3: Glass pane shatters into tumbling 3D polygonal shards, revealing Workspace (900ms)
  */
 export function runBootSequence(options: BootSequenceOptions = {}, force = false): Promise<void> {
   return new Promise((resolve) => {
@@ -46,67 +47,111 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       return;
     }
 
-    const overlay = element("div", "cyber-boot-overlay reactor-core-overlay");
+    const overlay = element("div", "cyber-boot-overlay glass-breach-overlay");
     overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-label", "Tokamak Fusion Reactor Core Ignition");
+    overlay.setAttribute("aria-label", "Tactical Ballistic Glass Stasis Breach");
 
-    // The Reactor Stage Container
-    const reactorStage = element("div", "reactor-stage");
+    // The Glass Stage
+    const stage = element("div", "glass-stage");
 
-    // Supernova Blast Flash Layer
-    const blastFlash = element("div", "reactor-supernova-blast");
+    // Radiant Breach Light Layer behind the glass
+    const breachFlash = element("div", "glass-breach-flash");
 
-    // Reactor Chamber assembly
-    const chamber = element("div", "reactor-chamber");
+    // The Ballistic Glass Pane
+    const glassPane = element("div", "ballistic-glass-pane");
 
-    // Ambient background flux grid
-    const fluxGrid = element("div", "reactor-flux-grid");
+    // Diagonal Glass Glare Reflection
+    const glassGlare = element("div", "glass-reflection-glare");
 
-    // 3 Counter-Rotating Magnetic Containment Damper Rings
-    const ringOuter = element("div", "containment-ring ring-outer");
-    const ringMiddle = element("div", "containment-ring ring-middle");
-    const ringInner = element("div", "containment-ring ring-inner");
+    // 4 Heavy-duty Steel Corner Mounting Brackets
+    const bracketTL = element("div", "glass-bracket bracket-tl");
+    const bracketTR = element("div", "glass-bracket bracket-tr");
+    const bracketBL = element("div", "glass-bracket bracket-bl");
+    const bracketBR = element("div", "glass-bracket bracket-br");
 
-    // Central Heavy Reactor Sphere & Actuator Button
-    const coreSphere = element("div", "reactor-core-sphere");
-    const actuatorBtn = element("button", "reactor-actuator-btn");
-    actuatorBtn.setAttribute("type", "button");
-    actuatorBtn.setAttribute("aria-label", "Initiate Tokamak Reactor Critical Overload");
-
-    const plasmaOrb = element("div", "reactor-plasma-orb");
-    const coreHeatHaze = element("div", "reactor-heat-haze");
-    const coreIcon = element("div", "reactor-core-icon");
-    coreIcon.innerHTML = `
-      <svg viewBox="0 0 48 48" class="reactor-svg" fill="none" stroke="currentColor" stroke-width="2.5">
-        <circle cx="24" cy="24" r="16" stroke-dasharray="4 2"/>
-        <circle cx="24" cy="24" r="8"/>
-        <path d="M24 4 V12 M24 36 V44 M4 24 H12 M36 24 H44"/>
-        <circle cx="24" cy="24" r="3" fill="currentColor"/>
+    // SVG Fractal Lightning Crack Web radiating from center (500x500 viewBox)
+    const crackSvg = element("div", "glass-fractal-cracks");
+    crackSvg.innerHTML = `
+      <svg viewBox="0 0 1000 1000" class="crack-web-svg" preserveAspectRatio="none">
+        <!-- Main primary fracture arteries -->
+        <path d="M500,500 L420,380 L350,290 L210,180 L80,60" class="crack-path crack-primary"/>
+        <path d="M500,500 L580,360 L690,260 L820,150 L950,50" class="crack-path crack-primary"/>
+        <path d="M500,500 L390,580 L280,670 L170,780 L50,920" class="crack-path crack-primary"/>
+        <path d="M500,500 L620,590 L740,710 L860,820 L960,940" class="crack-path crack-primary"/>
+        
+        <!-- Secondary branching fractures -->
+        <path d="M420,380 L310,410 L180,440 L40,460" class="crack-path crack-secondary"/>
+        <path d="M580,360 L660,400 L800,430 L960,450" class="crack-path crack-secondary"/>
+        <path d="M350,290 L400,210 L440,110 L460,0" class="crack-path crack-secondary"/>
+        <path d="M690,260 L630,190 L570,90 L540,0" class="crack-path crack-secondary"/>
+        <path d="M390,580 L440,680 L480,820 L500,1000" class="crack-path crack-secondary"/>
+        <path d="M620,590 L570,700 L530,830 L510,1000" class="crack-path crack-secondary"/>
+        
+        <!-- Concentric stress rings -->
+        <circle cx="500" cy="500" r="45" class="crack-ring ring-1"/>
+        <circle cx="500" cy="500" r="110" class="crack-ring ring-2"/>
+        <circle cx="500" cy="500" r="220" class="crack-ring ring-3"/>
       </svg>
     `;
-    actuatorBtn.append(coreHeatHaze, plasmaOrb, coreIcon);
-    coreSphere.append(actuatorBtn);
 
-    // Stencil, Diagnostics & Guidance Labels
-    const titleLabel = element("div", "reactor-title-label", "COMMAND VAULT // TOKAMAK KERNEL");
-    const statusBadge = element("div", "reactor-status-badge", "[ CORE TEMP: 4.8M K // CONTAINMENT STABLE ]");
-    const hintLabel = element("div", "reactor-hint-label", "✦ CLICK CORE TO INITIATE CRITICAL OVERCHARGE ✦");
-    const skipHint = element("div", "reactor-skip-hint", "[ ESC TO SKIP // SPACE TO DETONATE ]");
+    // 16 3D Polygonal Shatter Shards
+    const shardContainer = element("div", "glass-shards-container");
+    for (let i = 0; i < 16; i++) {
+      const shard = element("div", `glass-shard shard-idx-${i}`);
+      shardContainer.append(shard);
+    }
 
-    chamber.append(
-      fluxGrid,
-      ringOuter,
-      ringMiddle,
-      ringInner,
-      coreSphere,
+    // Central Kinetic Target Reticle Assembly
+    const kineticAssembly = element("div", "kinetic-impact-assembly");
+
+    // Rotating Crosshair Ring
+    const reticleRing = element("div", "kinetic-crosshair-ring");
+
+    // Center Strike Actuator Button
+    const breachBtn = element("button", "kinetic-breach-btn");
+    breachBtn.setAttribute("type", "button");
+    breachBtn.setAttribute("aria-label", "Strike Ballistic Glass Stasis Shield");
+
+    const bullseye = element("div", "kinetic-bullseye");
+    const bullseyeCore = element("div", "kinetic-bullseye-core");
+    const targetIcon = element("div", "kinetic-target-icon");
+    targetIcon.innerHTML = `
+      <svg viewBox="0 0 48 48" class="target-crosshair-svg" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="24" cy="24" r="18"/>
+        <circle cx="24" cy="24" r="8"/>
+        <path d="M24 2 V12 M24 36 V46 M2 24 H12 M36 24 H46"/>
+        <circle cx="24" cy="24" r="2.5" fill="currentColor"/>
+      </svg>
+    `;
+    breachBtn.append(bullseye, bullseyeCore, targetIcon);
+
+    const titleLabel = element("div", "kinetic-title-label", "COMMAND VAULT // STASIS SHIELD");
+    const statusBadge = element("div", "kinetic-status-badge", "[ BALLISTIC GLASS // 100% INTEGRITY ]");
+    const hintLabel = element("div", "kinetic-hint-label", "✦ CLICK RETICLE OR PRESS SPACE TO STRIKE & SHATTER ✦");
+    const skipHint = element("div", "kinetic-skip-hint", "[ ESC TO SKIP // SPACE TO STRIKE ]");
+
+    kineticAssembly.append(
+      reticleRing,
+      breachBtn,
       titleLabel,
       statusBadge,
       hintLabel,
       skipHint,
     );
 
-    reactorStage.append(blastFlash, chamber);
-    overlay.append(reactorStage);
+    glassPane.append(
+      glassGlare,
+      bracketTL,
+      bracketTR,
+      bracketBL,
+      bracketBR,
+      crackSvg,
+      shardContainer,
+      kineticAssembly,
+    );
+
+    stage.append(breachFlash, glassPane);
+    overlay.append(stage);
     document.body.append(overlay);
 
     let dismissed = false;
@@ -114,63 +159,64 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     const timers: number[] = [];
 
     // ==========================================
-    // Critical Overcharge Ignition Execution
+    // Kinetic Breach Execution
     // ==========================================
-    function igniteReactor() {
+    function strikeGlass() {
       if (running || dismissed) return;
       running = true;
 
-      // Phase 1 (t = 0ms): Spooling turbine, coils accelerate, heat escalates
-      chamber.classList.add("reactor-spooling", "reactor-shaking");
-      statusBadge.textContent = "[ CRITICALITY OVERCHARGE: 99.9% // WARNING ]";
-      statusBadge.classList.add("status-overcharge");
+      // Phase 1 (t = 0ms): Heavy Kinetic Strike Impact
+      glassPane.classList.add("glass-striking", "glass-shaking");
+      statusBadge.textContent = "[ KINETIC STRIKE IMPACT // FRACTURE SPREADING ]";
+      statusBadge.classList.add("status-impact");
 
-      playReactorOverload();
-      playCircuitSurgeAudio();
+      playMechanicalClick();
+      playServoClick();
 
-      const rect = actuatorBtn.getBoundingClientRect();
+      const rect = breachBtn.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
+      triggerSparkBurst(cx, cy);
 
-      // Phase 2 (t = 400ms): Damper breach, rings shatter outward, arcs and EMP
+      // Phase 2 (t = 160ms): Fractal Lightning Cracks Radiate
       const t1 = window.setTimeout(() => {
         if (dismissed) return;
-        chamber.classList.remove("reactor-shaking");
-        chamber.classList.add("reactor-breached");
-        statusBadge.textContent = "[ CONTAINMENT PURGED // SUPERNOVA IGNITION ]";
-        statusBadge.classList.add("status-purged");
+        glassPane.classList.remove("glass-shaking");
+        glassPane.classList.add("glass-cracking");
+        statusBadge.textContent = "[ STRUCTURAL INTEGRITY: 0% // CRITICAL BREACH ]";
+        statusBadge.classList.add("status-cracking");
 
-        triggerSparkBurst(cx, cy);
         triggerHexShockwave(cx, cy);
-        playEmpDistortion();
+        playDecryptionTick();
         playLaserChirp();
-      }, 400);
+        playEmpDistortion();
+      }, 160);
       timers.push(t1);
 
-      // Phase 3 (t = 780ms): Supernova blast wave washes across screen
+      // Phase 3 (t = 460ms): Catastrophic Glass Shatter & Rain
       const t2 = window.setTimeout(() => {
         if (dismissed) return;
-        blastFlash.classList.add("supernova-blooming");
-        chamber.classList.add("reactor-dissolving");
+        glassPane.classList.add("glass-shattered");
+        breachFlash.classList.add("breach-blooming");
 
         playCyberBootSequence();
         if (options.displayName) {
           speakSystemGreeting(options.displayName);
         }
-      }, 780);
+      }, 460);
       timers.push(t2);
 
-      // Phase 4 (t = 1750ms): Smooth overlay fadeout
+      // Phase 4 (t = 1550ms): Smooth overlay fadeout
       const t3 = window.setTimeout(() => {
         if (dismissed) return;
-        overlay.classList.add("reactor-overlay-fadeout");
-      }, 1750);
+        overlay.classList.add("glass-overlay-fadeout");
+      }, 1550);
       timers.push(t3);
 
-      // Phase 5 (t = 2050ms): Resolve and remove
+      // Phase 5 (t = 1850ms): Resolve and remove
       const t4 = window.setTimeout(() => {
         finish();
-      }, 2050);
+      }, 1850);
       timers.push(t4);
     }
 
@@ -183,14 +229,14 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       resolve();
     }
 
-    actuatorBtn.addEventListener("click", (e) => {
+    breachBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      igniteReactor();
+      strikeGlass();
     });
 
-    chamber.addEventListener("click", (e) => {
+    glassPane.addEventListener("click", (e) => {
       e.stopPropagation();
-      igniteReactor();
+      strikeGlass();
     });
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -203,19 +249,19 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       if (e.key === "Enter" || e.key === " ") {
         e.stopPropagation();
         e.preventDefault();
-        igniteReactor();
+        strikeGlass();
         return;
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
 
-    // Auto-ignite fallback after 5.0s if user is idle
-    const autoIgnite = window.setTimeout(() => {
+    // Auto-strike fallback after 5.0s if user is idle
+    const autoStrike = window.setTimeout(() => {
       if (!running && !dismissed) {
-        igniteReactor();
+        strikeGlass();
       }
     }, 5000);
-    timers.push(autoIgnite);
+    timers.push(autoStrike);
   });
 }

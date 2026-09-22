@@ -1,33 +1,34 @@
 /* ==========================================================================
-   COMMAND VAULT v0.17.0 - TOKAMAK REACTOR CORE SUPERNOVA (STYLE 3)
-   Cinematic Criticality Overcharge & Nuclear Supernova Ignition
+   COMMAND VAULT v0.17.0 - TACTICAL BALLISTIC GLASS SHATTER (STYLE 4)
+   Cinematic Kinetic Strike & Structural Fracture Stasis Breach
    ========================================================================== */
 
-.cyber-boot-overlay.reactor-core-overlay {
+.cyber-boot-overlay.glass-breach-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #02050b;
+  background: rgba(2, 5, 12, 0.96);
+  backdrop-filter: blur(8px);
   color: var(--text, #d0e4ff);
   font-family: var(--font-code, monospace);
   user-select: none;
-  cursor: pointer;
+  cursor: crosshair;
   overflow: hidden;
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cyber-boot-overlay.reactor-overlay-fadeout {
+.cyber-boot-overlay.glass-overlay-fadeout {
   opacity: 0;
   pointer-events: none;
 }
 
 /* ==========================================================================
-   REACTOR STAGE & BLAST FLASH
+   STAGE & RADIANT FLASH
    ========================================================================== */
-.reactor-stage {
+.glass-stage {
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -38,247 +39,288 @@
   z-index: 10;
 }
 
-/* Supernova Blast Shockwave Layer */
-.reactor-supernova-blast {
+.glass-breach-flash {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 5;
   background: radial-gradient(
-    circle at center,
-    #ffffff 0%,
-    #00f0ff 25%,
-    #0055ff 55%,
-    rgba(2, 5, 11, 0) 85%
+    ellipse at center,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(0, 240, 255, 0.9) 35%,
+    rgba(0, 85, 255, 0.7) 65%,
+    rgba(2, 5, 12, 0) 85%
   );
   opacity: 0;
-  transition: opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.reactor-supernova-blast.supernova-blooming {
+.glass-breach-flash.breach-blooming {
   opacity: 1;
 }
 
-/* Ambient Background Flux Grid */
-.reactor-flux-grid {
-  position: absolute;
-  width: 620px;
-  height: 620px;
-  border-radius: 50%;
-  pointer-events: none;
-  background-image: radial-gradient(circle, rgba(0, 240, 255, 0.09) 1px, transparent 1px);
-  background-size: 26px 26px;
-  opacity: 0.65;
-  z-index: 1;
-}
-
 /* ==========================================================================
-   REACTOR CHAMBER & CORE VIBRATIONS
+   THE BALLISTIC GLASS PANE
    ========================================================================== */
-.reactor-chamber {
-  position: relative;
+.ballistic-glass-pane {
+  position: absolute;
+  inset: 28px;
+  border-radius: 8px;
   z-index: 20;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(8, 16, 30, 0.85) 45%,
+    rgba(3, 7, 16, 0.96) 100%
+  );
+  border: 2px solid rgba(0, 240, 255, 0.35);
+  box-shadow:
+    0 0 70px rgba(0, 0, 0, 0.9),
+    inset 0 0 50px rgba(0, 240, 255, 0.12);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: transform 0.6s ease, opacity 0.6s ease;
+  overflow: hidden;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-.reactor-chamber.reactor-shaking {
-  animation: reactor-vibrate 0.36s ease-in-out infinite;
+.ballistic-glass-pane.glass-shaking {
+  animation: glass-impact-shake 0.36s ease-in-out;
 }
 
-@keyframes reactor-vibrate {
+@keyframes glass-impact-shake {
   0% { transform: translate(0, 0); }
-  20% { transform: translate(-4px, 3px); }
-  40% { transform: translate(4px, -3px); }
-  60% { transform: translate(-3px, -2px); }
-  80% { transform: translate(3px, 2px); }
-  100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 4px) scale(0.99); }
+  40% { transform: translate(6px, -4px) scale(1.01); }
+  60% { transform: translate(-4px, -2px) scale(0.995); }
+  80% { transform: translate(4px, 2px) scale(1.005); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
-.reactor-chamber.reactor-dissolving {
+.ballistic-glass-pane.glass-shattered {
   opacity: 0;
-  transform: scale(1.35);
   pointer-events: none;
+}
+
+/* Diagonal Specular Reflection */
+.glass-reflection-glare {
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 220%;
+  height: 220%;
+  background: linear-gradient(
+    45deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.05) 46%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.05) 54%,
+    transparent 58%
+  );
+  pointer-events: none;
+  transform: rotate(-25deg);
+}
+
+/* Steel Mounting Brackets */
+.glass-bracket {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: #1c2635;
+  border: 2px solid #3d4f66;
+  box-shadow: inset 0 0 8px #000;
+  border-radius: 4px;
+  z-index: 21;
+}
+
+.bracket-tl { top: 12px; left: 12px; }
+.bracket-tr { top: 12px; right: 12px; }
+.bracket-bl { bottom: 12px; left: 12px; }
+.bracket-br { bottom: 12px; right: 12px; }
+
+/* ==========================================================================
+   SVG FRACTAL LIGHTNING CRACKS WEB
+   ========================================================================== */
+.glass-fractal-cracks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 22;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+}
+
+.ballistic-glass-pane.glass-cracking .glass-fractal-cracks {
+  opacity: 1;
+}
+
+.crack-web-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.crack-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.crack-primary {
+  stroke: #ffffff;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 8px #00f0ff);
+}
+
+.crack-secondary {
+  stroke: rgba(0, 240, 255, 0.85);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px #00f0ff);
+}
+
+.crack-ring {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 2;
+  stroke-dasharray: 8 5;
 }
 
 /* ==========================================================================
-   3 COUNTER-ROTATING CONTAINMENT DAMPER RINGS
+   3D POLYGONAL SHATTER SHARDS
    ========================================================================== */
-.containment-ring {
+.glass-shards-container {
   position: absolute;
-  border-radius: 50%;
+  inset: 0;
   pointer-events: none;
-  transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.5s ease;
+  z-index: 24;
 }
 
-.ring-outer {
-  width: 390px;
-  height: 390px;
-  border: 3px solid rgba(0, 240, 255, 0.3);
-  border-top-color: #00f0ff;
-  border-bottom-color: #00f0ff;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
-  animation: ring-rotate-cw 26s linear infinite;
+.glass-shard {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(0, 240, 255, 0.3) 50%,
+    rgba(5, 15, 30, 0.7) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  clip-path: polygon(50% 0%, 100% 65%, 15% 100%);
+  transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.5s ease;
 }
 
-.ring-middle {
-  width: 300px;
-  height: 300px;
-  border: 3px dashed rgba(255, 170, 0, 0.45);
-  box-shadow: 0 0 20px rgba(255, 170, 0, 0.25);
-  animation: ring-rotate-ccw 16s linear infinite;
+/* 16 Shard Scatter Offsets */
+.ballistic-glass-pane.glass-shattered .shard-idx-0 { transform: translate(-280px, -240px) rotate(140deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-1 { transform: translate(320px, -220px) rotate(-110deg) scale(0.7); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-2 { transform: translate(-340px, 120px) rotate(65deg) scale(0.8); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-3 { transform: translate(290px, 200px) rotate(-150deg) scale(0.65); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-4 { transform: translate(-140px, -320px) rotate(220deg) scale(0.5); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-5 { transform: translate(180px, -300px) rotate(-70deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-6 { transform: translate(-220px, 280px) rotate(115deg) scale(0.75); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-7 { transform: translate(250px, 310px) rotate(-190deg) scale(0.55); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-8 { transform: translate(-420px, -90px) rotate(80deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-9 { transform: translate(440px, -80px) rotate(-130deg) scale(0.7); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-10 { transform: translate(-80px, 380px) rotate(160deg) scale(0.5); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-11 { transform: translate(90px, 390px) rotate(-85deg) scale(0.65); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-12 { transform: translate(-360px, -360px) rotate(195deg) scale(0.6); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-13 { transform: translate(380px, -350px) rotate(-165deg) scale(0.7); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-14 { transform: translate(-380px, 360px) rotate(105deg) scale(0.55); opacity: 1; }
+.ballistic-glass-pane.glass-shattered .shard-idx-15 { transform: translate(390px, 370px) rotate(-145deg) scale(0.65); opacity: 1; }
+
+/* ==========================================================================
+   CENTRAL KINETIC TARGET ASSEMBLY
+   ========================================================================== */
+.kinetic-impact-assembly {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.ring-inner {
-  width: 220px;
-  height: 220px;
-  border: 2px solid rgba(0, 255, 157, 0.4);
-  border-left-color: #00ff9d;
-  border-right-color: #00ff9d;
-  box-shadow: 0 0 20px rgba(0, 255, 157, 0.35);
-  animation: ring-rotate-cw 10s linear infinite;
+.ballistic-glass-pane.glass-shattered .kinetic-impact-assembly {
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
 }
 
-@keyframes ring-rotate-cw {
+/* Rotating Crosshair Ring */
+.kinetic-crosshair-ring {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 71, 87, 0.45);
+  box-shadow:
+    0 0 25px rgba(255, 71, 87, 0.25),
+    inset 0 0 25px rgba(255, 71, 87, 0.15);
+  animation: crosshair-spin 26s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes crosshair-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-@keyframes ring-rotate-ccw {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
-}
-
-/* Containment Acceleration on Spool */
-.reactor-chamber.reactor-spooling .ring-outer {
-  animation-duration: 3s;
-  box-shadow: 0 0 40px #00f0ff;
-}
-
-.reactor-chamber.reactor-spooling .ring-middle {
-  animation-duration: 2s;
-  box-shadow: 0 0 35px #ffaa00;
-}
-
-.reactor-chamber.reactor-spooling .ring-inner {
-  animation-duration: 1.2s;
-  box-shadow: 0 0 35px #00ff9d;
-}
-
-/* Damper Breach Shatter */
-.reactor-chamber.reactor-breached .ring-outer {
-  transform: scale(2.4);
-  opacity: 0;
-}
-
-.reactor-chamber.reactor-breached .ring-middle {
-  transform: scale(2.0);
-  opacity: 0;
-}
-
-.reactor-chamber.reactor-breached .ring-inner {
-  transform: scale(1.6);
-  opacity: 0;
-}
-
-/* ==========================================================================
-   CENTRAL REACTOR CORE SPHERE & ACTUATOR BUTTON
-   ========================================================================== */
-.reactor-core-sphere {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.reactor-actuator-btn {
-  width: 145px;
-  height: 145px;
+/* Kinetic Actuator Strike Button */
+.kinetic-breach-btn {
+  width: 115px;
+  height: 115px;
   border-radius: 50%;
-  background: radial-gradient(circle, #08101e 0%, #03060c 70%, #000 100%);
-  border: 3px solid #00f0ff;
+  background: radial-gradient(circle, #20080a 0%, #0d0305 60%, #000 100%);
+  border: 3px solid #ff4757;
   box-shadow:
-    0 0 35px rgba(0, 240, 255, 0.65),
-    inset 0 0 25px rgba(0, 240, 255, 0.35);
+    0 0 35px rgba(255, 71, 87, 0.65),
+    inset 0 0 25px rgba(255, 71, 87, 0.35);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   outline: none;
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.reactor-actuator-btn:hover,
-.reactor-actuator-btn:focus-visible {
-  transform: scale(1.08);
-  border-color: #ffaa00;
+.kinetic-breach-btn:hover,
+.kinetic-breach-btn:focus-visible {
+  transform: scale(1.12);
+  border-color: #00ff9d;
   box-shadow:
-    0 0 55px rgba(255, 170, 0, 0.85),
-    inset 0 0 35px rgba(255, 170, 0, 0.45);
+    0 0 55px rgba(0, 255, 157, 0.85),
+    inset 0 0 30px rgba(0, 255, 157, 0.45);
 }
 
-.reactor-actuator-btn:active {
-  transform: scale(0.95);
+.kinetic-breach-btn:active {
+  transform: scale(0.94);
 }
 
-/* Pulsing Heat Haze */
-.reactor-heat-haze {
-  position: absolute;
-  inset: -16px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 240, 255, 0.35) 0%, transparent 70%);
-  animation: heat-haze-anim 2s ease-in-out infinite alternate;
+/* Target Crosshair SVG */
+.target-crosshair-svg {
+  width: 52px;
+  height: 52px;
+  color: #ff4757;
+  filter: drop-shadow(0 0 8px #ff4757);
+  transition: color 0.22s, filter 0.22s;
 }
 
-@keyframes heat-haze-anim {
-  from { opacity: 0.3; transform: scale(0.88); }
-  to { opacity: 0.9; transform: scale(1.16); }
+.kinetic-breach-btn:hover .target-crosshair-svg {
+  color: #00ff9d;
+  filter: drop-shadow(0 0 12px #00ff9d);
 }
 
-/* Glowing Plasma Orb */
-.reactor-plasma-orb {
-  position: absolute;
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 0%, #00f0ff 40%, #0044ff 85%);
-  box-shadow:
-    0 0 35px #00f0ff,
-    0 0 70px rgba(0, 85, 255, 0.7);
-  animation: plasma-orb-anim 1.8s ease-in-out infinite alternate;
-}
-
-@keyframes plasma-orb-anim {
-  from { transform: scale(0.85); opacity: 0.8; }
-  to { transform: scale(1.15); opacity: 1; }
-}
-
-.reactor-chamber.reactor-spooling .reactor-plasma-orb {
-  background: radial-gradient(circle, #ffffff 0%, #ffeedd 30%, #ffaa00 70%, #ff4400 100%);
-  box-shadow:
-    0 0 50px #ffaa00,
-    0 0 100px #ff4400;
-  transform: scale(1.4);
-}
-
-.reactor-svg {
-  width: 48px;
-  height: 48px;
-  color: #ffffff;
-  z-index: 2;
-  filter: drop-shadow(0 0 8px #ffffff);
-}
-
-/* ==========================================================================
-   STENCIL & DIAGNOSTICS BADGES
-   ========================================================================== */
-.reactor-title-label {
-  margin-top: 34px;
+/* Labels */
+.kinetic-title-label {
+  margin-top: 32px;
   font-size: 0.80rem;
   font-weight: 800;
   letter-spacing: 0.22em;
@@ -287,10 +329,10 @@
   text-transform: uppercase;
 }
 
-.reactor-status-badge {
+.kinetic-status-badge {
   margin-top: 10px;
   padding: 5px 18px;
-  background: rgba(5, 12, 24, 0.9);
+  background: rgba(5, 10, 20, 0.9);
   border: 1px solid rgba(0, 240, 255, 0.55);
   border-radius: 4px;
   font-size: 0.65rem;
@@ -301,19 +343,19 @@
   transition: all 0.3s ease;
 }
 
-.reactor-status-badge.status-overcharge {
+.kinetic-status-badge.status-impact {
   border-color: #ffaa00;
   color: #ffaa00;
   text-shadow: 0 0 10px #ffaa00;
 }
 
-.reactor-status-badge.status-purged {
-  border-color: #00ff9d;
-  color: #00ff9d;
-  text-shadow: 0 0 12px #00ff9d;
+.kinetic-status-badge.status-cracking {
+  border-color: #ff4757;
+  color: #ff4757;
+  text-shadow: 0 0 12px #ff4757;
 }
 
-.reactor-hint-label {
+.kinetic-hint-label {
   margin-top: 12px;
   font-size: 0.70rem;
   letter-spacing: 0.15em;
@@ -321,7 +363,7 @@
   text-align: center;
 }
 
-.reactor-skip-hint {
+.kinetic-skip-hint {
   margin-top: 8px;
   font-size: 0.60rem;
   color: #64748b;
