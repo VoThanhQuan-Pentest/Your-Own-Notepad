@@ -65,7 +65,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     const dot = element("span", "boot-status-dot");
     title.append(dot, document.createTextNode("COMMAND VAULT // TACTICAL SECURE KERNEL"));
     const sysTime = element("span", "boot-systime", "REALTIME DIAGNOSTIC BUS");
-    const version = element("span", "boot-version", options.appVersion ?? "v0.16.0");
+    const version = element("span", "boot-version", options.appVersion ?? "v0.17.0");
     header.append(title, sysTime, version);
 
     // 3-Deck Panoramic Mainframe Layout

@@ -272,7 +272,8 @@
 
 .workspace {
   position: relative;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -281,6 +282,15 @@
     linear-gradient(color-mix(in srgb, var(--border) 13%, transparent) 1px, transparent 1px),
     linear-gradient(90deg, color-mix(in srgb, var(--border) 13%, transparent) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+.workspace-content-body {
+  position: relative;
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 :root[data-performance="full"] .workspace {
@@ -296,7 +306,8 @@
 }
 
 
-.workspace.file-transitioning {
+.workspace.file-transitioning,
+.workspace-content-body.file-transitioning {
   display: block;
   isolation: isolate;
 }

@@ -19,6 +19,13 @@ import {
   parseTablePaste,
 } from "../utils/table-import";
 import { parseCommandFile, serializeCommandFile } from "../utils/validation";
+import {
+  extractPlaceholders,
+  injectVariables,
+  resolveCanonicalKey,
+  type TacticalVariables,
+} from "../services/variables";
+import { commandFileLabel } from "../components/workspace-tabs";
 
 interface TestCase {
   name: string;
@@ -742,6 +749,65 @@ test("PHASE 5: WorkerClient configure profile supports custom batching", () => {
   client.reset(1);
   client.configure(1, { batchSize: 75, yieldMs: 5 });
   ok(true);
+});
+
+test("TACTICAL VARIABLES: canonical alias resolution works for common pentest terms", () => {
+  equal(resolveCanonicalKey("TARGET_IP"), "TARGET");
+  equal(resolveCanonicalKey("RHOST"), "TARGET");
+  equal(resolveCanonicalKey("rhosts"), "TARGET");
+  equal(resolveCanonicalKey("ip"), "TARGET");
+  equal(resolveCanonicalKey("RPORT"), "PORT");
+  equal(resolveCanonicalKey("local_ip"), "LHOST");
+  equal(resolveCanonicalKey("ATTACKER_PORT"), "LPORT");
+  equal(resolveCanonicalKey("wordlists"), "WORDLIST");
+  equal(resolveCanonicalKey("ADMIN"), "USER");
+  equal(resolveCanonicalKey("CUSTOM_KEY"), "CUSTOM_KEY");
+});
+
+test("TACTICAL VARIABLES: placeholder extraction handles <VAR>, {var}, and $VAR styles", () => {
+  const command = "nmap -sV -p <PORT> <TARGET_IP> --script {script} -e $INTERFACE";
+  const placeholders = extractPlaceholders(command);
+  equal(placeholders.length, 4);
+  equal(placeholders[0]?.rawPlaceholder, "<PORT>");
+  equal(placeholders[0]?.canonicalKey, "PORT");
+  equal(placeholders[1]?.rawPlaceholder, "<TARGET_IP>");
+  equal(placeholders[1]?.canonicalKey, "TARGET");
+  equal(placeholders[2]?.rawPlaceholder, "{script}");
+  equal(placeholders[2]?.canonicalKey, "SCRIPT");
+  equal(placeholders[3]?.rawPlaceholder, "$INTERFACE");
+  equal(placeholders[3]?.canonicalKey, "INTERFACE");
+});
+
+test("TACTICAL VARIABLES: injectVariables substitutes defined values and identifies missing ones", () => {
+  const testVars: TacticalVariables = {
+    TARGET: "10.10.11.45",
+    PORT: "8080",
+    LHOST: "10.10.14.2",
+    LPORT: "4444",
+    WORDLIST: "",
+    USER: "root",
+    custom: { DOMAIN: "corp.local" },
+  };
+
+  const command = "sqlmap -u http://<TARGET_IP>:<PORT>/login -p <INJECT_PARAM> --user={user} -d $DOMAIN";
+  const result = injectVariables(command, testVars);
+
+  equal(result.hasPlaceholders, true);
+  // <TARGET_IP>, <PORT>, {user}, $DOMAIN are substituted
+  ok(result.injected.includes("http://10.10.11.45:8080/login"));
+  ok(result.injected.includes("--user=root"));
+  ok(result.injected.includes("-d corp.local"));
+  // <INJECT_PARAM> is missing
+  ok(result.injected.includes("<INJECT_PARAM>"));
+  equal(result.missing.length, 1);
+  equal(result.missing[0]?.rawPlaceholder, "<INJECT_PARAM>");
+  equal(result.replaced.length, 4);
+});
+
+test("WORKSPACE TABS: commandFileLabel strips directory paths and .cmdnote extension", () => {
+  equal(commandFileLabel("/home/pentest/Recon.cmdnote"), "Recon");
+  equal(commandFileLabel("C:\\Vault\\Windows PrivEsc.cmdnote"), "Windows PrivEsc");
+  equal(commandFileLabel("Nmap.cmdnote"), "Nmap");
 });
 
 async function runAllTests(): Promise<void> {

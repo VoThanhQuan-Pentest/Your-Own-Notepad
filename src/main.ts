@@ -7,6 +7,8 @@ import "./styles/modal.css";
 import "./styles/search.css";
 import "./styles/boot-sequence.css";
 import "./styles/omni-palette.css";
+import "./styles/workspace-tabs.css";
+import "./styles/variables.css";
 
 import { CommandVaultApplication } from "./application";
 

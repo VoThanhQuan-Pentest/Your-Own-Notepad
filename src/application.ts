@@ -20,6 +20,9 @@ import { createToolbar, type ToolbarHandle } from "./components/toolbar";
 import { createWelcomeDashboard, type DashboardFavorite } from "./components/welcome-dashboard";
 import { createStartupModeDashboard } from "./components/startup-mode-dashboard";
 import { openOmniPalette, type OmniAction } from "./components/omni-palette";
+import { createWorkspaceTabs, type WorkspaceTabsHandle } from "./components/workspace-tabs";
+import { openVariableModal, promptMissingVariable } from "./components/variable-injector-modal";
+import { injectVariables } from "./services/variables";
 import { buildStressFile, demoCommandFile } from "./demo-data";
 import type {
   CommandEntry,
@@ -148,15 +151,18 @@ export class CommandVaultApplication {
   private readonly stressRowCount = stressRowCountFromLocation();
   private readonly skipWelcome = new URLSearchParams(window.location.search).has("skip-welcome");
   private readonly workspace = element("main", "workspace");
+  private readonly workspaceBody = element("div", "workspace-content-body");
   private readonly body = element("div", "app-body");
   private readonly toolbar: ToolbarHandle;
+  private readonly workspaceTabs: WorkspaceTabsHandle;
+  private readonly openTabs: string[] = [];
   private readonly performanceController = new PerformanceController();
   private readonly workspaceWorker = new WorkspaceWorkerClient();
   private performanceProfile: EffectivePerformanceProfile = this.performanceController.profile();
   private explorer: HTMLElement | null = null;
   private explorerRenderGeneration = 0;
   private activeTable: CommandTableHandle | null = null;
-  private appVersion = "0.16.0";
+  private appVersion = "0.17.0";
   private settings: AppSettings = structuredClone(defaultSettings);
   private workspaceRoot: string | null = null;
   private selectedFolder: string | null = null;
@@ -216,6 +222,23 @@ export class CommandVaultApplication {
       },
       onSettings: () => this.openSettings(),
     });
+    this.workspaceTabs = createWorkspaceTabs({
+      openTabs: this.openTabs,
+      activePath: this.activeFilePath,
+      isDashboard: this.showingDashboard,
+      onSelectDashboard: () => {
+        this.renderWelcomeDashboard();
+      },
+      onSelectTab: (path) => {
+        void this.openFile(path, undefined, true);
+      },
+      onCloseTab: (path) => {
+        this.closeTab(path);
+      },
+      onOpenVariableModal: () => {
+        openVariableModal();
+      },
+    });
     this.performanceController.subscribe((profile) => {
       this.performanceProfile = profile;
       if (profile.mode === "low-power") this.cancelFileTransition();
@@ -269,7 +292,7 @@ export class CommandVaultApplication {
         console.warn("Could not read application version", normalizeServiceError(error));
       }
     } else {
-      this.appVersion = "0.16.0 (development)";
+      this.appVersion = "0.17.0 (development)";
     }
 
     if (!this.settings.displayName && this.skipWelcome) {
@@ -295,6 +318,7 @@ export class CommandVaultApplication {
 
   private renderShell(): void {
     const shell = element("div", "app-shell");
+    this.workspace.append(this.workspaceTabs.element, this.workspaceBody);
     this.body.append(this.workspace);
     const telemetry = this.createTelemetryBar();
     shell.append(this.toolbar.element, this.body, telemetry);
@@ -560,6 +584,7 @@ export class CommandVaultApplication {
   private renderStartupModeDashboard(): void {
     this.clearActiveTable();
     this.showingDashboard = false;
+    this.workspaceTabs.element.style.display = "none";
     this.body.classList.add("app-body-startup");
     const interrupted = Boolean(this.settings.startupInProgress);
     const dashboard = createStartupModeDashboard({
@@ -568,7 +593,7 @@ export class CommandVaultApplication {
       interruptedStartup: interrupted,
       onSelect: (mode) => void this.startWorkspaceWithMode(mode),
     });
-    this.workspace.replaceChildren(dashboard);
+    this.workspaceBody.replaceChildren(dashboard);
   }
 
   private async startWorkspaceWithMode(mode: StartupPerformanceMode): Promise<void> {
@@ -576,6 +601,7 @@ export class CommandVaultApplication {
       return;
     }
     this.workspaceInitializationStarted = true;
+    this.workspaceTabs.element.style.display = "";
     this.body.classList.remove("app-body-startup");
     this.startupState = "loading-workspace";
     this.settings.lastStartupMode = mode;
@@ -1334,6 +1360,10 @@ export class CommandVaultApplication {
     this.activeFile = file ?? null;
     this.selectedFolder = parentDirectory(path) ?? this.selectedFolder;
     this.settings.lastOpenedFile = path;
+    if (file && !this.openTabs.includes(path)) {
+      this.openTabs.push(path);
+    }
+    this.updateTabs();
     this.renderExplorer();
 
     if (!file) {
@@ -1357,6 +1387,10 @@ export class CommandVaultApplication {
       `${this.activeFile.sections.length} sections`,
     );
     this.showingDashboard = false;
+    if (!this.openTabs.includes(this.activeFilePath)) {
+      this.openTabs.push(this.activeFilePath);
+    }
+    this.updateTabs();
 
     const expanded = new Set<string>();
     if (this.settings.rememberExpandedSections) {
@@ -1438,7 +1472,7 @@ export class CommandVaultApplication {
       } else if (!previousTable && this.performanceProfile.fileMotion !== "none" && !prefersReducedMotion()) {
         addOneShotClass(table.element, "workspace-view-fade-in");
       }
-      this.workspace.replaceChildren(table.element);
+      this.workspaceBody.replaceChildren(table.element);
     }
 
     if (focus?.commandId || focus?.sectionId) {
@@ -1475,7 +1509,7 @@ export class CommandVaultApplication {
     const previousElement = previousTable.element;
     if (!previousElement.isConnected) {
       previousTable.dispose();
-      this.workspace.replaceChildren(nextElement);
+      this.workspaceBody.replaceChildren(nextElement);
       return;
     }
 
@@ -1487,7 +1521,8 @@ export class CommandVaultApplication {
     snapshot.setAttribute("inert", "");
     nextElement.classList.add("workspace-view-layer", "file-view-incoming");
     this.workspace.classList.add("file-transitioning");
-    this.workspace.replaceChildren(snapshot, nextElement);
+    this.workspaceBody.classList.add("file-transitioning");
+    this.workspaceBody.replaceChildren(snapshot, nextElement);
 
     const finish = (): void => {
       if (generation !== this.viewTransitionGeneration) {
@@ -1500,6 +1535,7 @@ export class CommandVaultApplication {
       snapshot.remove();
       nextElement.classList.remove("workspace-view-layer", "file-view-incoming");
       this.workspace.classList.remove("file-transitioning");
+      this.workspaceBody.classList.remove("file-transitioning");
     };
     const onAnimationEnd = (event: AnimationEvent): void => {
       if (event.target === nextElement) {
@@ -1525,6 +1561,7 @@ export class CommandVaultApplication {
       view.classList.remove("workspace-view-layer", "file-view-incoming");
     });
     this.workspace.classList.remove("file-transitioning");
+    this.workspaceBody.classList.remove("file-transitioning");
   }
 
   private selectFolder(path: string): void {
@@ -1601,6 +1638,17 @@ export class CommandVaultApplication {
       const renamed = await renameEntry(this.workspaceRoot, entry.path, newName);
       this.fileHistory.remapPrefix(entry.path, renamed.path);
       this.remapFavoritePaths(entry.path, renamed.path);
+      for (let i = 0; i < this.openTabs.length; i++) {
+        if (this.openTabs[i] === entry.path) {
+          this.openTabs[i] = renamed.path;
+        } else {
+          const remapped = remapDescendantPath(entry.path, renamed.path, this.openTabs[i]!);
+          if (remapped) {
+            this.openTabs[i] = remapped;
+          }
+        }
+      }
+      this.updateTabs();
       await this.refreshWorkspace(false);
       if (previousActive === entry.path) {
         await this.openFile(renamed.path);
@@ -1637,6 +1685,10 @@ export class CommandVaultApplication {
       await trashEntry(this.workspaceRoot, entry.path);
       this.fileHistory.deletePrefix(entry.path);
       this.removeFavoritePaths(entry.path);
+      const remainingTabs = this.openTabs.filter((tabPath) => !isSameOrDescendant(entry.path, tabPath));
+      this.openTabs.length = 0;
+      this.openTabs.push(...remainingTabs);
+      this.updateTabs();
       if (this.activeFilePath && isSameOrDescendant(entry.path, this.activeFilePath)) {
         this.activeFile = null;
         this.activeFilePath = null;
@@ -2249,7 +2301,11 @@ export class CommandVaultApplication {
     }
   }
 
-  private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
+  private async performCopy(
+    textToCopy: string,
+    trigger: HTMLButtonElement,
+    statusText = "COPIED",
+  ): Promise<void> {
     playLaserChirp();
     playCircuitSurgeAudio();
     const rect = trigger.getBoundingClientRect();
@@ -2258,7 +2314,7 @@ export class CommandVaultApplication {
     triggerSparkBurst(cx, cy);
     triggerHexShockwave(cx, cy);
     try {
-      await copyText(value);
+      await copyText(textToCopy);
       const row = trigger.closest(".command-row");
       if (row) {
         row.classList.add("row-circuit-surge");
@@ -2270,7 +2326,7 @@ export class CommandVaultApplication {
         return;
       }
       const previous = trigger.textContent;
-      trigger.textContent = "COPIED";
+      trigger.textContent = statusText;
       trigger.classList.add("copied");
       const codeBlock = row?.querySelector<HTMLElement>(".command-code");
       if (codeBlock) {
@@ -2282,9 +2338,86 @@ export class CommandVaultApplication {
           trigger.textContent = previous;
           trigger.classList.remove("copied");
         }
-      }, 1200);
+      }, 1400);
     } catch (error) {
       await this.showServiceFailure("Could not copy command", error);
+    }
+  }
+
+  private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
+    const res = injectVariables(value);
+    if (!res.hasPlaceholders) {
+      await this.performCopy(value, trigger, "COPIED");
+      return;
+    }
+
+    if (res.missing.length > 0) {
+      const promptRes = await promptMissingVariable(res.missing[0]!, value);
+      if (!promptRes) {
+        return;
+      }
+      if (promptRes.raw) {
+        await this.performCopy(value, trigger, "COPIED RAW");
+        return;
+      }
+      const reInjected = injectVariables(value);
+      const targetLabel = reInjected.replaced[0]?.value ? ` (${reInjected.replaced[0].value})` : "";
+      await this.performCopy(reInjected.injected, trigger, `COPIED${targetLabel}`);
+      return;
+    }
+
+    const targetLabel = res.replaced[0]?.value ? ` (${res.replaced[0].value})` : "";
+    await this.performCopy(res.injected, trigger, `COPIED${targetLabel}`);
+  }
+
+  private updateTabs(): void {
+    this.workspaceTabs.update({
+      openTabs: this.openTabs,
+      activePath: this.activeFilePath,
+      isDashboard: this.showingDashboard,
+    });
+  }
+
+  private closeTab(path: string): void {
+    const index = this.openTabs.indexOf(path);
+    if (index === -1) {
+      return;
+    }
+    this.openTabs.splice(index, 1);
+    if (this.activeFilePath === path) {
+      if (this.openTabs.length > 0) {
+        const nextIndex = Math.min(index, this.openTabs.length - 1);
+        void this.openFile(this.openTabs[nextIndex]!, undefined, true);
+      } else {
+        this.activeFilePath = null;
+        this.activeFile = null;
+        this.clearActiveTable();
+        this.renderWelcomeDashboard();
+      }
+    } else {
+      this.updateTabs();
+    }
+  }
+
+  private cycleTab(direction: 1 | -1): void {
+    if (this.openTabs.length === 0) {
+      return;
+    }
+    if (this.showingDashboard) {
+      const targetIndex = direction === 1 ? 0 : this.openTabs.length - 1;
+      void this.openFile(this.openTabs[targetIndex]!, undefined, true);
+      return;
+    }
+    const currentIndex = this.openTabs.indexOf(this.activeFilePath ?? "");
+    if (currentIndex === -1) {
+      void this.openFile(this.openTabs[0]!, undefined, true);
+      return;
+    }
+    const nextIndex = currentIndex + direction;
+    if (nextIndex < 0 || nextIndex >= this.openTabs.length) {
+      this.renderWelcomeDashboard();
+    } else {
+      void this.openFile(this.openTabs[nextIndex]!, undefined, true);
     }
   }
 
@@ -2675,6 +2808,31 @@ export class CommandVaultApplication {
       if ((key === "z" || key === "y") && isTextEditingTarget(event.target)) {
         return;
       }
+      if (event.ctrlKey && event.altKey && key === "v") {
+        event.preventDefault();
+        openVariableModal();
+        return;
+      }
+      if (event.ctrlKey && (event.key === "Tab" || event.code === "Tab")) {
+        event.preventDefault();
+        this.cycleTab(event.shiftKey ? -1 : 1);
+        return;
+      }
+      if (event.ctrlKey && !event.altKey && !event.shiftKey && key === "w") {
+        event.preventDefault();
+        if (this.activeFilePath) {
+          this.closeTab(this.activeFilePath);
+        }
+        return;
+      }
+      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key >= "1" && event.key <= "9") {
+        const num = parseInt(event.key, 10);
+        if (num <= this.openTabs.length) {
+          event.preventDefault();
+          void this.openFile(this.openTabs[num - 1]!, undefined, true);
+          return;
+        }
+      }
       if (key === "k") {
         event.preventDefault();
         this.toolbar.focusSearch();
@@ -2894,6 +3052,7 @@ export class CommandVaultApplication {
 
   private async collectDisplayName(): Promise<void> {
     this.showingDashboard = false;
+    this.workspaceTabs.element.style.display = "none";
     this.renderExplorer();
     this.clearActiveTable();
     await new Promise<void>((resolve) => {
@@ -2923,7 +3082,7 @@ export class CommandVaultApplication {
       form.append(label, error, submit);
       panel.append(mark, eyebrow, title, description, form);
       onboarding.append(panel);
-      this.workspace.replaceChildren(onboarding);
+      this.workspaceBody.replaceChildren(onboarding);
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -2939,6 +3098,7 @@ export class CommandVaultApplication {
           this.settings.displayName = displayName;
           await saveSettings(this.settings);
           this.toolbar.setProfileName(displayName);
+          this.workspaceTabs.element.style.display = "";
           resolve();
         } catch (saveError) {
           submit.disabled = false;
@@ -2955,6 +3115,7 @@ export class CommandVaultApplication {
       return;
     }
     this.showingDashboard = true;
+    this.updateTabs();
     this.toolbar.clearSearch();
     this.clearActiveTable();
     const continuePath = this.settings.lastOpenedFile && this.files.has(this.settings.lastOpenedFile)
@@ -3012,7 +3173,7 @@ export class CommandVaultApplication {
         this.toolbar.focusSearch();
       },
     });
-    this.workspace.replaceChildren(dashboard);
+    this.workspaceBody.replaceChildren(dashboard);
   }
 
   private renderWorkspaceMissing(detail: string): void {
@@ -3044,7 +3205,7 @@ export class CommandVaultApplication {
     this.clearActiveTable();
     const state = element("section", "empty-state loading-state");
     state.append(element("div", "empty-state-icon", "…"), element("h1", undefined, message));
-    this.workspace.replaceChildren(state);
+    this.workspaceBody.replaceChildren(state);
   }
 
   private renderEmptyState(
@@ -3066,7 +3227,7 @@ export class CommandVaultApplication {
     const actionButton = button("primary-button", actionLabel);
     actionButton.addEventListener("click", action);
     state.append(actionButton);
-    this.workspace.replaceChildren(state);
+    this.workspaceBody.replaceChildren(state);
   }
 
   private clearActiveTable(): void {
@@ -3202,6 +3363,15 @@ export class CommandVaultApplication {
         detail: "Rescan all command notes and directories from disk",
         run: () => {
           void this.refreshWorkspaceFromUi();
+        },
+      },
+      {
+        id: "tactical-variables",
+        category: "TOOLS",
+        title: "Tactical Target Injector (Thiết lập biến mục tiêu)",
+        detail: "Ctrl+Alt+V - Set TARGET, PORT, LHOST, WORDLIST for auto-injection",
+        run: () => {
+          openVariableModal();
         },
       },
     ];

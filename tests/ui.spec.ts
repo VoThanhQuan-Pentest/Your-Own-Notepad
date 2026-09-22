@@ -1236,5 +1236,73 @@ test("God-Tier 6.0: neural omni-palette tactical controls", async ({ page }) => 
   await expect(omniModal).toBeHidden();
 });
 
+test("v0.17.0: Tactical Target Variable Injector HUD modal and live injection", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome");
 
+  // Verify Tactical Variable pill is visible on tab bar
+  const varPill = page.locator(".tactical-vars-pill");
+  await expect(varPill).toBeVisible();
+  await expect(varPill).toContainText("UNSET");
 
+  // Open modal via pill click
+  await varPill.click();
+  const modal = page.locator(".tactical-modal");
+  await expect(modal).toBeVisible();
+
+  // Enter Target IP & Port
+  const targetInput = page.locator(".tactical-input[data-key='TARGET']");
+  const portInput = page.locator(".tactical-input[data-key='PORT']");
+  await targetInput.fill("10.10.11.45");
+  await portInput.fill("8080");
+
+  // Verify live preview shows injected command
+  const previewCode = page.locator(".tactical-preview-code");
+  await expect(previewCode).toContainText("10.10.11.45");
+  await expect(previewCode).toContainText("8080");
+
+  // Save via Enter or click
+  const saveBtn = page.getByRole("button", { name: /SAVE CONFIG/ });
+  await saveBtn.click();
+  await expect(modal).toBeHidden();
+
+  // Check pill updated
+  await expect(varPill).toHaveClass(/has-target/);
+  await expect(varPill).toContainText("10.10.11.45:8080");
+});
+
+test("v0.17.0: Multi-Tab Cyber Workspace tab navigation and management", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&skip-welcome");
+
+  const tabBar = page.locator(".workspace-tab-bar");
+  await expect(tabBar).toBeVisible();
+
+  // Tab 1 for Nmap should be active
+  const nmapTab = tabBar.locator(".workspace-tab-item").filter({ hasText: "Nmap" });
+  await expect(nmapTab).toBeVisible();
+  await expect(nmapTab).toHaveClass(/active/);
+
+  // Open Long File from explorer
+  const longFileEntry = page.locator(".explorer-item").filter({ hasText: "Long File" }).first();
+  if (await longFileEntry.isVisible()) {
+    await longFileEntry.click();
+    const longTab = tabBar.locator(".workspace-tab-item").filter({ hasText: "Long File" });
+    await expect(longTab).toBeVisible();
+    await expect(longTab).toHaveClass(/active/);
+
+    // Switch back to Nmap tab by clicking
+    await nmapTab.click();
+    await expect(nmapTab).toHaveClass(/active/);
+    await expect(longTab).not.toHaveClass(/active/);
+
+    // Close Long File tab via close button
+    const closeBtn = longTab.locator(".tab-close-btn");
+    await closeBtn.click();
+    await expect(longTab).toBeHidden();
+  }
+
+  // Dashboard button in tab bar
+  const dashTab = tabBar.locator(".tab-item-dashboard");
+  await dashTab.click();
+  await expect(dashTab).toHaveClass(/active/);
+  await expect(page.locator(".welcome-dashboard")).toBeVisible();
+});

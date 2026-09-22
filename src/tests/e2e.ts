@@ -31,7 +31,7 @@ mockIPC((command, rawPayload) => {
       persist();
       return null;
     case "plugin:app|version":
-      return "0.16.0-test";
+      return "0.17.0-test";
     case "get_power_profile":
       return parameters.has("system-power-saver") ? "power-saver" : "performance";
     case "list_directory":
