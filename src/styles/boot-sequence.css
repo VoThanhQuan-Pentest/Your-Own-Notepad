@@ -30,105 +30,64 @@
 }
 
 /* ==========================================================================
-   MINIMALIST HIGH-LEGIBILITY WELCOME HUD BADGE
-   Positioned at the top: sleek frosted glass pill, tactical wings,
-   breathing beacon, high-contrast dual-tone typography, zero blinding glare
+   MINIMALIST HERO TYPOGRAPHY: WELCOME <NAME>
+   No borders, single unified color, size, and format,
+   highlighted by a high-end holographic light sheen sweep
    ========================================================================== */
 .boot-brand-group {
   position: absolute;
-  top: 36px;
+  top: 48px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   pointer-events: none;
   z-index: 100;
   width: max-content;
   max-width: 92vw;
-}
-
-.boot-brand-wing {
-  height: 1px;
-  width: clamp(30px, 7vw, 90px);
-  pointer-events: none;
-}
-
-.boot-brand-wing.wing-left {
-  background: linear-gradient(90deg, transparent, rgba(0, 212, 240, 0.45));
-}
-
-.boot-brand-wing.wing-right {
-  background: linear-gradient(90deg, rgba(0, 212, 240, 0.45), transparent);
-}
-
-.boot-brand-badge {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 24px;
-  background: rgba(8, 14, 24, 0.82);
-  border: 1px solid rgba(0, 212, 240, 0.35);
-  border-radius: 9999px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.75),
-    0 0 1px rgba(0, 212, 240, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.3s ease;
-}
-
-.boot-brand-beacon {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #00f5ff;
-  box-shadow:
-    0 0 6px #00f5ff,
-    0 0 12px rgba(0, 245, 255, 0.55);
-  animation: beacon-breathe 2.4s ease-in-out infinite alternate;
-  flex-shrink: 0;
-}
-
-@keyframes beacon-breathe {
-  0% {
-    opacity: 0.45;
-    transform: scale(0.85);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
+  text-align: center;
 }
 
 .boot-welcome-label {
-  display: inline-flex;
-  align-items: baseline;
   font-family: var(--font-code, monospace);
-  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
-  letter-spacing: 0.28em;
+  font-size: clamp(1.35rem, 2.7vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  text-align: center;
   white-space: nowrap;
   user-select: none;
+  padding: 4px 16px;
+  color: #ffffff;
+  /* Holographic laser sheen sweep: runs smoothly across all letters equally */
+  background: linear-gradient(
+    110deg,
+    #9ec5e8 0%,
+    #e2f2ff 28%,
+    #00f0ff 48%,
+    #ffffff 52%,
+    #00f0ff 56%,
+    #e2f2ff 72%,
+    #9ec5e8 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: welcome-sheen-sweep 3.6s ease-in-out infinite alternate;
+  /* Deep 3D drop shadow ensures crystal clarity on any background without blinding blur */
+  filter:
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 16px rgba(0, 212, 240, 0.45));
 }
 
-.welcome-text-prefix,
-.welcome-text-suffix {
-  font-weight: 700;
-  color: #94a3b8; /* Refined titanium slate gray: crisp, clear, non-competing */
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
-}
-
-.welcome-text-name {
-  font-weight: 900;
-  color: #ffffff; /* Stark brilliant pearl white */
-  /* Vibrant theme accent shadow for crisp high-contrast prominence */
-  text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.95),
-    0 0 12px rgba(0, 220, 255, 0.75);
-  margin: 0 4px;
-  letter-spacing: 0.3em;
+@keyframes welcome-sheen-sweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
 }
 
 /* Radiant Expanding Trigger Aura Wave */

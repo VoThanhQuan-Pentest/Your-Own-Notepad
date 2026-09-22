@@ -37,24 +37,9 @@ const CONCRETE_BOOT_STYLES: Exclude<BootSequenceStyle, "random">[] = [
  */
 function createBrandGroup(displayName?: string | null, extraPrefix = "boot"): HTMLElement {
   const brandGroup = element("div", `boot-brand-group ${extraPrefix}-brand-group`);
-
-  const leftWing = element("div", "boot-brand-wing wing-left");
-  const rightWing = element("div", "boot-brand-wing wing-right");
-
-  const badge = element("div", "boot-brand-badge");
-  const beacon = element("span", "boot-brand-beacon");
-
   const userName = displayName && displayName.trim().length > 0 ? displayName.trim().toUpperCase() : "OPERATOR";
-  const welcomeLabel = element("div", `boot-welcome-label ${extraPrefix}-welcome-label`);
-
-  const prefixSpan = element("span", "welcome-text-prefix", "WELCOME ");
-  const nameSpan = element("span", "welcome-text-name", userName);
-  const suffixSpan = element("span", "welcome-text-suffix", " BACK");
-
-  welcomeLabel.append(prefixSpan, nameSpan, suffixSpan);
-  badge.append(beacon, welcomeLabel);
-  brandGroup.append(leftWing, badge, rightWing);
-
+  const welcomeLabel = element("div", `boot-welcome-label ${extraPrefix}-welcome-label`, `WELCOME ${userName}`);
+  brandGroup.append(welcomeLabel);
   return brandGroup;
 }
 
