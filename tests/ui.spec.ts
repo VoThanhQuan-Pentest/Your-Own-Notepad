@@ -1178,19 +1178,15 @@ test("God-Tier 4.0: holographic cyber globe and matrix digital rain", async ({ p
   await expect(page.locator(".matrix-rain-canvas")).not.toBeVisible();
 });
 
-test("God-Tier 5.0: tactical pentest mission control, radar target acquisition, and plasma circuit surge", async ({ page }) => {
-  // 1. Verify Welcome Dashboard Tactical Mission Control & Radar
+test("God-Tier 5.0: hero tactical radar telemetry and plasma circuit surge", async ({ page }) => {
+  // 1. Verify Welcome Dashboard Hero Tactical Radar
   await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");
-  const tacticalCenter = page.locator(".welcome-tactical-center");
-  await expect(tacticalCenter).toBeVisible();
-  await expect(page.locator(".tactical-radar-canvas")).toBeVisible();
-  await expect(page.locator(".tactical-target-card")).toHaveCount(4);
+  await expect(page.locator(".hero-radar-container")).toBeVisible();
+  const radarCanvas = page.locator(".tactical-radar-canvas");
+  await expect(radarCanvas).toBeVisible();
 
-  // 2. Click target node ALPHA-GATEWAY to launch quick recon search
-  const alphaCard = page.locator(".tactical-target-card").filter({ hasText: "ALPHA-GATEWAY" });
-  await alphaCard.click();
-  const searchInput = page.getByRole("combobox", { name: "Search commands" });
-  await expect(searchInput).toHaveValue("nmap");
+  // 2. Click radar to pulse target lock
+  await radarCanvas.click();
 
   // 3. Open file and verify electric circuit surge on command copy
   await page.getByRole("button", { name: "OPEN FILE" }).click();
@@ -1203,31 +1199,12 @@ test("God-Tier 5.0: tactical pentest mission control, radar target acquisition, 
   await expect(copyBtn).toHaveText("COPIED");
 });
 
-test("God-Tier 6.0: neural omni-palette and tactical payload generator", async ({ page }) => {
+test("God-Tier 6.0: neural omni-palette tactical controls", async ({ page }) => {
   await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");
 
-  // 1. Verify Tactical Payload Generator on Welcome Dashboard
-  const payloadGen = page.locator(".tactical-payload-generator");
-  await expect(payloadGen).toBeVisible();
-  const codeBox = payloadGen.locator(".payload-code-box code");
-  await expect(codeBox).toContainText("bash -i >& /dev/tcp");
+  await expect(page.locator(".hero-radar-container")).toBeVisible();
 
-  // Switch preset to Python PTY
-  const pythonPreset = payloadGen.getByRole("button", { name: "PYTHON3 PTY" });
-  await pythonPreset.click();
-  await expect(codeBox).toContainText('pty.spawn("/bin/bash")');
-
-  // Change LHOST & LPORT and verify live update
-  const hostInput = payloadGen.locator('.payload-input[placeholder="10.10.14.1"]');
-  await hostInput.fill("192.168.1.50");
-  await expect(codeBox).toContainText("192.168.1.50");
-
-  // Copy payload
-  const copyBtn = payloadGen.locator(".payload-copy-btn");
-  await copyBtn.click();
-  await expect(copyBtn).toHaveText(/PAYLOAD COPIED!/);
-
-  // 2. Test Neural Omni-Palette via Ctrl+Space
+  // 1. Test Neural Omni-Palette via Ctrl+Space
   await page.keyboard.press("Control+Space");
   const omniModal = page.locator(".omni-palette-modal");
   await expect(omniModal).toBeVisible();
@@ -1242,7 +1219,7 @@ test("God-Tier 6.0: neural omni-palette and tactical payload generator", async (
   await page.keyboard.press("Enter");
   await expect(omniModal).toBeHidden();
 
-  // Open again and test Low Power mode
+  // 2. Open again and test Low Power mode
   await page.keyboard.press("Control+Space");
   await expect(omniModal).toBeVisible();
   await omniInput.fill("Tiết kiệm pin");
@@ -1252,7 +1229,7 @@ test("God-Tier 6.0: neural omni-palette and tactical payload generator", async (
   await expect(omniModal).toBeHidden();
   await expect(page.locator("html")).toHaveAttribute("data-performance", "low-power");
 
-  // Open again and test Esc close
+  // 3. Open again and test Esc close
   await page.keyboard.press("Control+Space");
   await expect(omniModal).toBeVisible();
   await page.keyboard.press("Escape");

@@ -4,7 +4,6 @@ import { button, element } from "../utils/dom";
 import { triggerSparkBurst, triggerHexShockwave } from "../utils/particles";
 import { createTacticalRadar } from "../utils/tactical-radar";
 import { createIcon } from "./icons";
-import { createPayloadGenerator } from "./payload-generator";
 
 export interface DashboardFavorite {
   label: string;
@@ -67,19 +66,6 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   });
 
   const globe = createCyberGlobe(100, 100);
-  const heroVisuals = element("div", "welcome-hero-visuals");
-  heroVisuals.append(globe.element, reactor);
-
-  hero.append(heroLeft, heroVisuals);
-
-  // Tactical Pentest Mission Control Section
-  const tacticalCenter = element("section", "welcome-tactical-center");
-  const tacticalHeader = element("div", "tactical-center-header");
-  const tacticalTitle = element("span", "tactical-title", "// PENTEST TARGET RECON & RADAR TELEMETRY");
-
-  tacticalHeader.append(tacticalTitle);
-
-  const tacticalBody = element("div", "tactical-center-body");
 
   const targets = [
     { id: "t1", name: "ALPHA-GATEWAY", ip: "192.168.1.1", port: "443/HTTPS", angle: 0.5, distance: 0.72, status: "vulnerable" as const, search: "nmap" },
@@ -88,61 +74,19 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
     { id: "t4", name: "DELTA-API-GW", ip: "10.0.12.90", port: "8080 REST", angle: 5.2, distance: 0.42, status: "hardened" as const, search: "curl" },
   ];
 
-  const radar = createTacticalRadar(160, targets, (target) => {
+  const radar = createTacticalRadar(100, targets, (target) => {
     playTacticalTargetLock();
     if (target.search) options.onSearchQuery?.(target.search);
   });
 
-  const radarBox = element("div", "tactical-radar-box");
-  const radarLabel = element("span", "tactical-radar-label", "RADAR PING // 360° SWEEP");
-  radarBox.append(radar.element, radarLabel);
+  const radarContainer = element("div", "hero-radar-container");
+  radarContainer.title = "Tactical Radar Telemetry // Click blips to acquire target";
+  radarContainer.append(radar.element);
 
-  const targetsGrid = element("div", "tactical-targets-grid");
-  targets.forEach((t) => {
-    const card = element("div", "tactical-target-card");
-    card.setAttribute("role", "button");
-    card.setAttribute("tabindex", "0");
-    card.setAttribute("title", `Click to quick-search ${t.search} commands`);
+  const heroVisuals = element("div", "welcome-hero-visuals");
+  heroVisuals.append(radarContainer, globe.element, reactor);
 
-    const headerRow = element("div", "target-header-row");
-    const nameEl = element("strong", "target-name", t.name);
-    const badgeEl = element("span", `target-badge ${t.status}`, t.status.toUpperCase());
-    headerRow.append(nameEl, badgeEl);
-
-    const ipRow = element("div", "target-meta-row");
-    ipRow.append(
-      element("code", "target-ip", t.ip),
-      element("span", "target-port", t.port),
-    );
-
-    const actionRow = element("div", "target-action-row");
-    const actionBtn = element("span", "target-action-tag", `RECON // ${t.search.toUpperCase()}`);
-    actionRow.append(actionBtn);
-
-    card.append(headerRow, ipRow, actionRow);
-
-    const triggerSelect = () => {
-      radar.pulseTarget(t.id);
-      playTacticalTargetLock();
-      const rect = card.getBoundingClientRect();
-      triggerSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      options.onSearchQuery?.(t.search);
-    };
-
-    card.addEventListener("click", triggerSelect);
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        triggerSelect();
-      }
-    });
-
-    targetsGrid.append(card);
-  });
-
-  tacticalBody.append(radarBox, targetsGrid);
-  const payloadGen = createPayloadGenerator();
-  tacticalCenter.append(tacticalHeader, tacticalBody, payloadGen);
+  hero.append(heroLeft, heroVisuals);
 
   // Cleanup radar on detachment
   const observer = new MutationObserver(() => {
@@ -216,7 +160,7 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   }
 
   grid.append(continueCard, stats, workspace, favorites);
-  dashboard.append(hero, tacticalCenter, grid);
+  dashboard.append(hero, grid);
   return dashboard;
 }
 
