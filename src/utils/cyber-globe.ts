@@ -15,6 +15,7 @@ interface GlobeNode {
 /**
  * High-performance 3D Holographic Cyber Globe
  * Projects 3D wireframe spherical coordinates onto a 2D canvas with mouse tilt.
+ * Renders complete 360-degree parallels and meridians with dual-pass depth shading.
  */
 export function createCyberGlobe(width = 140, height = 140): {
   element: HTMLElement;
@@ -46,17 +47,17 @@ export function createCyberGlobe(width = 140, height = 140): {
   const cx = (width / 2) * dpr;
   const cy = (height / 2) * dpr;
 
-  // Generate 8 tactical node points on the globe
+  // Tactical node points on the globe
   const nodes: GlobeNode[] = [
-    { lat: 0.2, lon: 0.5, blinkOffset: 0 },
-    { lat: -0.4, lon: 1.8, blinkOffset: 1.5 },
-    { lat: 0.6, lon: 3.1, blinkOffset: 3.0 },
-    { lat: -0.2, lon: 4.2, blinkOffset: 4.5 },
-    { lat: 0.5, lon: 5.5, blinkOffset: 2.0 },
-    { lat: -0.5, lon: 0.8, blinkOffset: 0.8 },
+    { lat: 0.25, lon: 0.6, blinkOffset: 0 },
+    { lat: -0.35, lon: 1.9, blinkOffset: 1.5 },
+    { lat: 0.55, lon: 3.2, blinkOffset: 3.0 },
+    { lat: -0.2, lon: 4.4, blinkOffset: 4.5 },
+    { lat: 0.45, lon: 5.6, blinkOffset: 2.0 },
+    { lat: -0.5, lon: 0.9, blinkOffset: 0.8 },
   ];
 
-  function project(p: Point3D): { x: number; y: number; z: number; visible: boolean } {
+  function project(p: Point3D): { x: number; y: number; z: number } {
     // Rotate Y
     const cosY = Math.cos(rotY);
     const sinY = Math.sin(rotY);
@@ -73,7 +74,6 @@ export function createCyberGlobe(width = 140, height = 140): {
       x: cx + x1,
       y: cy + y2,
       z: z2,
-      visible: z2 > -radius * 0.2,
     };
   }
 
@@ -104,81 +104,105 @@ export function createCyberGlobe(width = 140, height = 140): {
     }
 
     // Outer glow aura
-    const grad = ctx.createRadialGradient(cx, cy, radius * 0.6, cx, cy, radius * 1.15);
+    const grad = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius * 1.25);
     grad.addColorStop(0, "transparent");
-    grad.addColorStop(0.85, colorWithAlpha(accent, 0.08));
+    grad.addColorStop(0.75, colorWithAlpha(accent, 0.09));
     grad.addColorStop(1, "transparent");
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius * 1.1, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius * 1.15, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw Parallels (Latitude circles)
-    const latSteps = [-0.9, -0.55, 0, 0.55, 0.9];
-    ctx.lineWidth = 1 * dpr;
+    // 1. Draw Parallels (Latitude circles across the entire sphere)
+    const latSteps = [-0.8, -0.55, -0.3, 0, 0.3, 0.55, 0.8];
+    const segments = 48;
 
     latSteps.forEach((latFrac) => {
       const ringR = Math.sqrt(Math.max(0, 1 - latFrac * latFrac)) * radius;
       const ringY = latFrac * radius;
-      const segments = 36;
-      ctx.strokeStyle = colorWithAlpha(accent, latFrac === 0 ? 0.35 : 0.18);
-      ctx.beginPath();
+      const isEquator = latFrac === 0;
 
-      let started = false;
-      for (let s = 0; s <= segments; s++) {
-        const theta = (s / segments) * Math.PI * 2;
-        const pt = project({
-          x: Math.cos(theta) * ringR,
-          y: ringY,
-          z: Math.sin(theta) * ringR,
-        });
-        if (pt.visible) {
-          if (!started) {
-            ctx.moveTo(pt.x, pt.y);
-            started = true;
+      // Dual pass: back (pass 0) and front (pass 1)
+      for (let pass = 0; pass < 2; pass++) {
+        const isFrontPass = pass === 1;
+        ctx.strokeStyle = colorWithAlpha(
+          accent,
+          isFrontPass ? (isEquator ? 0.45 : 0.28) : (isEquator ? 0.16 : 0.08)
+        );
+        ctx.lineWidth = (isFrontPass && isEquator ? 1.4 : 1) * dpr;
+        ctx.beginPath();
+        let started = false;
+
+        for (let s = 0; s <= segments; s++) {
+          const theta = (s / segments) * Math.PI * 2;
+          const pt = project({
+            x: Math.cos(theta) * ringR,
+            y: ringY,
+            z: Math.sin(theta) * ringR,
+          });
+
+          const inPass = isFrontPass ? pt.z >= 0 : pt.z < 0;
+          if (inPass) {
+            if (!started) {
+              ctx.moveTo(pt.x, pt.y);
+              started = true;
+            } else {
+              ctx.lineTo(pt.x, pt.y);
+            }
           } else {
-            ctx.lineTo(pt.x, pt.y);
+            started = false;
           }
-        } else {
-          started = false;
         }
+        ctx.stroke();
       }
-      ctx.stroke();
     });
 
-    // Draw Meridians (Longitude lines)
+    // 2. Draw Meridians (8 Full circles spanning all 360 degrees)
     const lonCount = 8;
+    const meridianSegments = 48;
+
     for (let m = 0; m < lonCount; m++) {
       const baseLon = (m / lonCount) * Math.PI;
-      const segments = 32;
-      ctx.strokeStyle = colorWithAlpha(accent, 0.16);
-      ctx.beginPath();
-      let started = false;
 
-      for (let s = 0; s <= segments; s++) {
-        const phi = (s / segments) * Math.PI - Math.PI / 2;
-        const cosPhi = Math.cos(phi);
-        const pt = project({
-          x: Math.cos(baseLon) * cosPhi * radius,
-          y: Math.sin(phi) * radius,
-          z: Math.sin(baseLon) * cosPhi * radius,
-        });
+      for (let pass = 0; pass < 2; pass++) {
+        const isFrontPass = pass === 1;
+        ctx.strokeStyle = colorWithAlpha(accent, isFrontPass ? 0.22 : 0.07);
+        ctx.lineWidth = 1 * dpr;
+        ctx.beginPath();
+        let started = false;
 
-        if (pt.visible) {
-          if (!started) {
-            ctx.moveTo(pt.x, pt.y);
-            started = true;
+        for (let s = 0; s <= meridianSegments; s++) {
+          const phi = (s / meridianSegments) * Math.PI * 2;
+          const pt = project({
+            x: Math.cos(baseLon) * Math.cos(phi) * radius,
+            y: Math.sin(phi) * radius,
+            z: Math.sin(baseLon) * Math.cos(phi) * radius,
+          });
+
+          const inPass = isFrontPass ? pt.z >= 0 : pt.z < 0;
+          if (inPass) {
+            if (!started) {
+              ctx.moveTo(pt.x, pt.y);
+              started = true;
+            } else {
+              ctx.lineTo(pt.x, pt.y);
+            }
           } else {
-            ctx.lineTo(pt.x, pt.y);
+            started = false;
           }
-        } else {
-          started = false;
         }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
-    // Draw Nodes (Blinking Tactical Command Nodes)
+    // 3. Crisp outer silhouette boundary circle
+    ctx.strokeStyle = colorWithAlpha(accent, 0.28);
+    ctx.lineWidth = 1.2 * dpr;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 4. Draw Nodes (Blinking Tactical Command Nodes on front hemisphere)
     const time = performance.now() * 0.003;
     nodes.forEach((node) => {
       const cosLat = Math.cos(node.lat);
@@ -188,7 +212,7 @@ export function createCyberGlobe(width = 140, height = 140): {
         z: Math.sin(node.lon) * cosLat * radius,
       });
 
-      if (pt.visible && pt.z > 0) {
+      if (pt.z > 0) {
         const alpha = 0.4 + 0.5 * Math.sin(time + node.blinkOffset);
         ctx.fillStyle = bright;
         ctx.globalAlpha = alpha;

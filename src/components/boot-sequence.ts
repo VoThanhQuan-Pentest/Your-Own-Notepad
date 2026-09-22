@@ -31,17 +31,29 @@ const CONCRETE_BOOT_STYLES: Exclude<BootSequenceStyle, "random">[] = [
 
 /**
  * Creates the clean, minimalist branding group requested by the user:
- * - Line 1: COMMAND VAULT
- * - Line 2: WELCOME <NAME> BACK
- * Zero status badges, zero hint clutter, zero shortcuts.
+ * - Line 1: COMMAND VAULT (enlarged, glowing aura)
+ * - Line 2: WELCOME <NAME> BACK (enlarged, luminous shimmer)
+ * Positioned majestically at the top of the screen with radiant ambient aura.
  */
 function createBrandGroup(displayName?: string | null, extraPrefix = "boot"): HTMLElement {
   const brandGroup = element("div", `boot-brand-group ${extraPrefix}-brand-group`);
+  const brandAura = element("div", "boot-brand-aura");
   const titleLabel = element("div", `boot-title-label ${extraPrefix}-title-label`, "COMMAND VAULT");
   const userName = displayName && displayName.trim().length > 0 ? displayName.trim().toUpperCase() : "OPERATOR";
   const welcomeLabel = element("div", `boot-welcome-label ${extraPrefix}-welcome-label`, `WELCOME ${userName} BACK`);
-  brandGroup.append(titleLabel, welcomeLabel);
+  brandGroup.append(brandAura, titleLabel, welcomeLabel);
   return brandGroup;
+}
+
+/**
+ * Triggers a radiant expanding aura shockwave around the interactive actuator core
+ */
+function triggerAuraPulse(cx: number, cy: number, parent: HTMLElement): void {
+  const aura = element("div", "boot-trigger-aura-wave");
+  aura.style.left = `${cx}px`;
+  aura.style.top = `${cy}px`;
+  parent.append(aura);
+  window.setTimeout(() => aura.remove(), 2000);
 }
 
 /**
@@ -152,6 +164,10 @@ function setupMechanicalIris(
   overlay.classList.add("iris-aperture-overlay");
   overlay.setAttribute("aria-label", "Mechanical Iris Shutter Clearance");
 
+  // Top Title Aura Group
+  const brandGroup = createBrandGroup(options.displayName, "iris");
+  overlay.append(brandGroup);
+
   const stage = element("div", "iris-stage");
   const breachFlash = element("div", "iris-breach-flash");
   const irisContainer = element("div", "iris-aperture-container");
@@ -194,9 +210,7 @@ function setupMechanicalIris(
     </svg>
   `;
   actuatorBtn.append(lensHalo, lensCore, opticIcon);
-
-  const brandGroup = createBrandGroup(options.displayName, "iris");
-  hubAssembly.append(crosshairRing, actuatorBtn, brandGroup);
+  hubAssembly.append(crosshairRing, actuatorBtn);
 
   irisContainer.append(chassisFrame, bladesContainer, hubAssembly);
   stage.append(breachFlash, irisContainer);
@@ -210,21 +224,24 @@ function setupMechanicalIris(
     playPneumaticHiss(true);
     playServoClick();
 
+    const rect = actuatorBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerAuraPulse(cx, cy, overlay);
+
     const t1 = window.setTimeout(() => {
       if (getDismissed()) return;
       irisContainer.classList.remove("iris-shaking");
-      irisContainer.classList.add("iris-dilating");
+      irisContainer.classList.add("iris-dilating", "iris-opening");
 
-      const rect = actuatorBtn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
       triggerHexShockwave(cx, cy);
+      triggerAuraPulse(cx, cy, overlay);
 
       playMechanicalClick();
       playCircuitSurgeAudio();
       playLaserChirp();
-    }, 250);
+    }, 450);
     timers.push(t1);
 
     const t2 = window.setTimeout(() => {
@@ -234,18 +251,18 @@ function setupMechanicalIris(
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 580);
+    }, 1100);
     timers.push(t2);
 
     const t3 = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("iris-overlay-fadeout");
-    }, 1400);
+    }, 2400);
     timers.push(t3);
 
     const t4 = window.setTimeout(() => {
       finish();
-    }, 1750);
+    }, 2800);
     timers.push(t4);
   }
 
@@ -274,6 +291,10 @@ function setupBlastDoor(
 ): () => void {
   overlay.classList.add("blast-door-overlay");
   overlay.setAttribute("aria-label", "Command Vault Blast Door Clearance");
+
+  // Top Title Aura Group
+  const brandGroup = createBrandGroup(options.displayName, "blast");
+  overlay.append(brandGroup);
 
   const bgVignette = element("div", "blast-bg-vignette");
   const breachLight = element("div", "vault-breach-light");
@@ -346,9 +367,7 @@ function setupBlastDoor(
     </svg>
   `;
   coreButton.append(coreHalo, coreIcon);
-
-  const brandGroup = createBrandGroup(options.displayName, "blast");
-  coreAssembly.append(hazardRing, lockingDogs, coreButton, brandGroup);
+  coreAssembly.append(hazardRing, lockingDogs, coreButton);
 
   blastGate.append(panelLeft, panelRight, seamGlow, coreAssembly);
   overlay.append(bgVignette, breachLight, blastGate);
@@ -361,21 +380,24 @@ function setupBlastDoor(
     playPneumaticHiss(true);
     playServoClick();
 
+    const rect = coreButton.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerAuraPulse(cx, cy, overlay);
+
     const t1 = window.setTimeout(() => {
       if (getDismissed()) return;
       blastGate.classList.remove("gate-shaking");
       blastGate.classList.add("gate-dogs-released");
 
-      const rect = coreButton.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
       triggerHexShockwave(cx, cy);
+      triggerAuraPulse(cx, cy, overlay);
 
       playMechanicalClick();
       playCircuitSurgeAudio();
       playLaserChirp();
-    }, 380);
+    }, 550);
     timers.push(t1);
 
     const t2 = window.setTimeout(() => {
@@ -386,18 +408,18 @@ function setupBlastDoor(
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 820);
+    }, 1300);
     timers.push(t2);
 
     const t3 = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("blast-overlay-fadeout");
-    }, 1950);
+    }, 2700);
     timers.push(t3);
 
     const t4 = window.setTimeout(() => {
       finish();
-    }, 2200);
+    }, 3100);
     timers.push(t4);
   }
 
@@ -426,6 +448,10 @@ function setupVoidSlash(
 ): () => void {
   overlay.classList.add("void-slash-overlay");
   overlay.setAttribute("aria-label", "Dimensional Void Slash Gateway");
+
+  // Top Title Aura Group
+  const brandGroup = createBrandGroup(options.displayName, "void");
+  overlay.append(brandGroup);
 
   const voidScreen = element("div", "void-slash-screen");
   const breachLight = element("div", "void-breach-light");
@@ -458,9 +484,7 @@ function setupVoidSlash(
   const corePulse = element("div", "singularity-core-pulse");
   const coreDot = element("div", "singularity-core-dot");
   singularityBtn.append(corePulse, coreDot);
-
-  const brandGroup = createBrandGroup(options.displayName, "void");
-  singularityAssembly.append(accretionRing, singularityBtn, brandGroup);
+  singularityAssembly.append(accretionRing, singularityBtn);
 
   voidScreen.append(
     dustContainer,
@@ -481,41 +505,45 @@ function setupVoidSlash(
     playTimeWarp();
     playLaserChirp();
 
+    const rect = singularityBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerAuraPulse(cx, cy, overlay);
+
     const t1 = window.setTimeout(() => {
       if (getDismissed()) return;
-      voidScreen.classList.add("reality-torn");
+      voidScreen.classList.add("reality-torn", "rift-opening");
 
-      const rect = singularityBtn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
       triggerHexShockwave(cx, cy);
+      triggerAuraPulse(cx, cy, overlay);
 
       playEmpDistortion();
       playMechanicalClick();
       playCircuitSurgeAudio();
-    }, 120);
+    }, 260);
     timers.push(t1);
 
     const t2 = window.setTimeout(() => {
       if (getDismissed()) return;
+      voidScreen.classList.add("rift-breached");
       breachLight.classList.add("breach-blooming");
       playCyberBootSequence();
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 480);
+    }, 900);
     timers.push(t2);
 
     const t3 = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("void-overlay-fadeout");
-    }, 1600);
+    }, 2400);
     timers.push(t3);
 
     const t4 = window.setTimeout(() => {
       finish();
-    }, 1850);
+    }, 2800);
     timers.push(t4);
   }
 
@@ -568,6 +596,10 @@ function setupReactorCore(
   overlay.classList.add("reactor-core-overlay");
   overlay.setAttribute("aria-label", "Tokamak Fusion Reactor Core Ignition");
 
+  // Top Title Aura Group
+  const brandGroup = createBrandGroup(options.displayName, "reactor");
+  overlay.append(brandGroup);
+
   const reactorStage = element("div", "reactor-stage");
   const blastFlash = element("div", "reactor-supernova-blast");
   const chamber = element("div", "reactor-chamber");
@@ -596,8 +628,7 @@ function setupReactorCore(
   actuatorBtn.append(coreHeatHaze, plasmaOrb, coreIcon);
   coreSphere.append(actuatorBtn);
 
-  const brandGroup = createBrandGroup(options.displayName, "reactor");
-  chamber.append(fluxGrid, ringOuter, ringMiddle, ringInner, coreSphere, brandGroup);
+  chamber.append(fluxGrid, ringOuter, ringMiddle, ringInner, coreSphere);
   reactorStage.append(blastFlash, chamber);
   overlay.append(reactorStage);
 
@@ -608,21 +639,24 @@ function setupReactorCore(
     chamber.classList.add("reactor-overcharging", "chamber-shaking");
     playReactorOverload();
 
+    const rect = actuatorBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerAuraPulse(cx, cy, overlay);
+
     const t1 = window.setTimeout(() => {
       if (getDismissed()) return;
       chamber.classList.remove("chamber-shaking");
       chamber.classList.add("reactor-critical");
 
-      const rect = actuatorBtn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
       triggerHexShockwave(cx, cy);
+      triggerAuraPulse(cx, cy, overlay);
 
       playEmpDistortion();
       playCircuitSurgeAudio();
       playLaserChirp();
-    }, 400);
+    }, 600);
     timers.push(t1);
 
     const t2 = window.setTimeout(() => {
@@ -633,18 +667,18 @@ function setupReactorCore(
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 750);
+    }, 1300);
     timers.push(t2);
 
     const t3 = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("reactor-overlay-fadeout");
-    }, 1800);
+    }, 2650);
     timers.push(t3);
 
     const t4 = window.setTimeout(() => {
       finish();
-    }, 2050);
+    }, 3050);
     timers.push(t4);
   }
 
@@ -673,6 +707,10 @@ function setupGlassShatter(
 ): () => void {
   overlay.classList.add("glass-breach-overlay");
   overlay.setAttribute("aria-label", "Tactical Ballistic Glass Stasis Breach");
+
+  // Top Title Aura Group
+  const brandGroup = createBrandGroup(options.displayName, "glass");
+  overlay.append(brandGroup);
 
   const stage = element("div", "glass-stage");
   const breachFlash = element("div", "glass-breach-flash");
@@ -731,9 +769,7 @@ function setupGlassShatter(
   `;
   bullseye.append(bullseyeCore, targetIcon);
   breachBtn.append(bullseye);
-
-  const brandGroup = createBrandGroup(options.displayName, "glass");
-  kineticAssembly.append(reticleRing, breachBtn, brandGroup);
+  kineticAssembly.append(reticleRing, breachBtn);
 
   glassPane.append(
     glassGlare,
@@ -756,20 +792,23 @@ function setupGlassShatter(
     playMechanicalClick();
     playServoClick();
 
+    const rect = breachBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    triggerAuraPulse(cx, cy, overlay);
+
     const t1 = window.setTimeout(() => {
       if (getDismissed()) return;
       glassPane.classList.remove("glass-shaking");
       glassPane.classList.add("glass-fracturing");
 
-      const rect = breachBtn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
       triggerHexShockwave(cx, cy);
+      triggerAuraPulse(cx, cy, overlay);
 
       playDecryptionTick();
       playEmpDistortion();
-    }, 140);
+    }, 280);
     timers.push(t1);
 
     const t2 = window.setTimeout(() => {
@@ -781,18 +820,18 @@ function setupGlassShatter(
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 440);
+    }, 750);
     timers.push(t2);
 
     const t3 = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("glass-overlay-fadeout");
-    }, 1550);
+    }, 2350);
     timers.push(t3);
 
     const t4 = window.setTimeout(() => {
       finish();
-    }, 1850);
+    }, 2750);
     timers.push(t4);
   }
 
