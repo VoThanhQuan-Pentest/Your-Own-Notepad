@@ -302,13 +302,6 @@ export class CommandVaultApplication {
       await this.collectDisplayName();
     }
 
-    if (!this.skipWelcome && this.performanceProfile.mode !== "low-power") {
-      await runBootSequence({
-        displayName: this.settings.displayName,
-        appVersion: this.appVersion,
-      });
-    }
-
     await this.handleStartupFlow();
   }
 
@@ -629,6 +622,13 @@ export class CommandVaultApplication {
       this.cancelFileTransition();
     }
     this.activeTable?.setPerformanceProfile(this.performanceProfile);
+
+    if (!this.skipWelcome && mode === "performance" && this.performanceProfile.mode !== "low-power") {
+      await runBootSequence({
+        displayName: this.settings.displayName,
+        appVersion: this.appVersion,
+      });
+    }
 
     if (!this.desktopRuntime) {
       this.loadDevelopmentWorkspace();

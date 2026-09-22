@@ -1,945 +1,553 @@
 /* ==========================================================================
-   CYBERNETIC BOOT SEQUENCE OVERLAY - FULLSCREEN WAR-ROOM MAINFRAME
+   COMMAND VAULT v0.17.0 - MASSIVE CYBER VAULT BLAST DOOR (STYLE A)
+   Cinematic Brutalist Sci-Fi Blast Gate Experience
    ========================================================================== */
 
-.cyber-boot-overlay {
+.cyber-boot-overlay.blast-door-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, rgba(12, 20, 36, 0.98) 0%, rgba(2, 5, 10, 0.99) 100%);
-  backdrop-filter: blur(14px);
+  background: #020408;
   color: var(--text, #d0e4ff);
   font-family: var(--font-code, monospace);
   user-select: none;
   cursor: pointer;
   overflow: hidden;
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cyber-boot-overlay.boot-dismissing {
+.cyber-boot-overlay.blast-overlay-fadeout {
   opacity: 0;
-  transform: scale(1.03);
   pointer-events: none;
 }
 
-/* Background Scanlines */
-.cyber-boot-overlay::before {
-  content: "";
+/* Vignette Shadow for Atmospheric Depth */
+.blast-bg-vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.28) 50%
-  );
-  background-size: 100% 4px;
-  z-index: 1;
-  opacity: 0.7;
+  z-index: 2;
+  background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.85) 100%);
 }
 
-/* Fullscreen Tactical Ambient Grid */
-.boot-bg-grid {
+/* Radiant Breach Light Bloom */
+.vault-breach-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(0, 240, 255, 0.85) 45%, rgba(5, 12, 24, 0) 75%);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vault-breach-light.breach-blooming {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   THE MASSIVE BLAST GATE
+   ========================================================================== */
+.vault-blast-gate {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* Heavy Mechanical Screen Shake on Depressurization */
+.vault-blast-gate.gate-shaking {
+  animation: blast-gate-shake 0.38s ease-in-out;
+}
+
+@keyframes blast-gate-shake {
+  0% { transform: translate(0, 0); }
+  15% { transform: translate(-4px, 2px); }
+  30% { transform: translate(4px, -3px); }
+  45% { transform: translate(-3px, -2px); }
+  60% { transform: translate(3px, 2px); }
+  75% { transform: translate(-2px, 1px); }
+  90% { transform: translate(1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ==========================================================================
+   ARMORED TITANIUM DOOR PANELS (LEFT & RIGHT)
+   ========================================================================== */
+.vault-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.4%;
+  z-index: 20;
+  background: linear-gradient(135deg, #181e28 0%, #0d121a 45%, #151b24 100%);
+  box-shadow:
+    inset 0 0 90px rgba(0, 0, 0, 0.85),
+    0 0 50px rgba(0, 0, 0, 0.95);
+  transition: transform 1.15s cubic-bezier(0.7, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.vault-panel-left {
+  left: 0;
+  border-right: 3px solid #243042;
+}
+
+.vault-panel-right {
+  right: 0;
+  border-left: 3px solid #243042;
+}
+
+/* Door Parting Slide Animation */
+.vault-blast-gate.gate-opening .vault-panel-left {
+  transform: translateX(-104%);
+}
+
+.vault-blast-gate.gate-opening .vault-panel-right {
+  transform: translateX(104%);
+}
+
+/* CNC Milled Texture Plating */
+.panel-armor-plate {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(0, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  z-index: 1;
-  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0.2) 90%);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.85;
 }
 
-/* Fullscreen Rotating Concentric Radar Sweep */
-.boot-bg-radar {
+/* Industrial Stencil Markings */
+.panel-stencil {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: min(1000px, 98vw);
-  height: min(1000px, 98vw);
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px dashed color-mix(in srgb, var(--accent, #00ffff) 15%, transparent);
-  pointer-events: none;
-  z-index: 1;
+  top: 28px;
+  font-family: var(--font-code, monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  color: rgba(112, 133, 160, 0.4);
+  text-transform: uppercase;
 }
 
-.boot-bg-radar::before {
-  content: "";
-  position: absolute;
-  inset: 18%;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 10%, transparent);
+.vault-panel-left .panel-stencil {
+  left: 40px;
 }
 
-.boot-bg-radar::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    color-mix(in srgb, var(--accent, #00ffff) 14%, transparent) 42deg,
-    transparent 45deg
-  );
-  animation: boot-radar-spin 10s linear infinite;
+.vault-panel-right .panel-stencil {
+  right: 40px;
+  text-align: right;
 }
 
-@keyframes boot-radar-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Sweeping horizontal laser beam across screen */
-.boot-laser-sweep {
+/* Hazard Warning Stripes */
+.panel-hazard-stripe {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--accent, #00ffff), var(--accent-bright, #ffffff), var(--accent, #00ffff), transparent);
-  box-shadow: 0 0 16px var(--accent, #00ffff), 0 0 32px var(--accent, #00ffff);
-  opacity: 0.85;
-  pointer-events: none;
-  z-index: 2;
-  animation: boot-laser-scan 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  bottom: 0;
+  width: 14px;
+  opacity: 0.65;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 240, 255, 0.3) 0,
+    rgba(0, 240, 255, 0.3) 12px,
+    rgba(10, 15, 25, 0.95) 12px,
+    rgba(10, 15, 25, 0.95) 24px
+  );
 }
 
-@keyframes boot-laser-scan {
-  0% {
-    top: 0%;
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 0.9;
-  }
-  100% {
-    top: 100%;
-    opacity: 0;
-  }
+.vault-panel-left .panel-hazard-stripe {
+  right: 18px;
 }
 
-/* 4 Full-screen Corner HUD Perimeter Telemetry Pods */
-.boot-hud-corner {
+.vault-panel-right .panel-hazard-stripe {
+  left: 18px;
+}
+
+/* Interlocking Serrated Teeth Edge */
+.panel-teeth-edge {
   position: absolute;
-  z-index: 2;
-  font-size: 0.70rem;
-  font-family: var(--font-code, monospace);
-  color: var(--text-muted, #7085a0);
-  padding: 10px 14px;
-  pointer-events: none;
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 25%, transparent);
-  background: rgba(5, 10, 18, 0.72);
-  backdrop-filter: blur(8px);
-  border-radius: 4px;
-  line-height: 1.4;
-  letter-spacing: 0.05em;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  color: #0d121a;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
+  z-index: 22;
 }
 
-.boot-hud-corner .corner-tag {
-  color: var(--accent, #00ffff);
-  font-weight: 700;
-  margin-right: 4px;
+.teeth-left {
+  right: -2px;
 }
 
-.boot-hud-corner .corner-sub {
-  color: #00ff9d;
-  font-size: 0.65rem;
+.teeth-right {
+  left: -2px;
 }
 
-.boot-hud-corner.top-left {
-  top: 22px;
-  left: 24px;
-  border-left: 2px solid var(--accent, #00ffff);
-}
-
-.boot-hud-corner.top-right {
-  top: 22px;
-  right: 24px;
-  text-align: right;
-  border-right: 2px solid var(--accent, #00ffff);
-}
-
-.boot-hud-corner.bottom-left {
-  bottom: 22px;
-  left: 24px;
-  border-left: 2px solid var(--accent, #00ffff);
-}
-
-.boot-hud-corner.bottom-right {
-  bottom: 22px;
-  right: 24px;
-  text-align: right;
-  border-right: 2px solid var(--accent, #00ffff);
-}
-
-/* ==========================================================================
-   MAINFRAME CONTENT CONTAINER (Widescreen Cyber Command Deck)
-   ========================================================================== */
-
-.boot-content {
-  position: relative;
-  z-index: 3;
-  width: min(1280px, 94vw);
-  min-height: min(620px, 84vh);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 24px 30px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 30%, transparent);
-  background: rgba(8, 14, 26, 0.82);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.7), 0 0 1px var(--accent, #00ffff), inset 0 0 30px rgba(0, 255, 255, 0.03);
-}
-
-/* Four Corner Military Brackets for Mainframe */
-.boot-content::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  pointer-events: none;
-  border-radius: 10px;
-  background:
-    linear-gradient(to right, var(--accent, #00ffff) 14px, transparent 14px) top left,
-    linear-gradient(to bottom, var(--accent, #00ffff) 14px, transparent 14px) top left,
-    linear-gradient(to left, var(--accent, #00ffff) 14px, transparent 14px) top right,
-    linear-gradient(to bottom, var(--accent, #00ffff) 14px, transparent 14px) top right,
-    linear-gradient(to right, var(--accent, #00ffff) 14px, transparent 14px) bottom left,
-    linear-gradient(to top, var(--accent, #00ffff) 14px, transparent 14px) bottom left,
-    linear-gradient(to left, var(--accent, #00ffff) 14px, transparent 14px) bottom right,
-    linear-gradient(to top, var(--accent, #00ffff) 14px, transparent 14px) bottom right;
-  background-repeat: no-repeat;
-  background-size: 14px 14px;
-}
-
-/* Tactical Boot Header */
-.boot-header {
+.teeth-svg {
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent, #00ffff) 22%, transparent);
-  padding-bottom: 12px;
-}
-
-.boot-title {
-  font-size: 0.80rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--accent, #00ffff);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.boot-status-dot {
-  width: 8px;
-  height: 8px;
-  background: #00ff9d;
-  border-radius: 50%;
-  box-shadow: 0 0 10px #00ff9d;
-  animation: boot-dot-pulse 0.8s ease-in-out infinite alternate;
-}
-
-@keyframes boot-dot-pulse {
-  0% { opacity: 0.4; transform: scale(0.85); }
-  100% { opacity: 1; transform: scale(1.15); }
-}
-
-.boot-systime {
-  font-size: 0.72rem;
-  color: var(--accent-bright, #ffffff);
-  letter-spacing: 0.12em;
-  opacity: 0.85;
-}
-
-.boot-version {
-  font-size: 0.74rem;
-  color: var(--text-muted, #7085a0);
-  letter-spacing: 0.08em;
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 25%, transparent);
-  padding: 2px 8px;
-  border-radius: 3px;
-  background: rgba(0, 255, 255, 0.05);
-}
-
-/* ==========================================================================
-   PANORAMIC 3-DECK COMMAND LAYOUT
-   ========================================================================== */
-
-.boot-deck-grid {
-  display: grid;
-  grid-template-columns: 280px minmax(340px, 1fr) 340px;
-  gap: 24px;
-  width: 100%;
-  flex: 1;
-  align-items: stretch;
-}
-
-.boot-deck-left,
-.boot-deck-right {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 18%, transparent);
-  border-radius: 6px;
-  background: rgba(4, 9, 18, 0.55);
-}
-
-.boot-deck-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-}
-
-.boot-deck-header {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--accent, #00ffff);
-  border-bottom: 1px solid color-mix(in srgb, var(--accent, #00ffff) 15%, transparent);
-  padding-bottom: 6px;
-  text-transform: uppercase;
-}
-
-/* Left Deck: Hardware Metrics List */
-.boot-metrics-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.boot-metric-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 0.68rem;
-}
-
-.boot-metric-name {
-  color: var(--text-muted, #7085a0);
-  width: 90px;
-  letter-spacing: 0.06em;
-}
-
-.boot-metric-bar {
-  flex: 1;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.boot-metric-fill {
   height: 100%;
-  border-radius: 2px;
+  display: block;
 }
 
-.boot-metric-fill.cpu {
-  width: 95%;
-  background: var(--accent, #00ffff);
-  box-shadow: 0 0 6px var(--accent, #00ffff);
-}
-
-.boot-metric-fill.vram {
-  width: 82%;
-  background: #00ff9d;
-  box-shadow: 0 0 6px #00ff9d;
-}
-
-.boot-metric-fill.crypto {
-  width: 100%;
-  background: #a855f7;
-  box-shadow: 0 0 6px #a855f7;
-}
-
-.boot-metric-fill.airgap {
-  width: 100%;
-  background: #3b82f6;
-  box-shadow: 0 0 6px #3b82f6;
-}
-
-.boot-metric-val {
-  color: #00ff9d;
-  font-size: 0.65rem;
-  font-weight: 700;
-  min-width: 48px;
-  text-align: right;
-}
-
-/* Left Deck: Dancing Equalizer Frequency Bars */
-.boot-freq-visualizer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 38px;
-  padding: 6px 8px;
-  margin-top: 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 12%, transparent);
-}
-
-.boot-oscilloscope-canvas {
-  width: 100%;
-  height: 40px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 20%, transparent);
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.7);
-  margin-top: auto;
-}
-
-/* Right Deck: Live Decrypting Hex Stream */
-.boot-hex-stream {
+/* ==========================================================================
+   HEAVY HYDRAULIC PISTONS
+   ========================================================================== */
+.vault-hydraulic-piston {
+  position: absolute;
+  width: 200px;
+  height: 48px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
-  font-size: 0.68rem;
-  font-family: var(--font-code, monospace);
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 16%, transparent);
-  border-radius: 4px;
-  letter-spacing: 0.04em;
+  z-index: 25;
 }
 
-.boot-hex-stream .hex-addr {
-  color: var(--accent, #00ffff);
-  font-weight: 700;
+.piston-tl {
+  top: 60px;
+  left: 40px;
 }
 
-.boot-hex-stream .hex-bytes {
-  color: var(--text-muted, #7085a0);
-  letter-spacing: 0.08em;
+.piston-bl {
+  bottom: 60px;
+  left: 40px;
 }
 
-.boot-hex-stream .hex-tag {
-  color: #ffd166;
-  font-size: 0.62rem;
-  font-weight: 700;
+.piston-tr {
+  top: 60px;
+  right: 40px;
+  flex-direction: row-reverse;
 }
 
-.boot-hex-stream .hex-tag.ok {
-  color: #00ff9d;
-  text-shadow: 0 0 8px #00ff9d;
+.piston-br {
+  bottom: 60px;
+  right: 40px;
+  flex-direction: row-reverse;
 }
 
-.boot-freq-bar {
-  width: 4px;
-  height: 20%;
-  background: linear-gradient(to top, var(--accent, #00ffff), var(--accent-bright, #ffffff));
-  border-radius: 2px;
-  animation: boot-freq-dance 0.7s ease-in-out infinite alternate;
+.piston-mount {
+  width: 24px;
+  height: 44px;
+  background: #2a3544;
+  border: 1px solid #48566a;
+  border-radius: 3px;
+  box-shadow: inset 0 0 6px #000;
 }
 
-@keyframes boot-freq-dance {
-  0% { height: 15%; opacity: 0.5; }
-  50% { height: 85%; opacity: 1; }
-  100% { height: 35%; opacity: 0.7; }
-}
-
-/* Center Deck: Holographic Central Reactor */
-.boot-holo-center {
-  position: relative;
+.piston-cylinder {
   width: 110px;
-  height: 110px;
+  height: 32px;
+  background: linear-gradient(180deg, #3d4a5c 0%, #151c26 50%, #2b3644 100%);
+  border-radius: 4px;
+  border: 1px solid #506177;
+  position: relative;
   display: flex;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.piston-rod {
+  width: 60px;
+  height: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #a8b6c6 40%, #e2e8f0 70%, #64748b 100%);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  border-radius: 2px;
+}
+
+.piston-tl .piston-rod,
+.piston-bl .piston-rod {
+  transform: translateX(10px);
+}
+
+.piston-tr .piston-rod,
+.piston-br .piston-rod {
+  transform: translateX(-10px);
+}
+
+/* Disengaging Retraction */
+.vault-blast-gate.gate-disengaging .piston-tl .piston-rod,
+.vault-blast-gate.gate-disengaging .piston-bl .piston-rod {
+  transform: translateX(-26px);
+}
+
+.vault-blast-gate.gate-disengaging .piston-tr .piston-rod,
+.vault-blast-gate.gate-disengaging .piston-br .piston-rod {
+  transform: translateX(26px);
+}
+
+.piston-led {
+  position: absolute;
+  top: calc(50% - 5px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff4757;
+  box-shadow: 0 0 12px #ff4757;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.piston-tl .piston-led,
+.piston-bl .piston-led {
+  right: 10px;
+}
+
+.piston-tr .piston-led,
+.piston-br .piston-led {
+  left: 10px;
+}
+
+.vault-blast-gate.gate-disengaging .piston-led {
+  background: #00ff9d;
+  box-shadow: 0 0 14px #00ff9d;
+}
+
+.piston-label {
+  font-size: 0.55rem;
+  color: #7085a0;
+  margin: 0 8px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+}
+
+/* ==========================================================================
+   VERTICAL SEAM GLOW
+   ========================================================================== */
+.vault-seam-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  background: #00f0ff;
+  box-shadow:
+    0 0 16px #00f0ff,
+    0 0 32px rgba(0, 240, 255, 0.7);
+  z-index: 22;
+  transition: opacity 0.3s ease;
+}
+
+.vault-blast-gate.gate-opening .vault-seam-glow {
+  opacity: 0;
+}
+
+/* ==========================================================================
+   CENTRAL REACTOR LOCK & ACTUATOR CORE
+   ========================================================================== */
+.vault-core-assembly {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 6px 0;
+  pointer-events: auto;
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-.boot-holo-outer-ring {
+.vault-blast-gate.gate-opening .vault-core-assembly {
+  opacity: 0;
+  transform: scale(1.15);
+  pointer-events: none;
+}
+
+/* Rotating Hazard Warning Ring */
+.core-hazard-ring {
   position: absolute;
-  inset: -8px;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
-  border: 1px dotted color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
-  animation: boot-ring-spin 12s linear infinite reverse;
+  border: 4px dashed rgba(0, 240, 255, 0.35);
+  box-shadow:
+    0 0 30px rgba(0, 240, 255, 0.2),
+    inset 0 0 30px rgba(0, 240, 255, 0.15);
+  animation: core-hazard-rotate 35s linear infinite;
+  pointer-events: none;
 }
 
-.boot-holo-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px dashed color-mix(in srgb, var(--accent, #00ffff) 60%, transparent);
-  animation: boot-ring-spin 6s linear infinite;
-}
-
-.boot-holo-inner {
-  position: absolute;
-  inset: 16px;
-  border-radius: 50%;
-  border: 1.5px solid var(--accent, #00ffff);
-  box-shadow: 0 0 20px var(--accent, #00ffff);
-  animation: boot-ring-spin 3s linear infinite reverse;
-}
-
-@keyframes boot-ring-spin {
+@keyframes core-hazard-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-.boot-holo-icon {
-  width: 32px;
-  height: 32px;
-  color: var(--accent-bright, #ffffff);
-  filter: drop-shadow(0 0 10px var(--accent, #00ffff));
+/* Radial Locking Dogs */
+.core-locking-dogs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.boot-holo-center.core-igniting .boot-holo-ring {
-  animation: boot-ring-spin 1.2s linear infinite;
-  border-color: var(--accent-bright, #ffffff);
-  box-shadow: 0 0 28px var(--accent, #00ffff);
-}
-
-.boot-holo-center.core-igniting .boot-holo-inner {
-  animation: boot-ring-spin 0.6s linear infinite reverse;
-  border-color: #00ff9d;
-  box-shadow: 0 0 36px #00ff9d;
-}
-
-/* Center Deck: Phase Banner */
-.boot-phase-banner {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--accent, #00ffff);
-  padding: 4px 14px;
-  background: color-mix(in srgb, var(--accent, #00ffff) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
-  border-radius: 4px;
-  text-transform: uppercase;
-  transition: all 0.25s ease;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent, #00ffff) 20%, transparent);
-}
-
-/* Center Deck: Clearance Level 5 Stamped Badge */
-.boot-clearance-container {
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.boot-clearance-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 18px;
-  border: 1.5px solid #00ff9d;
-  background: rgba(0, 255, 157, 0.15);
-  color: #00ff9d;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  border-radius: 4px;
-  box-shadow: 0 0 24px rgba(0, 255, 157, 0.45), inset 0 0 12px rgba(0, 255, 157, 0.2);
-  animation: boot-badge-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes boot-badge-pop {
-  0% { transform: scale(0.85); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Center Deck: Quantum Progress Bar */
-.boot-progress-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.boot-progress-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  color: var(--text-muted, #7085a0);
-}
-
-.boot-progress-percent {
-  color: var(--accent-bright, #ffffff);
-  font-weight: 700;
-}
-
-.boot-progress-track {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+.locking-dog {
+  position: absolute;
+  background: linear-gradient(180deg, #ffaa00, #b37400);
+  border: 1px solid #ffcc00;
+  box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
   border-radius: 3px;
-  overflow: hidden;
-  position: relative;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.35s;
 }
 
-.boot-progress-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--accent, #00ffff), var(--accent-bright, #5ceaff));
-  box-shadow: 0 0 12px var(--accent, #00ffff);
-  border-radius: 3px;
-  transition: width 0.08s linear;
+.dog-top {
+  top: -46px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 44px;
 }
 
-/* Center Deck: Skip Hint */
-.boot-skip-hint {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--text-muted, #7085a0);
-  opacity: 0.8;
-  animation: boot-hint-blink 1.2s ease-in-out infinite alternate;
+.dog-bottom {
+  bottom: -46px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 44px;
 }
 
-@keyframes boot-hint-blink {
-  0% { opacity: 0.4; }
-  100% { opacity: 0.95; color: var(--accent, #00ffff); }
+.dog-left {
+  left: -46px;
+  top: calc(50% - 8px);
+  width: 44px;
+  height: 16px;
 }
 
-/* ==========================================================================
-   INTERACTIVE NUCLEAR IGNITION SWITCH (SAFETY COVER & IGNITION BUTTON)
-   ========================================================================== */
+.dog-right {
+  right: -46px;
+  top: calc(50% - 8px);
+  width: 44px;
+  height: 16px;
+}
 
-/* ==========================================================================
-   STYLE 1: BIOMETRIC FINGERPRINT & RETINAL LASER SCANNER
-   ========================================================================== */
+/* Dogs Retracted & Disengaged */
+.vault-blast-gate.gate-dogs-released .dog-top {
+  transform: translateY(-26px) rotate(45deg);
+  opacity: 0;
+}
 
-.boot-biometric-scanner {
-  position: relative;
-  width: 100%;
-  max-width: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
-  background: radial-gradient(circle at 50% 50%, rgba(6, 18, 30, 0.95) 0%, rgba(2, 6, 14, 0.98) 100%);
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
-  border-radius: 12px;
+.vault-blast-gate.gate-dogs-released .dog-bottom {
+  transform: translateY(26px) rotate(-45deg);
+  opacity: 0;
+}
+
+.vault-blast-gate.gate-dogs-released .dog-left {
+  transform: translateX(-26px) rotate(-45deg);
+  opacity: 0;
+}
+
+.vault-blast-gate.gate-dogs-released .dog-right {
+  transform: translateX(26px) rotate(45deg);
+  opacity: 0;
+}
+
+/* Central Core Button Actuator */
+.vault-core-button {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1c2636 0%, #0d121a 70%, #05070a 100%);
+  border: 3px solid #00f0ff;
   box-shadow:
-    0 0 35px rgba(0, 240, 255, 0.15),
-    inset 0 0 30px rgba(0, 0, 0, 0.85);
-  margin: 4px 0;
+    0 0 30px rgba(0, 240, 255, 0.45),
+    inset 0 0 25px rgba(0, 240, 255, 0.25);
   cursor: pointer;
-  user-select: none;
-  outline: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.boot-biometric-scanner:hover,
-.boot-biometric-scanner:focus-visible {
-  border-color: var(--accent, #00ffff);
-  box-shadow:
-    0 0 45px rgba(0, 240, 255, 0.35),
-    inset 0 0 30px rgba(0, 240, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-.boot-biometric-scanner.scanning {
-  border-color: #00ff9d;
-  box-shadow: 0 0 50px rgba(0, 255, 157, 0.4), inset 0 0 35px rgba(0, 255, 157, 0.15);
-}
-
-.boot-biometric-scanner.verified {
-  border-color: #00ff9d;
-  box-shadow: 0 0 60px rgba(0, 255, 157, 0.7);
-}
-
-.boot-biometric-scanner.engaged-hidden {
-  opacity: 0;
-  transform: scale(0.9);
-  pointer-events: none;
-  transition: all 0.24s cubic-bezier(0.7, 0, 0.84, 0);
-  display: none;
-}
-
-/* Header */
-.biometric-scanner-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: var(--font-code, monospace);
-  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
-  padding-bottom: 6px;
-}
-
-.biometric-badge {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--accent, #00ffff);
-}
-
-.biometric-status {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #ffaa00;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: rgba(255, 170, 0, 0.12);
-  border: 1px solid rgba(255, 170, 0, 0.4);
-}
-
-.boot-biometric-scanner.scanning .biometric-status {
-  color: #5ceaff;
-  background: rgba(92, 234, 255, 0.2);
-  border-color: #5ceaff;
-  animation: bio-status-pulse 0.6s infinite alternate;
-}
-
-.boot-biometric-scanner.verified .biometric-status {
-  color: #fff;
-  background: #00ff9d;
-  border-color: #fff;
-  box-shadow: 0 0 12px #00ff9d;
-}
-
-@keyframes bio-status-pulse {
-  from { opacity: 0.7; }
-  to { opacity: 1; box-shadow: 0 0 10px #5ceaff; }
-}
-
-/* Scanner Pad */
-.biometric-scanner-pad {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.06) 0%, rgba(2, 8, 16, 0.95) 75%);
-  border: 2px solid rgba(0, 240, 255, 0.4);
-  box-shadow:
-    0 0 20px rgba(0, 240, 255, 0.25),
-    inset 0 0 25px rgba(0, 240, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin: 4px 0;
-}
-
-/* Reticle Rings */
-.biometric-reticle-ring {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.biometric-reticle-ring.ring-outer {
-  inset: 6px;
-  border: 1px dashed rgba(0, 240, 255, 0.35);
-  animation: bio-ring-rotate 12s linear infinite;
-}
-
-.biometric-reticle-ring.ring-inner {
-  inset: 18px;
-  border: 1px dotted rgba(0, 255, 157, 0.4);
-  animation: bio-ring-rotate 8s linear infinite reverse;
-}
-
-@keyframes bio-ring-rotate {
-  to { transform: rotate(360deg); }
-}
-
-/* Fingerprint SVG */
-.biometric-fingerprint-svg {
-  width: 64px;
-  height: 76px;
-  color: #00f0ff;
-  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
-  transition: color 0.3s ease, filter 0.3s ease;
-  z-index: 2;
-}
-
-.boot-biometric-scanner.scanning .biometric-fingerprint-svg {
-  color: #5ceaff;
-  filter: drop-shadow(0 0 14px #5ceaff);
-}
-
-.boot-biometric-scanner.verified .biometric-fingerprint-svg {
-  color: #00ff9d;
-  filter: drop-shadow(0 0 20px #00ff9d);
-}
-
-/* Laser Sweep Bar */
-.biometric-laser-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent 0%, #00ff9d 50%, transparent 100%);
-  box-shadow: 0 0 14px #00ff9d, 0 0 28px #5ceaff;
-  z-index: 4;
-  top: 10%;
-  animation: bio-laser-sweep 2s ease-in-out infinite alternate;
-}
-
-.boot-biometric-scanner.scanning .biometric-laser-bar {
-  background: linear-gradient(90deg, transparent 0%, #5ceaff 50%, transparent 100%);
-  box-shadow: 0 0 18px #5ceaff, 0 0 35px #00ffff;
-  animation: bio-laser-sweep 0.8s ease-in-out infinite alternate;
-}
-
-@keyframes bio-laser-sweep {
-  0% { top: 12%; opacity: 0.6; }
-  100% { top: 86%; opacity: 1; }
-}
-
-/* Prompt Text */
-.biometric-prompt-text {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #00ff9d;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
-  text-align: center;
-  animation: bio-prompt-pulse 1.2s ease-in-out infinite alternate;
-}
-
-@keyframes bio-prompt-pulse {
-  0% { opacity: 0.75; transform: scale(0.98); }
-  100% { opacity: 1; transform: scale(1.02); text-shadow: 0 0 14px rgba(0, 255, 157, 0.9); }
-}
-
-/* Diagnostics */
-.biometric-diagnostics {
-  font-size: 0.55rem;
-  font-family: var(--font-code, monospace);
-  letter-spacing: 0.10em;
-  color: var(--text-muted, #7085a0);
-  text-align: center;
-}
-
-@keyframes cli-btn-pulse {
-  from { transform: scale(1); box-shadow: 0 0 6px #00ff9d; }
-  to { transform: scale(1.05); box-shadow: 0 0 20px #00ff9d; }
-}
-
-/* Gravitational Singularity Collapse before Dissolve */
-.cyber-boot-overlay.boot-collapsing .boot-content {
-  transform: scale(0.02);
-  opacity: 0;
-  filter: blur(12px) brightness(3);
-  transition: all 0.32s cubic-bezier(0.7, 0, 0.84, 0);
-}
-
-/* Right Deck: Real-time Terminal Log */
-.boot-terminal-log {
-  width: 100%;
-  flex: 1;
-  min-height: 180px;
-  max-height: 250px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.72rem;
-  line-height: 1.45;
-  color: var(--text, #d0e4ff);
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.boot-log-line {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  opacity: 0;
-  transform: translateX(-4px);
-  animation: boot-line-in 0.15s ease-out forwards;
+  justify-content: center;
+  outline: none;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes boot-line-in {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.vault-core-button:hover,
+.vault-core-button:focus-visible {
+  transform: scale(1.05);
+  border-color: #00ff9d;
+  box-shadow:
+    0 0 45px rgba(0, 255, 157, 0.65),
+    inset 0 0 35px rgba(0, 255, 157, 0.35);
 }
 
-.boot-log-prefix {
-  color: var(--accent, #00ffff);
-  font-weight: 700;
+.vault-core-button:active {
+  transform: scale(0.96);
 }
 
-.boot-log-ok {
-  color: #00ff9d;
-  font-weight: 700;
-  margin-left: auto;
-}
-
-.boot-terminal-prompt {
-  font-size: 0.72rem;
-  color: #00ff9d;
-  font-weight: bold;
-  animation: boot-dot-pulse 0.8s infinite alternate;
-}
-
-/* Radial Laser Shockwave Burst on Level 5 Clearance */
-.boot-radial-burst {
+.core-btn-halo {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  transform: translate(-50%, -50%);
+  inset: 0;
   border-radius: 50%;
-  border: 2px solid var(--accent, #00ffff);
-  box-shadow: 0 0 30px var(--accent, #00ffff), 0 0 60px var(--accent-bright, #5ceaff);
-  pointer-events: none;
-  animation: boot-burst-expand 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, transparent 70%);
+  animation: core-halo-pulse 2.4s ease-in-out infinite alternate;
 }
 
-@keyframes boot-burst-expand {
-  0% {
-    width: 20px;
-    height: 20px;
-    opacity: 1;
-  }
-  100% {
-    width: 220vmax;
-    height: 220vmax;
-    opacity: 0;
-  }
+@keyframes core-halo-pulse {
+  from { opacity: 0.4; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1.08); }
 }
 
-/* Responsive Collapse for Laptops / Tablets / Mobile */
-@media (max-width: 1024px) {
-  .boot-content {
-    width: 95vw;
-    min-height: auto;
-    max-height: 88vh;
-    overflow-y: auto;
-    padding: 20px;
-  }
-
-  .boot-deck-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .boot-hud-corner {
-    display: none;
-  }
+.core-svg-icon {
+  width: 64px;
+  height: 64px;
+  color: #00f0ff;
+  filter: drop-shadow(0 0 10px #00f0ff);
+  transition: color 0.3s, filter 0.3s;
 }
 
-/* Low-power suppression */
-:root[data-performance="low-power"] .cyber-boot-overlay {
-  display: none !important;
+.vault-core-button:hover .core-svg-icon {
+  color: #00ff9d;
+  filter: drop-shadow(0 0 14px #00ff9d);
+}
+
+.core-btn-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #e2e8f0;
+  margin-top: 6px;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+}
+
+/* Diagnostics & Status Badges */
+.core-status-badge {
+  margin-top: 26px;
+  padding: 6px 18px;
+  background: rgba(10, 15, 25, 0.88);
+  border: 1px solid rgba(255, 170, 0, 0.55);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: #ffaa00;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 170, 0, 0.6);
+  transition: all 0.3s ease;
+}
+
+.core-status-badge.status-venting {
+  border-color: #00f0ff;
+  color: #00f0ff;
+  text-shadow: 0 0 10px #00f0ff;
+}
+
+.core-status-badge.status-disengaged {
+  border-color: #00ff9d;
+  color: #00ff9d;
+  text-shadow: 0 0 12px #00ff9d;
+}
+
+.core-hint-label {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: #a0aec0;
+  text-align: center;
+}
+
+.core-skip-hint {
+  margin-top: 8px;
+  font-size: 0.60rem;
+  color: #7085a0;
+  letter-spacing: 0.10em;
 }
