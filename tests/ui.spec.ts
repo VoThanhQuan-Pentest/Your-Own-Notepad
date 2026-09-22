@@ -1147,14 +1147,14 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   await expect(bootOverlay).toBeVisible();
   await expect(page.locator(".boot-laser-sweep")).toBeVisible();
   await expect(page.locator(".boot-title")).toContainText("COMMAND VAULT // TACTICAL SECURE KERNEL");
-  await expect(page.locator(".boot-cli-terminal")).toBeVisible();
+  await expect(page.locator(".boot-magnetic-slider")).toBeVisible();
 
   // Press Escape to dismiss immediately
   await page.keyboard.press("Escape");
   await expect(bootOverlay).not.toBeVisible();
 });
 
-test("v0.17.0: Cyber Breach Terminal CLI engage and boot sequence", async ({ page }) => {
+test("v0.17.0: Magnetic Railgun Slider engage and boot sequence", async ({ page }) => {
   await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
   await page.getByRole("button", { name: "Open settings" }).click();
@@ -1164,17 +1164,13 @@ test("v0.17.0: Cyber Breach Terminal CLI engage and boot sequence", async ({ pag
   const bootOverlay = page.locator(".cyber-boot-overlay");
   await expect(bootOverlay).toBeVisible();
 
-  const cliTerminal = page.locator(".boot-cli-terminal");
-  await expect(cliTerminal).toBeVisible();
-  await expect(page.locator(".boot-cli-prompt-row")).toBeVisible();
+  const railSlider = page.locator(".boot-magnetic-slider");
+  await expect(railSlider).toBeVisible();
+  await expect(page.locator(".slider-rail-puck")).toBeVisible();
 
-  // Press a key to trigger Hollywood auto-typing
-  await page.keyboard.press("a");
-  await expect(page.locator(".boot-cli-command")).toContainText("ov");
-
-  // Press Enter to execute override
+  // Press Enter to auto-slide puck to target
   await page.keyboard.press("Enter");
-  await expect(cliTerminal).toHaveClass(/engaged-hidden/);
+  await expect(railSlider).toHaveClass(/engaged-hidden/);
   await expect(page.locator(".boot-holo-center")).toBeVisible();
 
   // Escape to dismiss

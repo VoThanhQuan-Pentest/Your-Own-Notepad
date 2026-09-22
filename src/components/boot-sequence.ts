@@ -2,6 +2,8 @@ import {
   playCyberBootSequence,
   speakSystemGreeting,
   playBiometricAuthSound,
+  playServoClick,
+  playPneumaticHiss,
   playCircuitSurgeAudio,
   playLaserChirp,
   playEnergyPulse,
@@ -18,12 +20,8 @@ export interface BootSequenceOptions {
 
 /**
  * Tactical Cybernetic Boot Sequence v0.17.0:
- * - Interactive Nuclear Ignition Switch (Safety Cover Flip & Engage Button)
- * - 6.0-second 4-phase cinematic BIOS / Kernel Power-On Self Test:
- *   - Phase 1 (0.0s - 1.5s): Power Grid Surge & Hardware POST (CPU 8/8, VRAM, Ram buffer)
- *   - Phase 2 (1.5s - 3.2s): Quantum Core Reactor Overdrive & 3D Wireframe Canvas
- *   - Phase 3 (3.2s - 4.8s): Assembly & Matrix Hex Decryption Cascade + Live Operator Name Decoding
- *   - Phase 4 (4.8s - 6.0s): Voice Synthesis, Clearance Level 5 & Supernova Shockwave Dissolve
+ * - Interactive Style 3: Magnetic Railgun Slider (Slide-to-Engage Neural Link)
+ * - 6.0-second 4-phase cinematic BIOS / Kernel Power-On Self Test
  */
 export function runBootSequence(options: BootSequenceOptions = {}, force = false): Promise<void> {
   return new Promise((resolve) => {
@@ -66,7 +64,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     cornerBL.innerHTML = `<span class="corner-tag">[RADAR_MESH]</span> SENSORS: 127.0.0.1 // THREATS: 0<br><span class="corner-sub">TACTICAL TELEMETRY: 60 FPS NOMINAL</span>`;
 
     const cornerBR = element("div", "boot-hud-corner bottom-right");
-    cornerBR.innerHTML = `<span class="corner-tag">[OVERRIDE]</span> ESC TO ABORT // SPACE TO ENGAGE<br><span class="corner-sub">SYS_LATENCY: 0.08ms // STABLE</span>`;
+    cornerBR.innerHTML = `<span class="corner-tag">[OVERRIDE]</span> ESC TO ABORT // SLIDE TO ENGAGE<br><span class="corner-sub">SYS_LATENCY: 0.08ms // STABLE</span>`;
 
     const content = element("div", "boot-content");
 
@@ -125,41 +123,48 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     }
     deckLeft.append(leftHeader, metricsList, oscCanvas, freqVisualizer);
 
-    // Center Deck: Cyber Breach Terminal CLI & Holographic Core
+    // Center Deck: Magnetic Railgun Slider & Holographic Core
     const deckCenter = element("div", "boot-deck-center");
-    const phaseBanner = element("div", "boot-phase-banner", "STANDBY // ZERO-TRUST AIRGAP BREACH GATEWAY");
+    const phaseBanner = element("div", "boot-phase-banner", "STANDBY // MAGNETIC RAILGUN CONDUIT READY");
 
-    // 1. Cyber Breach Terminal CLI
-    const cliTerminal = element("div", "boot-cli-terminal");
-    cliTerminal.setAttribute("role", "button");
-    cliTerminal.setAttribute("tabindex", "0");
-    cliTerminal.setAttribute("aria-label", "Cyber Breach CLI Terminal. Type any key or press Enter to execute");
+    // 1. Magnetic Railgun Slider Assembly
+    const railSlider = element("div", "boot-magnetic-slider");
+    railSlider.setAttribute("role", "slider");
+    railSlider.setAttribute("tabindex", "0");
+    railSlider.setAttribute("aria-valuemin", "0");
+    railSlider.setAttribute("aria-valuemax", "100");
+    railSlider.setAttribute("aria-valuenow", "0");
+    railSlider.setAttribute("aria-label", "Slide magnetic puck to engage neural link");
 
-    const cliHeader = element("div", "boot-cli-header");
-    const cliTitle = element("span", "boot-cli-title", "KERNEL_AUTH_CONSOLE // V0.17.0");
-    const cliStatus = element("span", "boot-cli-status", "[ LOCKED ]");
-    cliHeader.append(cliTitle, cliStatus);
+    const railHeader = element("div", "slider-rail-header");
+    const railBadge = element("span", "slider-rail-badge", "DEFCON 1 // NEURAL RAIL CONDUIT");
+    const railStatus = element("span", "slider-rail-status", "[ ARMED: 0% ]");
+    railHeader.append(railBadge, railStatus);
 
-    const cliLogs = element("div", "boot-cli-logs");
-    cliLogs.innerHTML = `
-      <div class="cli-log-warn"><span class="cli-tag">[SECURITY]</span> DEFCON 1 ZERO-TRUST AIRGAP ACTIVE</div>
-      <div class="cli-log-info"><span class="cli-tag">[AUTH]</span> OPERATOR BIOMETRIC CLEARANCE REQUIRED</div>
-      <div class="cli-log-hint"><span class="cli-tag">[HINT]</span> TYPE KEYS TO AUTO-CODE // PRESS [ENTER] TO EXECUTE</div>
-    `;
+    const railTrack = element("div", "slider-rail-track");
+    const railTrail = element("div", "slider-rail-trail");
+    const railText = element("div", "slider-rail-text", "SLIDE TO ENGAGE NEURAL LINK >>>>>>");
 
-    const cliPromptRow = element("div", "boot-cli-prompt-row");
-    const cliPromptPrefix = element("span", "boot-cli-prefix", "root@vault:~# ");
-    const cliCommandText = element("span", "boot-cli-command", "");
-    const cliCursor = element("span", "boot-cli-cursor", "█");
-    cliPromptRow.append(cliPromptPrefix, cliCommandText, cliCursor);
+    // Magnetic Shuttle / Puck
+    const railPuck = element("div", "slider-rail-puck");
+    railPuck.setAttribute("title", "Drag to right or press Enter to engage");
+    const puckIcon = element("span", "slider-puck-icon", "⚡");
+    const puckGlow = element("div", "slider-puck-glow");
+    railPuck.append(puckIcon, puckGlow);
 
-    const cliActionBar = element("div", "boot-cli-action-bar");
-    const cliKeyHint = element("span", "boot-cli-key-hint", "⌨ HIT ANY KEY TO AUTO-CODE");
-    const cliExecuteBtn = element("button", "boot-cli-execute-btn", "EXECUTE OVERRIDE ↵");
-    cliExecuteBtn.type = "button";
-    cliActionBar.append(cliKeyHint, cliExecuteBtn);
+    // Target Magnetic Dock
+    const railDock = element("div", "slider-rail-dock");
+    const dockEmitter = element("div", "rail-dock-emitter");
+    const dockTag = element("span", "rail-dock-tag", "LOCK");
+    railDock.append(dockEmitter, dockTag);
 
-    cliTerminal.append(cliHeader, cliLogs, cliPromptRow, cliActionBar);
+    railTrack.append(railTrail, railText, railPuck, railDock);
+
+    const railFooter = element("div", "slider-rail-footer");
+    const railHint = element("span", "slider-rail-hint", "⮂ DRAG PUCK TO LOCK // PRESS [ENTER] TO SLIDE");
+    railFooter.append(railHint);
+
+    railSlider.append(railHeader, railTrack, railFooter);
 
     // 2. Holographic Quantum Core (revealed once engaged)
     const holoCenter = element("div", "boot-holo-center");
@@ -183,15 +188,15 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     progressTrack.append(progressFill);
     progressContainer.append(progressHeader, progressTrack);
 
-    const skipHint = element("span", "boot-skip-hint", "[ ESC TO SKIP // ENTER TO EXECUTE ]");
-    deckCenter.append(phaseBanner, cliTerminal, holoCenter, clearanceContainer, progressContainer, skipHint);
+    const skipHint = element("span", "boot-skip-hint", "[ ESC TO SKIP // ENTER TO ENGAGE ]");
+    deckCenter.append(phaseBanner, railSlider, holoCenter, clearanceContainer, progressContainer, skipHint);
 
     // Right Deck: Real-time Kernel POST Stream
     const deckRight = element("div", "boot-deck-right");
     const rightHeader = element("div", "boot-deck-header", "// REAL-TIME POST STREAM");
     const terminalLog = element("div", "boot-terminal-log");
     const hexStream = element("div", "boot-hex-stream");
-    hexStream.innerHTML = `<span class="hex-addr">0x7FFE04</span> <span class="hex-bytes">48 89 E5 31 C0 48 83 EC</span> <span class="hex-tag">[BREACH_AWAITING]</span>`;
+    hexStream.innerHTML = `<span class="hex-addr">0x7FFE04</span> <span class="hex-bytes">48 89 E5 31 C0 48 83 EC</span> <span class="hex-tag">[RAIL_CHARGED]</span>`;
     const terminalPrompt = element("div", "boot-terminal-prompt", "> _");
     deckRight.append(rightHeader, terminalLog, hexStream, terminalPrompt);
 
@@ -204,23 +209,97 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     let running = false;
     const timers: number[] = [];
 
-    // Hollywood Hacker Auto-Typer Logic
-    const targetCommand = "override_kernel_auth --force --target=CORE --level=5";
-    let typedIndex = 0;
+    // ==========================================
+    // Magnetic Rail Drag & Engagement Physics
+    // ==========================================
+    let isDragging = false;
+    let dragStartX = 0;
+    let currentPct = 0;
 
-    function typeNextChunk() {
-      if (running || dismissed) return;
-      const chunkSize = Math.floor(Math.random() * 3) + 2; // 2-4 chars per keystroke
-      typedIndex = Math.min(targetCommand.length, typedIndex + chunkSize);
-      cliCommandText.textContent = targetCommand.slice(0, typedIndex);
-      playDecryptionTick();
-
-      if (typedIndex >= targetCommand.length) {
-        cliStatus.textContent = "[ READY ]";
-        cliStatus.classList.add("ready");
-        cliExecuteBtn.classList.add("pulse");
-      }
+    function getMaxDistance() {
+      return Math.max(1, railTrack.clientWidth - railPuck.clientWidth - 10);
     }
+
+    function updatePuckPosition(px: number) {
+      const max = getMaxDistance();
+      const clamped = Math.max(0, Math.min(max, px));
+      currentPct = clamped / max;
+      railPuck.style.transform = `translateX(${clamped}px)`;
+      railTrail.style.width = `${currentPct * 100}%`;
+      railStatus.textContent = `[ CHARGING: ${Math.round(currentPct * 100)}% ]`;
+      railSlider.setAttribute("aria-valuenow", `${Math.round(currentPct * 100)}`);
+    }
+
+    function snapReset() {
+      railPuck.style.transition = "transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+      railTrail.style.transition = "width 0.28s ease";
+      railPuck.style.transform = "translateX(0px)";
+      railTrail.style.width = "0%";
+      currentPct = 0;
+      railStatus.textContent = "[ ARMED: 0% ]";
+      railSlider.setAttribute("aria-valuenow", "0");
+      window.setTimeout(() => {
+        railPuck.style.transition = "";
+        railTrail.style.transition = "";
+      }, 300);
+    }
+
+    function autoSlideAndEngage() {
+      if (running || dismissed) return;
+      const max = getMaxDistance();
+      railPuck.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)";
+      railTrail.style.transition = "width 0.25s ease";
+      updatePuckPosition(max);
+      window.setTimeout(() => {
+        engageCore();
+      }, 260);
+    }
+
+    railPuck.addEventListener("pointerdown", (e) => {
+      if (running || dismissed) return;
+      isDragging = true;
+      dragStartX = e.clientX - currentPct * getMaxDistance();
+      railPuck.setPointerCapture(e.pointerId);
+      railSlider.classList.add("dragging");
+      playPneumaticHiss(true);
+    });
+
+    railPuck.addEventListener("pointermove", (e) => {
+      if (!isDragging || running || dismissed) return;
+      const currentX = e.clientX - dragStartX;
+      updatePuckPosition(currentX);
+      if (currentPct >= 0.88) {
+        isDragging = false;
+        railSlider.classList.remove("dragging");
+        autoSlideAndEngage();
+      }
+    });
+
+    const onPointerUp = () => {
+      if (!isDragging || running || dismissed) return;
+      isDragging = false;
+      railSlider.classList.remove("dragging");
+      if (currentPct >= 0.80) {
+        autoSlideAndEngage();
+      } else {
+        snapReset();
+      }
+    };
+
+    railPuck.addEventListener("pointerup", onPointerUp);
+    railPuck.addEventListener("pointercancel", onPointerUp);
+
+    railTrack.addEventListener("click", (e) => {
+      if (running || dismissed) return;
+      e.stopPropagation();
+      autoSlideAndEngage();
+    });
+
+    railSlider.addEventListener("click", (e) => {
+      if (running || dismissed) return;
+      e.stopPropagation();
+      autoSlideAndEngage();
+    });
 
     function renderOsc() {
       if (dismissed || !oscCtx) return;
@@ -268,31 +347,28 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       }, 260);
     };
 
-    const executeCLI = () => {
+    const engageCore = () => {
       if (running || dismissed) return;
       running = true;
 
-      cliCommandText.textContent = targetCommand;
-      cliStatus.textContent = "[ EXECUTING ]";
-      cliStatus.classList.add("executing");
-      cliTerminal.classList.add("executing-pulse");
+      railStatus.textContent = "[ LOCKED: 100% ]";
+      railStatus.classList.add("locked");
+      railSlider.classList.add("locked-engaged");
+      railDock.classList.add("dock-locked");
 
-      const execLine = element("div", "cli-log-success", "[OK] OVERRIDE VECTOR ACCEPTED ➔ ENGAGING QUANTUM KERNEL");
-      cliLogs.append(execLine);
-      cliLogs.scrollTop = cliLogs.scrollHeight;
-
-      const rect = cliTerminal.getBoundingClientRect();
+      const rect = railPuck.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       triggerSparkBurst(cx, cy);
       triggerHexShockwave(cx, cy);
 
+      playServoClick();
       playCircuitSurgeAudio();
       playLaserChirp();
       playCyberBootSequence();
 
       window.setTimeout(() => {
-        cliTerminal.classList.add("engaged-hidden");
+        railSlider.classList.add("engaged-hidden");
         holoCenter.style.display = "flex";
         holoCenter.classList.add("core-igniting");
       }, 220);
@@ -300,37 +376,17 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       start6SecondTimeline();
     };
 
-    cliExecuteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      executeCLI();
-    });
-
-    cliTerminal.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (typedIndex < targetCommand.length) {
-        typeNextChunk();
-      } else {
-        executeCLI();
-      }
-    });
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
         dismiss();
         return;
       }
-      if (e.key === "Enter") {
+      if (e.key === "Enter" || e.key === " ") {
         e.stopPropagation();
         e.preventDefault();
-        executeCLI();
+        autoSlideAndEngage();
         return;
-      }
-      // Any other key triggers Hollywood Hacker auto-type
-      if (e.key.length === 1 || e.key === "Backspace" || e.key === "Tab" || e.key === " ") {
-        e.stopPropagation();
-        e.preventDefault();
-        typeNextChunk();
       }
     };
 
@@ -339,7 +395,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     // Auto-engage fallback after 5.0 seconds if user is idle
     const autoEngageTimer = window.setTimeout(() => {
       if (!running && !dismissed) {
-        executeCLI();
+        autoSlideAndEngage();
       }
     }, 5000);
     timers.push(autoEngageTimer);

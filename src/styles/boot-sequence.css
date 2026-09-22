@@ -618,63 +618,44 @@
    ========================================================================== */
 
 /* ==========================================================================
-   STYLE 2: CYBER BREACH TERMINAL / HOLLYWOOD CLI PROMPT
+   STYLE 3: MAGNETIC RAILGUN SLIDER (SLIDE-TO-ENGAGE NEURAL LINK)
    ========================================================================== */
 
-.boot-cli-terminal {
+.boot-magnetic-slider {
   position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(6, 14, 22, 0.95) 0%, rgba(2, 6, 12, 0.98) 100%);
+  gap: 12px;
+  padding: 16px 18px;
+  background: radial-gradient(circle at 50% 50%, rgba(8, 20, 32, 0.95) 0%, rgba(2, 6, 14, 0.98) 100%);
   border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
-  border-left: 3px solid #00ff9d;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow:
-    0 0 30px rgba(0, 255, 157, 0.12),
-    inset 0 0 30px rgba(0, 0, 0, 0.9);
+    0 0 35px rgba(0, 240, 255, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.85);
   margin: 4px 0;
-  cursor: pointer;
   user-select: none;
   outline: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
 }
 
-/* Scanline texture over terminal */
-.boot-cli-terminal::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0px,
-    transparent 2px,
-    rgba(0, 0, 0, 0.35) 2px,
-    rgba(0, 0, 0, 0.35) 4px
-  );
-  pointer-events: none;
-  opacity: 0.6;
-}
-
-.boot-cli-terminal:hover,
-.boot-cli-terminal:focus-visible {
-  border-color: #00ff9d;
+.boot-magnetic-slider:hover,
+.boot-magnetic-slider:focus-visible {
+  border-color: var(--accent, #00ffff);
   box-shadow:
-    0 0 35px rgba(0, 255, 157, 0.28),
-    inset 0 0 35px rgba(0, 255, 157, 0.08);
+    0 0 45px rgba(0, 240, 255, 0.35),
+    inset 0 0 30px rgba(0, 240, 255, 0.1);
   transform: translateY(-2px);
 }
 
-.boot-cli-terminal.executing-pulse {
+.boot-magnetic-slider.locked-engaged {
   border-color: #00ff9d;
-  box-shadow: 0 0 50px rgba(0, 255, 157, 0.6), inset 0 0 40px rgba(0, 255, 157, 0.2);
+  box-shadow: 0 0 50px rgba(0, 255, 157, 0.6);
 }
 
-.boot-cli-terminal.engaged-hidden {
+.boot-magnetic-slider.engaged-hidden {
   opacity: 0;
   transform: scale(0.9);
   pointer-events: none;
@@ -682,27 +663,27 @@
   display: none;
 }
 
-/* Terminal Header */
-.boot-cli-header {
+/* Header */
+.slider-rail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(0, 255, 157, 0.2);
-  padding-bottom: 6px;
   font-family: var(--font-code, monospace);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+  padding-bottom: 6px;
 }
 
-.boot-cli-title {
+.slider-rail-badge {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: #00ff9d;
+  color: var(--accent, #00ffff);
 }
 
-.boot-cli-status {
+.slider-rail-status {
   font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.08em;
   color: #ffaa00;
   padding: 1px 6px;
   border-radius: 3px;
@@ -710,143 +691,155 @@
   border: 1px solid rgba(255, 170, 0, 0.4);
 }
 
-.boot-cli-status.ready {
+.slider-rail-status.locked {
   color: #00ff9d;
-  background: rgba(0, 255, 157, 0.15);
+  background: rgba(0, 255, 157, 0.18);
   border-color: #00ff9d;
-  animation: cli-status-pulse 0.8s infinite alternate;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.8);
 }
 
-.boot-cli-status.executing {
-  color: #fff;
-  background: #00ff9d;
-  border-color: #fff;
+/* Track Body */
+.slider-rail-track {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  background: rgba(4, 10, 18, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
 }
 
-@keyframes cli-status-pulse {
-  from { opacity: 0.7; }
-  to { opacity: 1; box-shadow: 0 0 10px rgba(0, 255, 157, 0.8); }
+/* Plasma Trail behind puck */
+.slider-rail-trail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.1) 0%, rgba(0, 255, 157, 0.4) 100%);
+  box-shadow: 0 0 16px rgba(0, 255, 157, 0.6);
+  pointer-events: none;
 }
 
-/* Terminal Security Logs */
-.boot-cli-logs {
-  font-size: 0.62rem;
+/* Glowing text inside rail */
+.slider-rail-text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  font-size: 0.65rem;
   font-family: var(--font-code, monospace);
-  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  animation: rail-text-shimmer 2s infinite linear;
+}
+
+@keyframes rail-text-shimmer {
+  0% { color: rgba(255, 255, 255, 0.35); text-shadow: none; }
+  50% { color: #5ceaff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.8); }
+  100% { color: rgba(255, 255, 255, 0.35); text-shadow: none; }
+}
+
+/* Shuttle / Puck */
+.slider-rail-puck {
+  position: absolute;
+  left: 4px;
+  width: 50px;
+  height: 46px;
+  background: linear-gradient(135deg, #16364a 0%, #0d2230 60%, #05121c 100%);
+  border: 2px solid var(--accent, #00ffff);
+  border-radius: 6px;
+  box-shadow:
+    0 0 16px rgba(0, 240, 255, 0.6),
+    inset 0 0 8px rgba(0, 240, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+  z-index: 5;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.boot-magnetic-slider.dragging .slider-rail-puck {
+  cursor: grabbing;
+  border-color: #00ff9d;
+  box-shadow: 0 0 24px #00ff9d;
+}
+
+.slider-puck-icon {
+  font-size: 1.15rem;
+  color: #fff;
+  filter: drop-shadow(0 0 6px var(--accent, #00ffff));
+}
+
+.slider-puck-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 8px;
+  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Target Magnetic Dock / Clamp */
+.slider-rail-dock {
+  position: absolute;
+  right: 4px;
+  width: 44px;
+  height: 46px;
+  border: 1px dashed rgba(255, 170, 0, 0.4);
+  border-radius: 6px;
+  background: rgba(255, 170, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
-.cli-tag {
-  font-weight: 700;
-  margin-right: 4px;
+.rail-dock-emitter {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffaa00;
+  box-shadow: 0 0 8px #ffaa00;
 }
 
-.cli-log-warn {
+.slider-rail-dock.dock-locked .rail-dock-emitter {
+  background: #00ff9d;
+  box-shadow: 0 0 12px #00ff9d;
+}
+
+.rail-dock-tag {
+  font-size: 0.52rem;
+  font-family: var(--font-code, monospace);
+  font-weight: 800;
   color: #ffaa00;
+  margin-top: 3px;
+  letter-spacing: 0.08em;
 }
 
-.cli-log-info {
-  color: #7085a0;
-}
-
-.cli-log-hint {
-  color: #5ceaff;
-}
-
-.cli-log-success {
+.slider-rail-dock.dock-locked .rail-dock-tag {
   color: #00ff9d;
-  font-weight: 700;
-  animation: cli-log-pop 0.2s ease-out;
 }
 
-@keyframes cli-log-pop {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Prompt Line */
-.boot-cli-prompt-row {
+/* Footer */
+.slider-rail-footer {
   display: flex;
-  align-items: center;
-  font-family: var(--font-code, monospace);
-  font-size: 0.72rem;
-  line-height: 1.4;
-  padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(0, 255, 157, 0.25);
-  border-radius: 4px;
-  color: #fff;
-  word-break: break-all;
-}
-
-.boot-cli-prefix {
-  color: #00ff9d;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.boot-cli-command {
-  display: inline-block;
-  min-width: 4px;
-  color: #fff;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  min-height: 1.2em;
-}
-
-.boot-cli-cursor {
-  color: #00ff9d;
-  margin-left: 2px;
-  font-size: 0.80rem;
-  line-height: 1;
-  animation: cli-cursor-blink 0.7s infinite alternate;
-}
-
-@keyframes cli-cursor-blink {
-  0% { opacity: 1; }
-  50% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/* Action Bar */
-.boot-cli-action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 4px;
+  justify-content: center;
   font-family: var(--font-code, monospace);
 }
 
-.boot-cli-key-hint {
+.slider-rail-hint {
   font-size: 0.58rem;
   letter-spacing: 0.08em;
   color: var(--text-muted, #7085a0);
-}
-
-.boot-cli-execute-btn {
-  font-size: 0.62rem;
-  font-family: var(--font-code, monospace);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #000;
-  background: #00ff9d;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.boot-cli-execute-btn:hover {
-  background: #fff;
-  box-shadow: 0 0 16px #00ff9d;
-  transform: scale(1.04);
-}
-
-.boot-cli-execute-btn.pulse {
-  animation: cli-btn-pulse 0.9s infinite alternate;
+  text-align: center;
 }
 
 @keyframes cli-btn-pulse {
