@@ -1,11 +1,10 @@
 import {
   playCyberBootSequence,
   speakSystemGreeting,
-  playLaserChirp,
-  playTimeWarp,
+  playReactorOverload,
   playEmpDistortion,
-  playMechanicalClick,
   playCircuitSurgeAudio,
+  playLaserChirp,
 } from "../services/audio";
 import { element } from "../utils/dom";
 import { triggerSparkBurst, triggerHexShockwave } from "../utils/particles";
@@ -17,14 +16,14 @@ export interface BootSequenceOptions {
 
 /**
  * Command Vault v0.17.0 - Brutalist Cybernetic Intro
- * Style 2: Nhát Cắt Không Gian (Dimensional Void Slash / Spatial Rift Breach)
+ * Style 3: Lõi Phản Ứng Quá Tải (Reactor Core Supernova / Critical Ignition)
  *
  * Cinematic Flow:
- * - The Void: Pitch black space with floating quantum particles & central singularity
- * - Interactive: Swipe / drag a slash across screen OR click singularity / press Space
- * - Phase 1: Ultra-fast razor-sharp energy blade slices across space (120ms) with blade sound
- * - Phase 2: Reality cracks open, spatial shards scatter, spatial fabric tears apart
- * - Phase 3: The two halves of space slide off into the void, releasing radiant breach light
+ * - Centerpiece: Tokamak Fusion Reactor with 3 counter-rotating magnetic containment rings
+ * - Interactive: Hold / click reactor core button to initiate criticality
+ * - Phase 1: Turbine spools up, magnetic coils accelerate, plasma core turns white-hot (400ms)
+ * - Phase 2: Containment dampers breach, rings shatter outward, arcs and EMP shockwaves blast (350ms)
+ * - Phase 3: Supernova blast wave washes across screen, dissolving into Workspace (900ms)
  */
 export function runBootSequence(options: BootSequenceOptions = {}, force = false): Promise<void> {
   return new Promise((resolve) => {
@@ -47,76 +46,67 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       return;
     }
 
-    const overlay = element("div", "cyber-boot-overlay void-slash-overlay");
+    const overlay = element("div", "cyber-boot-overlay reactor-core-overlay");
     overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-label", "Dimensional Void Slash Gateway");
+    overlay.setAttribute("aria-label", "Tokamak Fusion Reactor Core Ignition");
 
-    // The Void container
-    const voidScreen = element("div", "void-slash-screen");
+    // The Reactor Stage Container
+    const reactorStage = element("div", "reactor-stage");
 
-    // Radiant breach flash behind the tear
-    const breachLight = element("div", "void-breach-light");
+    // Supernova Blast Flash Layer
+    const blastFlash = element("div", "reactor-supernova-blast");
 
-    // Two halves of reality that split apart along the diagonal slash
-    const halfTop = element("div", "void-half void-half-top");
-    const halfBottom = element("div", "void-half void-half-bottom");
+    // Reactor Chamber assembly
+    const chamber = element("div", "reactor-chamber");
 
-    // Background cosmic dust particles
-    const dustContainer = element("div", "void-dust-container");
-    for (let i = 0; i < 20; i++) {
-      const p = element("span", "void-particle");
-      p.style.setProperty("--x", `${(i * 17) % 100}%`);
-      p.style.setProperty("--y", `${(i * 23) % 100}%`);
-      p.style.setProperty("--dur", `${3 + (i % 4)}s`);
-      p.style.setProperty("--delay", `${(i * 0.2).toFixed(1)}s`);
-      dustContainer.append(p);
-    }
+    // Ambient background flux grid
+    const fluxGrid = element("div", "reactor-flux-grid");
 
-    // Razor energy blade line that slashes across the screen
-    const slashBlade = element("div", "void-slash-blade");
+    // 3 Counter-Rotating Magnetic Containment Damper Rings
+    const ringOuter = element("div", "containment-ring ring-outer");
+    const ringMiddle = element("div", "containment-ring ring-middle");
+    const ringInner = element("div", "containment-ring ring-inner");
 
-    // Shard fragments that shatter when space tears
-    const shardContainer = element("div", "spatial-shard-container");
-    for (let i = 0; i < 8; i++) {
-      const s = element("div", `spatial-shard shard-${i}`);
-      shardContainer.append(s);
-    }
+    // Central Heavy Reactor Sphere & Actuator Button
+    const coreSphere = element("div", "reactor-core-sphere");
+    const actuatorBtn = element("button", "reactor-actuator-btn");
+    actuatorBtn.setAttribute("type", "button");
+    actuatorBtn.setAttribute("aria-label", "Initiate Tokamak Reactor Critical Overload");
 
-    // Central Singularity Assembly
-    const singularityAssembly = element("div", "void-singularity-assembly");
-    const accretionRing = element("div", "singularity-accretion-ring");
-    const singularityBtn = element("button", "void-singularity");
-    singularityBtn.setAttribute("type", "button");
-    singularityBtn.setAttribute("aria-label", "Trigger Dimensional Void Slash");
+    const plasmaOrb = element("div", "reactor-plasma-orb");
+    const coreHeatHaze = element("div", "reactor-heat-haze");
+    const coreIcon = element("div", "reactor-core-icon");
+    coreIcon.innerHTML = `
+      <svg viewBox="0 0 48 48" class="reactor-svg" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="24" cy="24" r="16" stroke-dasharray="4 2"/>
+        <circle cx="24" cy="24" r="8"/>
+        <path d="M24 4 V12 M24 36 V44 M4 24 H12 M36 24 H44"/>
+        <circle cx="24" cy="24" r="3" fill="currentColor"/>
+      </svg>
+    `;
+    actuatorBtn.append(coreHeatHaze, plasmaOrb, coreIcon);
+    coreSphere.append(actuatorBtn);
 
-    const corePulse = element("div", "singularity-core-pulse");
-    const coreDot = element("div", "singularity-core-dot");
-    singularityBtn.append(corePulse, coreDot);
+    // Stencil, Diagnostics & Guidance Labels
+    const titleLabel = element("div", "reactor-title-label", "COMMAND VAULT // TOKAMAK KERNEL");
+    const statusBadge = element("div", "reactor-status-badge", "[ CORE TEMP: 4.8M K // CONTAINMENT STABLE ]");
+    const hintLabel = element("div", "reactor-hint-label", "✦ CLICK CORE TO INITIATE CRITICAL OVERCHARGE ✦");
+    const skipHint = element("div", "reactor-skip-hint", "[ ESC TO SKIP // SPACE TO DETONATE ]");
 
-    const titleLabel = element("div", "void-title-label", "COMMAND VAULT // SPATIAL VOID");
-    const statusBadge = element("div", "void-status-badge", "[ SPATIAL FABRIC: 100% // ANCHORED ]");
-    const hintLabel = element("div", "void-hint-label", "✦ DRAG TO SLASH OR CLICK SINGULARITY TO TEAR REALITY ✦");
-    const skipHint = element("div", "void-skip-hint", "[ ESC TO SKIP // SPACE TO SLASH ]");
-
-    singularityAssembly.append(
-      accretionRing,
-      singularityBtn,
+    chamber.append(
+      fluxGrid,
+      ringOuter,
+      ringMiddle,
+      ringInner,
+      coreSphere,
       titleLabel,
       statusBadge,
       hintLabel,
       skipHint,
     );
 
-    voidScreen.append(
-      dustContainer,
-      breachLight,
-      halfTop,
-      halfBottom,
-      slashBlade,
-      shardContainer,
-      singularityAssembly,
-    );
-    overlay.append(voidScreen);
+    reactorStage.append(blastFlash, chamber);
+    overlay.append(reactorStage);
     document.body.append(overlay);
 
     let dismissed = false;
@@ -124,101 +114,63 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     const timers: number[] = [];
 
     // ==========================================
-    // Interactive Slash & Drag Detection
+    // Critical Overcharge Ignition Execution
     // ==========================================
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let isDragging = false;
-
-    voidScreen.addEventListener("pointerdown", (e) => {
-      if (running || dismissed) return;
-      isDragging = true;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-    });
-
-    voidScreen.addEventListener("pointerup", (e) => {
-      if (!isDragging || running || dismissed) return;
-      isDragging = false;
-      const dx = e.clientX - dragStartX;
-      const dy = e.clientY - dragStartY;
-      const dist = Math.hypot(dx, dy);
-
-      if (dist > 60) {
-        // Calculate dynamic drag angle
-        let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-        executeSlash(angle);
-      } else {
-        // Simple click / tap
-        executeSlash(-25);
-      }
-    });
-
-    singularityBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      executeSlash(-25);
-    });
-
-    // ==========================================
-    // Cinematic Dimensional Slash Execution
-    // ==========================================
-    function executeSlash(angleDeg = -25) {
+    function igniteReactor() {
       if (running || dismissed) return;
       running = true;
 
-      voidScreen.style.setProperty("--slash-angle", `${angleDeg}deg`);
+      // Phase 1 (t = 0ms): Spooling turbine, coils accelerate, heat escalates
+      chamber.classList.add("reactor-spooling", "reactor-shaking");
+      statusBadge.textContent = "[ CRITICALITY OVERCHARGE: 99.9% // WARNING ]";
+      statusBadge.classList.add("status-overcharge");
 
-      // Phase 1 (t = 0ms): Razor blade slashes across screen in 120ms
-      voidScreen.classList.add("slashing", "void-screen-shaking");
-      statusBadge.textContent = "[ SPATIAL FABRIC RUPTURED // VOID RIFT ACTIVATED ]";
-      statusBadge.classList.add("status-slashed");
+      playReactorOverload();
+      playCircuitSurgeAudio();
 
-      playLaserChirp();
-      playTimeWarp();
+      const rect = actuatorBtn.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
 
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      triggerSparkBurst(cx, cy);
-
-      // Phase 2 (t = 180ms): Reality cracks open, spatial shards scatter
+      // Phase 2 (t = 400ms): Damper breach, rings shatter outward, arcs and EMP
       const t1 = window.setTimeout(() => {
         if (dismissed) return;
-        voidScreen.classList.remove("void-screen-shaking");
-        voidScreen.classList.add("rift-opening");
-        statusBadge.textContent = "[ REALITY TEAR: 100% // COMMENCING BREACH ]";
-        statusBadge.classList.add("status-breaching");
+        chamber.classList.remove("reactor-shaking");
+        chamber.classList.add("reactor-breached");
+        statusBadge.textContent = "[ CONTAINMENT PURGED // SUPERNOVA IGNITION ]";
+        statusBadge.classList.add("status-purged");
 
+        triggerSparkBurst(cx, cy);
         triggerHexShockwave(cx, cy);
-        playMechanicalClick();
         playEmpDistortion();
-        playCircuitSurgeAudio();
-      }, 180);
+        playLaserChirp();
+      }, 400);
       timers.push(t1);
 
-      // Phase 3 (t = 650ms): The two halves fly apart, radiant light floods screen
+      // Phase 3 (t = 780ms): Supernova blast wave washes across screen
       const t2 = window.setTimeout(() => {
         if (dismissed) return;
-        voidScreen.classList.add("rift-breached");
-        breachLight.classList.add("breach-blooming");
+        blastFlash.classList.add("supernova-blooming");
+        chamber.classList.add("reactor-dissolving");
 
         playCyberBootSequence();
         if (options.displayName) {
           speakSystemGreeting(options.displayName);
         }
-      }, 650);
+      }, 780);
       timers.push(t2);
 
-      // Phase 4 (t = 1600ms): Smooth overlay fadeout
+      // Phase 4 (t = 1750ms): Smooth overlay fadeout
       const t3 = window.setTimeout(() => {
         if (dismissed) return;
-        overlay.classList.add("void-overlay-fadeout");
-      }, 1600);
+        overlay.classList.add("reactor-overlay-fadeout");
+      }, 1750);
       timers.push(t3);
 
-      // Phase 5 (t = 1850ms): Resolve and remove
+      // Phase 5 (t = 2050ms): Resolve and remove
       const t4 = window.setTimeout(() => {
         finish();
-      }, 1850);
+      }, 2050);
       timers.push(t4);
     }
 
@@ -231,6 +183,16 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       resolve();
     }
 
+    actuatorBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      igniteReactor();
+    });
+
+    chamber.addEventListener("click", (e) => {
+      e.stopPropagation();
+      igniteReactor();
+    });
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
@@ -241,19 +203,19 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       if (e.key === "Enter" || e.key === " ") {
         e.stopPropagation();
         e.preventDefault();
-        executeSlash(-25);
+        igniteReactor();
         return;
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
 
-    // Auto-slash fallback after 5.0s if user is idle
-    const autoSlash = window.setTimeout(() => {
+    // Auto-ignite fallback after 5.0s if user is idle
+    const autoIgnite = window.setTimeout(() => {
       if (!running && !dismissed) {
-        executeSlash(-25);
+        igniteReactor();
       }
     }, 5000);
-    timers.push(autoSlash);
+    timers.push(autoIgnite);
   });
 }

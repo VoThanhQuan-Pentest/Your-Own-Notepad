@@ -1145,16 +1145,16 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   // Boot sequence overlay appears and can be dismissed
   const bootOverlay = page.locator(".cyber-boot-overlay");
   await expect(bootOverlay).toBeVisible();
-  await expect(page.locator(".void-slash-screen")).toBeVisible();
-  await expect(page.locator(".void-singularity")).toBeVisible();
-  await expect(page.locator(".void-title-label")).toContainText("COMMAND VAULT");
+  await expect(page.locator(".reactor-chamber")).toBeVisible();
+  await expect(page.locator(".reactor-actuator-btn")).toBeVisible();
+  await expect(page.locator(".reactor-title-label")).toContainText("COMMAND VAULT");
 
   // Press Escape to dismiss immediately
   await page.keyboard.press("Escape");
   await expect(bootOverlay).not.toBeVisible();
 });
 
-test("v0.17.0: Dimensional Void Slash trigger and rift breach sequence", async ({ page }) => {
+test("v0.17.0: Tokamak Reactor Core critical overload ignition sequence", async ({ page }) => {
   await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
   await page.getByRole("button", { name: "Open settings" }).click();
@@ -1164,14 +1164,14 @@ test("v0.17.0: Dimensional Void Slash trigger and rift breach sequence", async (
   const bootOverlay = page.locator(".cyber-boot-overlay");
   await expect(bootOverlay).toBeVisible();
 
-  const voidScreen = page.locator(".void-slash-screen");
-  await expect(voidScreen).toBeVisible();
-  const singularity = page.locator(".void-singularity");
-  await expect(singularity).toBeVisible();
+  const chamber = page.locator(".reactor-chamber");
+  await expect(chamber).toBeVisible();
+  const actuatorBtn = page.locator(".reactor-actuator-btn");
+  await expect(actuatorBtn).toBeVisible();
 
-  // Click singularity to trigger spatial slash
-  await singularity.click();
-  await expect(voidScreen).toHaveClass(/slashing/);
+  // Click core to trigger overload ignition
+  await actuatorBtn.click();
+  await expect(chamber).toHaveClass(/reactor-spooling/);
 
   // Escape to dismiss
   await page.keyboard.press("Escape");
