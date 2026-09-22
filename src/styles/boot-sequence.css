@@ -1,4 +1,7 @@
-/* CYBERNETIC BOOT SEQUENCE OVERLAY */
+/* ==========================================================================
+   CYBERNETIC BOOT SEQUENCE OVERLAY - FULLSCREEN WAR-ROOM MAINFRAME
+   ========================================================================== */
+
 .cyber-boot-overlay {
   position: fixed;
   inset: 0;
@@ -7,10 +10,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, rgba(10, 16, 28, 0.96) 0%, rgba(3, 6, 12, 0.99) 100%);
-  backdrop-filter: blur(12px);
+  background: radial-gradient(ellipse at center, rgba(12, 20, 36, 0.98) 0%, rgba(2, 5, 10, 0.99) 100%);
+  backdrop-filter: blur(14px);
   color: var(--text, #d0e4ff);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-code, monospace);
   user-select: none;
   cursor: pointer;
   overflow: hidden;
@@ -19,11 +22,11 @@
 
 .cyber-boot-overlay.boot-dismissing {
   opacity: 0;
-  transform: scale(1.035);
+  transform: scale(1.03);
   pointer-events: none;
 }
 
-/* Background Cyber Scanline */
+/* Background Scanlines */
 .cyber-boot-overlay::before {
   content: "";
   position: absolute;
@@ -31,11 +34,65 @@
   pointer-events: none;
   background: linear-gradient(
     rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.25) 50%
+    rgba(0, 0, 0, 0.28) 50%
   );
   background-size: 100% 4px;
   z-index: 1;
-  opacity: 0.65;
+  opacity: 0.7;
+}
+
+/* Fullscreen Tactical Ambient Grid */
+.boot-bg-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  z-index: 1;
+  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0.2) 90%);
+}
+
+/* Fullscreen Rotating Concentric Radar Sweep */
+.boot-bg-radar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(1000px, 98vw);
+  height: min(1000px, 98vw);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--accent, #00ffff) 15%, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.boot-bg-radar::before {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 10%, transparent);
+}
+
+.boot-bg-radar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--accent, #00ffff) 14%, transparent) 42deg,
+    transparent 45deg
+  );
+  animation: boot-radar-spin 10s linear infinite;
+}
+
+@keyframes boot-radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Sweeping horizontal laser beam across screen */
@@ -70,40 +127,100 @@
   }
 }
 
-/* Boot Box Content Container */
+/* 4 Full-screen Corner HUD Perimeter Telemetry Pods */
+.boot-hud-corner {
+  position: absolute;
+  z-index: 2;
+  font-size: 0.70rem;
+  font-family: var(--font-code, monospace);
+  color: var(--text-muted, #7085a0);
+  padding: 10px 14px;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 25%, transparent);
+  background: rgba(5, 10, 18, 0.72);
+  backdrop-filter: blur(8px);
+  border-radius: 4px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.boot-hud-corner .corner-tag {
+  color: var(--accent, #00ffff);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.boot-hud-corner .corner-sub {
+  color: #00ff9d;
+  font-size: 0.65rem;
+}
+
+.boot-hud-corner.top-left {
+  top: 22px;
+  left: 24px;
+  border-left: 2px solid var(--accent, #00ffff);
+}
+
+.boot-hud-corner.top-right {
+  top: 22px;
+  right: 24px;
+  text-align: right;
+  border-right: 2px solid var(--accent, #00ffff);
+}
+
+.boot-hud-corner.bottom-left {
+  bottom: 22px;
+  left: 24px;
+  border-left: 2px solid var(--accent, #00ffff);
+}
+
+.boot-hud-corner.bottom-right {
+  bottom: 22px;
+  right: 24px;
+  text-align: right;
+  border-right: 2px solid var(--accent, #00ffff);
+}
+
+/* ==========================================================================
+   MAINFRAME CONTENT CONTAINER (Widescreen Cyber Command Deck)
+   ========================================================================== */
+
 .boot-content {
   position: relative;
   z-index: 3;
-  width: min(640px, 90vw);
+  width: min(1280px, 94vw);
+  min-height: min(620px, 84vh);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 32px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 25%, transparent);
-  background: rgba(8, 14, 24, 0.75);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 1px var(--accent, #00ffff);
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 30px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 30%, transparent);
+  background: rgba(8, 14, 26, 0.82);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.7), 0 0 1px var(--accent, #00ffff), inset 0 0 30px rgba(0, 255, 255, 0.03);
 }
 
-/* Four Corner Military Brackets for Boot Box */
+/* Four Corner Military Brackets for Mainframe */
 .boot-content::before {
   content: "";
   position: absolute;
   inset: -2px;
   pointer-events: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background:
-    linear-gradient(to right, var(--accent, #00ffff) 12px, transparent 12px) top left,
-    linear-gradient(to bottom, var(--accent, #00ffff) 12px, transparent 12px) top left,
-    linear-gradient(to left, var(--accent, #00ffff) 12px, transparent 12px) top right,
-    linear-gradient(to bottom, var(--accent, #00ffff) 12px, transparent 12px) top right,
-    linear-gradient(to right, var(--accent, #00ffff) 12px, transparent 12px) bottom left,
-    linear-gradient(to top, var(--accent, #00ffff) 12px, transparent 12px) bottom left,
-    linear-gradient(to left, var(--accent, #00ffff) 12px, transparent 12px) bottom right,
-    linear-gradient(to top, var(--accent, #00ffff) 12px, transparent 12px) bottom right;
+    linear-gradient(to right, var(--accent, #00ffff) 14px, transparent 14px) top left,
+    linear-gradient(to bottom, var(--accent, #00ffff) 14px, transparent 14px) top left,
+    linear-gradient(to left, var(--accent, #00ffff) 14px, transparent 14px) top right,
+    linear-gradient(to bottom, var(--accent, #00ffff) 14px, transparent 14px) top right,
+    linear-gradient(to right, var(--accent, #00ffff) 14px, transparent 14px) bottom left,
+    linear-gradient(to top, var(--accent, #00ffff) 14px, transparent 14px) bottom left,
+    linear-gradient(to left, var(--accent, #00ffff) 14px, transparent 14px) bottom right,
+    linear-gradient(to top, var(--accent, #00ffff) 14px, transparent 14px) bottom right;
   background-repeat: no-repeat;
-  background-size: 12px 12px;
+  background-size: 14px 14px;
 }
 
 /* Tactical Boot Header */
@@ -112,12 +229,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent, #00ffff) 20%, transparent);
-  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent, #00ffff) 22%, transparent);
+  padding-bottom: 12px;
 }
 
 .boot-title {
-  font-size: 0.75rem;
+  font-size: 0.80rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--accent, #00ffff);
@@ -127,11 +244,11 @@
 }
 
 .boot-status-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   background: #00ff9d;
   border-radius: 50%;
-  box-shadow: 0 0 8px #00ff9d;
+  box-shadow: 0 0 10px #00ff9d;
   animation: boot-dot-pulse 0.8s ease-in-out infinite alternate;
 }
 
@@ -140,20 +257,176 @@
   100% { opacity: 1; transform: scale(1.15); }
 }
 
-.boot-version {
+.boot-systime {
   font-size: 0.72rem;
-  color: var(--text-muted, #7085a0);
-  letter-spacing: 0.08em;
+  color: var(--accent-bright, #ffffff);
+  letter-spacing: 0.12em;
+  opacity: 0.85;
 }
 
-/* Holographic Central Reactor/Logo */
+.boot-version {
+  font-size: 0.74rem;
+  color: var(--text-muted, #7085a0);
+  letter-spacing: 0.08em;
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 25%, transparent);
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(0, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   PANORAMIC 3-DECK COMMAND LAYOUT
+   ========================================================================== */
+
+.boot-deck-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(340px, 1fr) 340px;
+  gap: 24px;
+  width: 100%;
+  flex: 1;
+  align-items: stretch;
+}
+
+.boot-deck-left,
+.boot-deck-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 18%, transparent);
+  border-radius: 6px;
+  background: rgba(4, 9, 18, 0.55);
+}
+
+.boot-deck-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+}
+
+.boot-deck-header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent, #00ffff);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent, #00ffff) 15%, transparent);
+  padding-bottom: 6px;
+  text-transform: uppercase;
+}
+
+/* Left Deck: Hardware Metrics List */
+.boot-metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.boot-metric-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.68rem;
+}
+
+.boot-metric-name {
+  color: var(--text-muted, #7085a0);
+  width: 90px;
+  letter-spacing: 0.06em;
+}
+
+.boot-metric-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.boot-metric-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.boot-metric-fill.cpu {
+  width: 95%;
+  background: var(--accent, #00ffff);
+  box-shadow: 0 0 6px var(--accent, #00ffff);
+}
+
+.boot-metric-fill.vram {
+  width: 82%;
+  background: #00ff9d;
+  box-shadow: 0 0 6px #00ff9d;
+}
+
+.boot-metric-fill.crypto {
+  width: 100%;
+  background: #a855f7;
+  box-shadow: 0 0 6px #a855f7;
+}
+
+.boot-metric-fill.airgap {
+  width: 100%;
+  background: #3b82f6;
+  box-shadow: 0 0 6px #3b82f6;
+}
+
+.boot-metric-val {
+  color: #00ff9d;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* Left Deck: Dancing Equalizer Frequency Bars */
+.boot-freq-visualizer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 38px;
+  padding: 6px 8px;
+  margin-top: auto;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 12%, transparent);
+}
+
+.boot-freq-bar {
+  width: 4px;
+  height: 20%;
+  background: linear-gradient(to top, var(--accent, #00ffff), var(--accent-bright, #ffffff));
+  border-radius: 2px;
+  animation: boot-freq-dance 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes boot-freq-dance {
+  0% { height: 15%; opacity: 0.5; }
+  50% { height: 85%; opacity: 1; }
+  100% { height: 35%; opacity: 0.7; }
+}
+
+/* Center Deck: Holographic Central Reactor */
 .boot-holo-center {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 110px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 6px 0;
+}
+
+.boot-holo-outer-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px dotted color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
+  animation: boot-ring-spin 12s linear infinite reverse;
 }
 
 .boot-holo-ring {
@@ -166,10 +439,10 @@
 
 .boot-holo-inner {
   position: absolute;
-  inset: 12px;
+  inset: 16px;
   border-radius: 50%;
   border: 1.5px solid var(--accent, #00ffff);
-  box-shadow: 0 0 16px var(--accent, #00ffff);
+  box-shadow: 0 0 20px var(--accent, #00ffff);
   animation: boot-ring-spin 3s linear infinite reverse;
 }
 
@@ -179,22 +452,135 @@
 }
 
 .boot-holo-icon {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   color: var(--accent-bright, #ffffff);
-  filter: drop-shadow(0 0 8px var(--accent, #00ffff));
+  filter: drop-shadow(0 0 10px var(--accent, #00ffff));
 }
 
-/* POST Terminal Stream */
-.boot-terminal-log {
+.boot-holo-center.core-igniting .boot-holo-ring {
+  animation: boot-ring-spin 1.2s linear infinite;
+  border-color: var(--accent-bright, #ffffff);
+  box-shadow: 0 0 28px var(--accent, #00ffff);
+}
+
+.boot-holo-center.core-igniting .boot-holo-inner {
+  animation: boot-ring-spin 0.6s linear infinite reverse;
+  border-color: #00ff9d;
+  box-shadow: 0 0 36px #00ff9d;
+}
+
+/* Center Deck: Phase Banner */
+.boot-phase-banner {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent, #00ffff);
+  padding: 4px 14px;
+  background: color-mix(in srgb, var(--accent, #00ffff) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
+  border-radius: 4px;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent, #00ffff) 20%, transparent);
+}
+
+/* Center Deck: Clearance Level 5 Stamped Badge */
+.boot-clearance-container {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boot-clearance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border: 1.5px solid #00ff9d;
+  background: rgba(0, 255, 157, 0.15);
+  color: #00ff9d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  border-radius: 4px;
+  box-shadow: 0 0 24px rgba(0, 255, 157, 0.45), inset 0 0 12px rgba(0, 255, 157, 0.2);
+  animation: boot-badge-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes boot-badge-pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Center Deck: Quantum Progress Bar */
+.boot-progress-container {
   width: 100%;
-  min-height: 110px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 0.76rem;
-  line-height: 1.4;
+  gap: 6px;
+}
+
+.boot-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #7085a0);
+}
+
+.boot-progress-percent {
+  color: var(--accent-bright, #ffffff);
+  font-weight: 700;
+}
+
+.boot-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.boot-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent, #00ffff), var(--accent-bright, #5ceaff));
+  box-shadow: 0 0 12px var(--accent, #00ffff);
+  border-radius: 3px;
+  transition: width 0.08s linear;
+}
+
+/* Center Deck: Skip Hint */
+.boot-skip-hint {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--text-muted, #7085a0);
+  opacity: 0.8;
+  animation: boot-hint-blink 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes boot-hint-blink {
+  0% { opacity: 0.4; }
+  100% { opacity: 0.95; color: var(--accent, #00ffff); }
+}
+
+/* Right Deck: Real-time Terminal Log */
+.boot-terminal-log {
+  width: 100%;
+  flex: 1;
+  min-height: 180px;
+  max-height: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.72rem;
+  line-height: 1.45;
   color: var(--text, #d0e4ff);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .boot-log-line {
@@ -215,7 +601,7 @@
 
 .boot-log-prefix {
   color: var(--accent, #00ffff);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .boot-log-ok {
@@ -224,104 +610,14 @@
   margin-left: auto;
 }
 
-/* Quantum Energy Progress Bar */
-.boot-progress-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.boot-progress-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.70rem;
-  letter-spacing: 0.08em;
-  color: var(--text-muted, #7085a0);
-}
-
-.boot-progress-track {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-}
-
-.boot-progress-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--accent, #00ffff), var(--accent-bright, #5ceaff));
-  box-shadow: 0 0 10px var(--accent, #00ffff);
-  border-radius: 3px;
-  transition: width 0.08s linear;
-}
-
-/* Skip Hint */
-.boot-skip-hint {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--text-muted, #7085a0);
-  opacity: 0.8;
-  animation: boot-hint-blink 1.2s ease-in-out infinite alternate;
-}
-
-@keyframes boot-hint-blink {
-  0% { opacity: 0.4; }
-  100% { opacity: 0.95; color: var(--accent, #00ffff); }
-}
-
-/* Phase Banner */
-.boot-phase-banner {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--accent, #00ffff);
-  padding: 3px 10px;
-  background: color-mix(in srgb, var(--accent, #00ffff) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
-  border-radius: 3px;
-  text-transform: uppercase;
-  transition: all 0.25s ease;
-}
-
-/* Biometric & Core Ignition states */
-.boot-holo-center.core-igniting .boot-holo-ring {
-  animation: boot-ring-spin 1.2s linear infinite;
-  border-color: var(--accent-bright, #ffffff);
-  box-shadow: 0 0 24px var(--accent, #00ffff);
-}
-
-.boot-holo-center.core-igniting .boot-holo-inner {
-  animation: boot-ring-spin 0.6s linear infinite reverse;
-  border-color: #00ff9d;
-  box-shadow: 0 0 32px #00ff9d;
-}
-
-/* Clearance Level 5 Stamped Badge */
-.boot-clearance-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border: 1.5px solid #00ff9d;
-  background: rgba(0, 255, 157, 0.12);
+.boot-terminal-prompt {
+  font-size: 0.72rem;
   color: #00ff9d;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  border-radius: 4px;
-  box-shadow: 0 0 20px rgba(0, 255, 157, 0.4), inset 0 0 10px rgba(0, 255, 157, 0.2);
-  animation: boot-badge-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  font-weight: bold;
+  animation: boot-dot-pulse 0.8s infinite alternate;
 }
 
-@keyframes boot-badge-pop {
-  0% { transform: scale(0.85); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Radial Laser Shockwave Burst on Release */
+/* Radial Laser Shockwave Burst on Level 5 Clearance */
 .boot-radial-burst {
   position: absolute;
   top: 50%;
@@ -343,9 +639,29 @@
     opacity: 1;
   }
   100% {
-    width: 180vmax;
-    height: 180vmax;
+    width: 220vmax;
+    height: 220vmax;
     opacity: 0;
+  }
+}
+
+/* Responsive Collapse for Laptops / Tablets / Mobile */
+@media (max-width: 1024px) {
+  .boot-content {
+    width: 95vw;
+    min-height: auto;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .boot-deck-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .boot-hud-corner {
+    display: none;
   }
 }
 

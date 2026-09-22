@@ -906,6 +906,7 @@
 
 /* Startup Mode Dashboard */
 .startup-dashboard {
+  position: relative;
   display: grid;
   width: 100%;
   height: 100%;
@@ -915,17 +916,32 @@
   place-items: center;
   overflow: auto;
   background:
-    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 45%),
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 45%),
     linear-gradient(150deg, color-mix(in srgb, var(--bg-panel) 75%, var(--bg-main)), var(--bg-main));
 }
 
+.startup-dashboard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 5%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.8) 30%, transparent 85%);
+  z-index: 0;
+}
+
 .startup-dashboard-panel {
-  width: min(780px, 100%);
-  padding: clamp(24px, 4vw, 44px);
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  position: relative;
+  z-index: 1;
+  width: min(980px, 95vw);
+  padding: clamp(28px, 4vw, 48px);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
   border-radius: 20px;
   background: color-mix(in srgb, var(--bg-panel) 96%, transparent);
-  box-shadow: 0 28px 90px var(--shadow-lg);
+  box-shadow: 0 28px 90px var(--shadow-lg), 0 0 1px var(--accent);
   text-align: center;
   animation: dashboard-enter 380ms ease-out both;
 }

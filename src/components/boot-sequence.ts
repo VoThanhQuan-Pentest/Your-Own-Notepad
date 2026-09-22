@@ -39,31 +39,85 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-label", "System Boot Sequence");
 
+    // Full-screen Ambient Backgrounds
+    const bgGrid = element("div", "boot-bg-grid");
+    const bgRadar = element("div", "boot-bg-radar");
     const laserSweep = element("div", "boot-laser-sweep");
+
+    // 4 Corner HUD Perimeter Telemetry Pods
+    const cornerTL = element("div", "boot-hud-corner top-left");
+    cornerTL.innerHTML = `<span class="corner-tag">[SYS_KERNEL]</span> ARCH: X86_64 // KERNEL: 6.8.0-SECURE<br><span class="corner-sub">STATUS: HOST ENCLAVE ALLOCATED (OK)</span>`;
+
+    const cornerTR = element("div", "boot-hud-corner top-right");
+    cornerTR.innerHTML = `<span class="corner-tag">[SECURITY]</span> DEFCON 1 // ZERO-TRUST AIRGAP<br><span class="corner-sub">CIPHER: AES-256-GCM // BUS: 4.80GHz (SYNC)</span>`;
+
+    const cornerBL = element("div", "boot-hud-corner bottom-left");
+    cornerBL.innerHTML = `<span class="corner-tag">[RADAR_MESH]</span> SENSORS: 127.0.0.1 // THREATS: 0<br><span class="corner-sub">TACTICAL TELEMETRY: 60 FPS NOMINAL</span>`;
+
+    const cornerBR = element("div", "boot-hud-corner bottom-right");
+    cornerBR.innerHTML = `<span class="corner-tag">[OVERRIDE]</span> ESC / ANY KEY / CLICK TO SKIP<br><span class="corner-sub">SYS_LATENCY: 0.12ms // STABLE</span>`;
+
     const content = element("div", "boot-content");
 
-    // Header
+    // Top Header
     const header = element("div", "boot-header");
     const title = element("span", "boot-title");
     const dot = element("span", "boot-status-dot");
     title.append(dot, document.createTextNode("COMMAND VAULT // TACTICAL SECURE KERNEL"));
+    const sysTime = element("span", "boot-systime", "REALTIME DIAGNOSTIC BUS");
     const version = element("span", "boot-version", options.appVersion ?? "v0.16.0");
-    header.append(title, version);
+    header.append(title, sysTime, version);
 
-    // Phase Banner
+    // 3-Deck Panoramic Mainframe Layout
+    const deckGrid = element("div", "boot-deck-grid");
+
+    // Left Deck: System Enclave & Hardware Metrics
+    const deckLeft = element("div", "boot-deck-left");
+    const leftHeader = element("div", "boot-deck-header", "// HARDWARE ENCLAVE");
+    const metricsList = element("div", "boot-metrics-list");
+    metricsList.innerHTML = `
+      <div class="boot-metric-item">
+        <span class="boot-metric-name">CPU CORES</span>
+        <div class="boot-metric-bar"><div class="boot-metric-fill cpu"></div></div>
+        <span class="boot-metric-val">8/8 ON</span>
+      </div>
+      <div class="boot-metric-item">
+        <span class="boot-metric-name">VRAM BUF</span>
+        <div class="boot-metric-bar"><div class="boot-metric-fill vram"></div></div>
+        <span class="boot-metric-val">60 FPS</span>
+      </div>
+      <div class="boot-metric-item">
+        <span class="boot-metric-name">CRYPTO BUS</span>
+        <div class="boot-metric-bar"><div class="boot-metric-fill crypto"></div></div>
+        <span class="boot-metric-val">SHA-256</span>
+      </div>
+      <div class="boot-metric-item">
+        <span class="boot-metric-name">AIRGAP ENCLAVE</span>
+        <div class="boot-metric-bar"><div class="boot-metric-fill airgap"></div></div>
+        <span class="boot-metric-val">SECURE</span>
+      </div>
+    `;
+    const freqVisualizer = element("div", "boot-freq-visualizer");
+    for (let i = 0; i < 14; i++) {
+      const bar = element("span", "boot-freq-bar");
+      bar.style.animationDelay = `${(i * 0.08).toFixed(2)}s`;
+      freqVisualizer.append(bar);
+    }
+    deckLeft.append(leftHeader, metricsList, freqVisualizer);
+
+    // Center Deck: Quantum Core Reactor & Biometrics
+    const deckCenter = element("div", "boot-deck-center");
     const phaseBanner = element("div", "boot-phase-banner", "PHASE 1 // BIOMETRIC & HARDWARE AUTHENTICATION");
 
-    // Holo Center
     const holoCenter = element("div", "boot-holo-center");
+    const holoOuterRing = element("div", "boot-holo-outer-ring");
     const holoRing = element("div", "boot-holo-ring");
     const holoInner = element("div", "boot-holo-inner");
     const holoIcon = createIcon("command-file", "boot-holo-icon");
-    holoCenter.append(holoRing, holoInner, holoIcon);
+    holoCenter.append(holoOuterRing, holoRing, holoInner, holoIcon);
 
-    // Terminal log
-    const terminalLog = element("div", "boot-terminal-log");
+    const clearanceContainer = element("div", "boot-clearance-container");
 
-    // Progress
     const progressContainer = element("div", "boot-progress-container");
     const progressHeader = element("div", "boot-progress-header");
     const progressLabel = element("span", undefined, "INITIALIZING SYSTEM MODULES");
@@ -75,11 +129,19 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     progressTrack.append(progressFill);
     progressContainer.append(progressHeader, progressTrack);
 
-    // Skip hint
     const skipHint = element("span", "boot-skip-hint", "[ CLICK ANYWHERE OR PRESS ANY KEY TO SKIP ]");
+    deckCenter.append(phaseBanner, holoCenter, clearanceContainer, progressContainer, skipHint);
 
-    content.append(header, phaseBanner, holoCenter, terminalLog, progressContainer, skipHint);
-    overlay.append(laserSweep, content);
+    // Right Deck: Real-time Kernel POST Stream
+    const deckRight = element("div", "boot-deck-right");
+    const rightHeader = element("div", "boot-deck-header", "// REAL-TIME POST STREAM");
+    const terminalLog = element("div", "boot-terminal-log");
+    const terminalPrompt = element("div", "boot-terminal-prompt", "> _");
+    deckRight.append(rightHeader, terminalLog, terminalPrompt);
+
+    deckGrid.append(deckLeft, deckCenter, deckRight);
+    content.append(header, deckGrid);
+    overlay.append(bgGrid, bgRadar, laserSweep, cornerTL, cornerTR, cornerBL, cornerBR, content);
     document.body.append(overlay);
 
     // Start Audio
@@ -163,6 +225,8 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
           phaseBanner.textContent = "PHASE 3 // CLEARANCE LEVEL 5 GRANTED";
           progressLabel.textContent = "ALL SYSTEMS NOMINAL // SYSTEM READY";
           speakSystemGreeting("Biometrics confirmed. Operator authenticated. Command Vault online and ready for operations.");
+          const badge = element("div", "boot-clearance-badge", `CLEARANCE LEVEL 5 // ${name}`);
+          clearanceContainer.append(badge);
           const burst = element("div", "boot-radial-burst");
           overlay.append(burst);
         },
@@ -180,6 +244,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
         const st = element("span", "boot-log-ok", step.status);
         line.append(prefix, msg, st);
         terminalLog.append(line);
+        terminalLog.scrollTop = terminalLog.scrollHeight;
 
         progressFill.style.width = `${step.pct}%`;
         progressPercent.textContent = `${step.pct}%`;
