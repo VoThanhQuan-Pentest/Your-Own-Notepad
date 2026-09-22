@@ -4,6 +4,7 @@ import { button, element } from "../utils/dom";
 import { triggerSparkBurst, triggerHexShockwave } from "../utils/particles";
 import { createTacticalRadar } from "../utils/tactical-radar";
 import { createIcon } from "./icons";
+import { createPayloadGenerator } from "./payload-generator";
 
 export interface DashboardFavorite {
   label: string;
@@ -162,7 +163,8 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   });
 
   tacticalBody.append(radarBox, targetsGrid);
-  tacticalCenter.append(tacticalHeader, tacticalBody);
+  const payloadGen = createPayloadGenerator();
+  tacticalCenter.append(tacticalHeader, tacticalBody, payloadGen);
 
   // Cleanup radar on detachment
   const observer = new MutationObserver(() => {

@@ -6,6 +6,7 @@ import "./styles/command-table.css";
 import "./styles/modal.css";
 import "./styles/search.css";
 import "./styles/boot-sequence.css";
+import "./styles/omni-palette.css";
 
 import { CommandVaultApplication } from "./application";
 

@@ -1,0 +1,192 @@
+/* ==========================================================================
+   HOLOGRAPHIC OMNI COMMAND PALETTE (CTRL+SPACE)
+   ========================================================================== */
+
+.omni-palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: clamp(40px, 12vh, 120px);
+  background: rgba(3, 7, 14, 0.72);
+  backdrop-filter: blur(8px);
+  animation: omni-fade-in 0.16s ease-out forwards;
+}
+
+.omni-palette-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
+@keyframes omni-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.omni-palette-modal {
+  width: min(640px, 94vw);
+  max-height: min(520px, 75vh);
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: rgba(8, 14, 24, 0.94);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.8),
+    0 0 1px var(--accent),
+    inset 0 0 24px color-mix(in srgb, var(--accent) 8%, transparent);
+  overflow: hidden;
+  animation: omni-slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes omni-slide-down {
+  from {
+    transform: translateY(-16px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.omni-search-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
+}
+
+.omni-search-prefix {
+  position: absolute;
+  top: 19px;
+  left: 20px;
+  font-family: var(--font-code);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+.omni-search-input {
+  width: 100%;
+  padding: 4px 8px 4px 34px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-code);
+  font-size: 15px;
+  color: var(--text-main, #ffffff);
+  caret-color: var(--accent);
+}
+
+.omni-search-input::placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.omni-search-hint {
+  margin-top: 8px;
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.omni-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.omni-action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: all 120ms ease;
+  width: 100%;
+}
+
+.omni-action-item:hover,
+.omni-action-item.selected {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-secondary));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.omni-cat-badge {
+  flex-shrink: 0;
+  font-family: var(--font-code);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.omni-cat-badge.system {
+  background: rgba(0, 255, 157, 0.15);
+  color: #00ff9d;
+  border: 1px solid rgba(0, 255, 157, 0.35);
+}
+
+.omni-cat-badge.theme {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.omni-cat-badge.mode {
+  background: rgba(255, 180, 0, 0.15);
+  color: #ffd000;
+  border: 1px solid rgba(255, 180, 0, 0.35);
+}
+
+.omni-cat-badge.tools {
+  background: rgba(0, 240, 255, 0.15);
+  color: #00f0ff;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+}
+
+.omni-item-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.omni-item-title {
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-main);
+  letter-spacing: 0.04em;
+}
+
+.omni-item-detail {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.omni-empty {
+  padding: 24px;
+  text-align: center;
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--text-muted);
+}

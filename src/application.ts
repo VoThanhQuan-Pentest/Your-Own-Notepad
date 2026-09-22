@@ -19,6 +19,7 @@ import { openTableImportForm } from "./components/table-import-form";
 import { createToolbar, type ToolbarHandle } from "./components/toolbar";
 import { createWelcomeDashboard, type DashboardFavorite } from "./components/welcome-dashboard";
 import { createStartupModeDashboard } from "./components/startup-mode-dashboard";
+import { openOmniPalette, type OmniAction } from "./components/omni-palette";
 import { buildStressFile, demoCommandFile } from "./demo-data";
 import type {
   CommandEntry,
@@ -76,6 +77,7 @@ import {
   playTacticalBlip,
   playEmpDistortion,
   playCircuitSurgeAudio,
+  playTacticalTargetLock,
   isAudioMuted,
   toggleAudioMuted,
   getAudioFrequencyData,
@@ -2647,6 +2649,11 @@ export class CommandVaultApplication {
         return;
       }
       const key = event.key.toLowerCase();
+      if (event.ctrlKey && (event.code === "Space" || event.key === " ")) {
+        event.preventDefault();
+        this.openOmniPalette();
+        return;
+      }
       if (event.ctrlKey && event.altKey && key === "m") {
         event.preventDefault();
         const active = toggleMatrixRain();
@@ -3105,6 +3112,158 @@ export class CommandVaultApplication {
       title: "Desktop Feature",
       message: "Filesystem actions are available in the Tauri desktop window.",
     });
+  }
+
+  private openOmniPalette(): void {
+    const actions: OmniAction[] = [
+      {
+        id: "toggle-matrix",
+        category: "SYSTEM",
+        title: "Toggle Matrix Rain Canvas",
+        detail: "Ctrl+Alt+M - Cybernetic cascading background animation",
+        run: () => {
+          const active = toggleMatrixRain();
+          const matrixBtn = this.telemetryBar?.querySelector(".telemetry-matrix-toggle");
+          if (matrixBtn) {
+            matrixBtn.textContent = active ? "MATRIX: ON" : "MATRIX: OFF";
+            matrixBtn.classList.toggle("active", active);
+          }
+          playTacticalBlip();
+        },
+      },
+      {
+        id: "replay-boot",
+        category: "SYSTEM",
+        title: "Replay Cyber Boot Sequence",
+        detail: "Launch fullscreen cybernetic BIOS diagnostic sequence",
+        run: () => {
+          void runBootSequence(
+            {
+              displayName: this.settings.displayName,
+              appVersion: this.appVersion,
+            },
+            true,
+          );
+        },
+      },
+      {
+        id: "open-settings",
+        category: "SYSTEM",
+        title: "Open Tactical Settings",
+        detail: "Configure workspace, appearance, font sizes, and performance",
+        run: () => {
+          void this.openSettings();
+        },
+      },
+      {
+        id: "toggle-theme-mode",
+        category: "SYSTEM",
+        title: `Switch to ${this.settings.themeMode === "dark" ? "Light" : "Dark"} Mode`,
+        detail: "Toggle high-contrast dark or tactical light mode",
+        run: () => {
+          this.settings.themeMode = this.settings.themeMode === "dark" ? "light" : "dark";
+          this.applyTheme(this.settings.themeMode, this.settings.accentTheme, this.settings.customThemes, true);
+          void this.persistSettings(false);
+        },
+      },
+      {
+        id: "new-file",
+        category: "TOOLS",
+        title: "Create New Command File (.cmdnote)",
+        detail: "Ctrl+N - Add a new tactical command notebook",
+        run: () => {
+          void this.newFile();
+        },
+      },
+      {
+        id: "new-folder",
+        category: "TOOLS",
+        title: "Create New Folder",
+        detail: "Ctrl+Shift+N - Add a new organizational directory",
+        run: () => {
+          void this.newFolder();
+        },
+      },
+      {
+        id: "open-workspace",
+        category: "TOOLS",
+        title: "Open Workspace Directory",
+        detail: "Ctrl+O - Switch active workspace repository",
+        run: () => {
+          void this.chooseAndOpenWorkspace();
+        },
+      },
+      {
+        id: "refresh-workspace",
+        category: "TOOLS",
+        title: "Reload Workspace Filesystem",
+        detail: "Rescan all command notes and directories from disk",
+        run: () => {
+          void this.refreshWorkspaceFromUi();
+        },
+      },
+      {
+        id: "mode-red-team",
+        category: "MODE",
+        title: "Engage Red Team Mode (Offensive Operations)",
+        detail: "Switch accent to Crimson with overclocked performance profile",
+        run: () => {
+          this.settings.accentTheme = "crimson";
+          this.settings.performanceMode = "full";
+          this.applySettings();
+          void this.persistSettings(false);
+          playLaserChirp();
+        },
+      },
+      {
+        id: "mode-blue-team",
+        category: "MODE",
+        title: "Engage Blue Team Mode (Defensive Shield)",
+        detail: "Switch accent to Cyan with tactical defense matrix",
+        run: () => {
+          this.settings.accentTheme = "cyan";
+          this.settings.performanceMode = "full";
+          this.applySettings();
+          void this.persistSettings(false);
+          playTacticalTargetLock();
+        },
+      },
+      {
+        id: "mode-low-power",
+        category: "MODE",
+        title: "Engage Low-Power Stealth Mode",
+        detail: "Suppress heavy animations to maximize battery efficiency",
+        run: () => {
+          this.settings.performanceMode = "low-power";
+          this.applySettings();
+          void this.persistSettings(false);
+        },
+      },
+      {
+        id: "mode-performance",
+        category: "MODE",
+        title: "Overclock Mode (Maximum Performance)",
+        detail: "Enable high-speed animations and responsive background workers",
+        run: () => {
+          this.settings.performanceMode = "full";
+          this.applySettings();
+          void this.persistSettings(false);
+        },
+      },
+      ...accentThemes.map((accent) => ({
+        id: `theme-accent-${accent}`,
+        category: "THEME" as const,
+        title: `Accent: ${accent.toUpperCase()}`,
+        detail: `Switch UI accent color matrix to ${accent}`,
+        run: () => {
+          this.settings.accentTheme = accent;
+          this.applyTheme(this.settings.themeMode, accent, this.settings.customThemes, true);
+          void this.persistSettings(false);
+        },
+      })),
+    ];
+
+    openOmniPalette({ actions });
   }
 }
 
