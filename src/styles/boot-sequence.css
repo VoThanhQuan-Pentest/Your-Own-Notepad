@@ -276,54 +276,33 @@
   filter: drop-shadow(0 0 12px #00ff9d);
 }
 
-/* Labels */
-.iris-title-label {
-  margin-top: 32px;
-  font-size: 0.80rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  color: #e2e8f0;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
-  text-transform: uppercase;
-}
-
-.iris-status-badge {
-  margin-top: 10px;
-  padding: 5px 18px;
-  background: rgba(5, 12, 24, 0.9);
-  border: 1px solid rgba(0, 240, 255, 0.55);
-  border-radius: 4px;
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  color: #00f0ff;
-  font-weight: 700;
-  text-shadow: 0 0 8px #00f0ff;
-  transition: all 0.3s ease;
-}
-
-.iris-status-badge.status-unlatching {
-  border-color: #ffaa00;
-  color: #ffaa00;
-  text-shadow: 0 0 10px #ffaa00;
-}
-
-.iris-status-badge.status-open {
-  border-color: #00ff9d;
-  color: #00ff9d;
-  text-shadow: 0 0 12px #00ff9d;
-}
-
-.iris-hint-label {
-  margin-top: 12px;
-  font-size: 0.70rem;
-  letter-spacing: 0.15em;
-  color: #94a3b8;
+/* Minimalist Clean Brand Group */
+.iris-brand-group {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
   text-align: center;
 }
 
-.iris-skip-hint {
-  margin-top: 8px;
-  font-size: 0.60rem;
-  color: #64748b;
-  letter-spacing: 0.10em;
+.iris-title-label {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: #ffffff;
+  text-shadow:
+    0 0 12px rgba(0, 240, 255, 0.9),
+    0 0 24px rgba(0, 240, 255, 0.45);
+  text-transform: uppercase;
+}
+
+.iris-welcome-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
+  text-transform: uppercase;
 }

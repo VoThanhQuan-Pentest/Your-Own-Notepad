@@ -109,18 +109,16 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     `;
     actuatorBtn.append(lensHalo, lensCore, opticIcon);
 
-    const titleLabel = element("div", "iris-title-label", "COMMAND VAULT // MECHANICAL IRIS");
-    const statusBadge = element("div", "iris-status-badge", "[ 8-BLADE IRIS APERTURE // SEALED ]");
-    const hintLabel = element("div", "iris-hint-label", "✦ CLICK HUB OR PRESS SPACE TO DILATE APERTURE ✦");
-    const skipHint = element("div", "iris-skip-hint", "[ ESC TO SKIP // SPACE TO DILATE ]");
+    const brandGroup = element("div", "iris-brand-group");
+    const titleLabel = element("div", "iris-title-label", "COMMAND VAULT");
+    const userName = options.displayName ? options.displayName.trim().toUpperCase() : "OPERATOR";
+    const welcomeLabel = element("div", "iris-welcome-label", `WELCOME ${userName} BACK`);
+    brandGroup.append(titleLabel, welcomeLabel);
 
     hubAssembly.append(
       crosshairRing,
       actuatorBtn,
-      titleLabel,
-      statusBadge,
-      hintLabel,
-      skipHint,
+      brandGroup,
     );
 
     irisContainer.append(chassisFrame, bladesContainer, hubAssembly);
@@ -141,8 +139,6 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
 
       // Phase 1 (t = 0ms): Clamp Unlatch & Pneumatic Purge
       irisContainer.classList.add("iris-unlatching", "iris-shaking");
-      statusBadge.textContent = "[ CLAMPS DISENGAGED // COMMENCING DILATION ]";
-      statusBadge.classList.add("status-unlatching");
 
       playPneumaticHiss(true);
       playServoClick();
@@ -157,8 +153,6 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
         irisContainer.classList.remove("iris-shaking");
         irisContainer.classList.add("iris-opening");
         breachFlash.classList.add("breach-blooming");
-        statusBadge.textContent = "[ APERTURE 100% DILATED // UNSEALED ]";
-        statusBadge.classList.add("status-open");
 
         triggerSparkBurst(cx, cy);
         triggerHexShockwave(cx, cy);
