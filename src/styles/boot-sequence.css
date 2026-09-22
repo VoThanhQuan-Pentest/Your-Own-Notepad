@@ -618,147 +618,240 @@
    ========================================================================== */
 
 /* ==========================================================================
-   STYLE 4: 3D FLOATING QUANTUM TESSERACT & ENERGY ORB
+   STYLE 2: CYBER BREACH TERMINAL / HOLLYWOOD CLI PROMPT
    ========================================================================== */
 
-.boot-tesseract-hub {
+.boot-cli-terminal {
   position: relative;
   width: 100%;
-  max-width: 310px;
+  max-width: 320px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: radial-gradient(circle at 50% 45%, rgba(0, 240, 255, 0.08) 0%, rgba(5, 12, 24, 0.92) 80%);
+  gap: 10px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(6, 14, 22, 0.95) 0%, rgba(2, 6, 12, 0.98) 100%);
   border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
-  border-radius: 12px;
+  border-left: 3px solid #00ff9d;
+  border-radius: 8px;
   box-shadow:
-    0 0 35px rgba(0, 240, 255, 0.15),
-    inset 0 0 25px rgba(0, 0, 0, 0.85);
+    0 0 30px rgba(0, 255, 157, 0.12),
+    inset 0 0 30px rgba(0, 0, 0, 0.9);
   margin: 4px 0;
   cursor: pointer;
   user-select: none;
   outline: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
-.boot-tesseract-hub:hover,
-.boot-tesseract-hub:focus-visible {
-  border-color: var(--accent, #00ffff);
+/* Scanline texture over terminal */
+.boot-cli-terminal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.boot-cli-terminal:hover,
+.boot-cli-terminal:focus-visible {
+  border-color: #00ff9d;
   box-shadow:
-    0 0 45px rgba(0, 240, 255, 0.35),
-    inset 0 0 30px rgba(0, 240, 255, 0.12);
+    0 0 35px rgba(0, 255, 157, 0.28),
+    inset 0 0 35px rgba(0, 255, 157, 0.08);
   transform: translateY(-2px);
 }
 
-.boot-tesseract-hub.engaged-hidden {
+.boot-cli-terminal.executing-pulse {
+  border-color: #00ff9d;
+  box-shadow: 0 0 50px rgba(0, 255, 157, 0.6), inset 0 0 40px rgba(0, 255, 157, 0.2);
+}
+
+.boot-cli-terminal.engaged-hidden {
   opacity: 0;
-  transform: scale(0.05);
+  transform: scale(0.9);
   pointer-events: none;
-  transition: all 0.28s cubic-bezier(0.7, 0, 0.84, 0);
+  transition: all 0.24s cubic-bezier(0.7, 0, 0.84, 0);
   display: none;
 }
 
-/* Pedestal base glow */
-.tesseract-pedestal {
-  position: absolute;
-  bottom: 46px;
-  width: 150px;
-  height: 18px;
-  background: radial-gradient(ellipse at center, rgba(0, 255, 157, 0.35) 0%, rgba(0, 240, 255, 0.1) 50%, transparent 75%);
-  border-radius: 50%;
-  filter: blur(4px);
-  pointer-events: none;
-  animation: pedestal-pulse 2s ease-in-out infinite alternate;
+/* Terminal Header */
+.boot-cli-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+  padding-bottom: 6px;
+  font-family: var(--font-code, monospace);
 }
 
-@keyframes pedestal-pulse {
-  0% { transform: scale(0.9); opacity: 0.5; }
-  100% { transform: scale(1.15); opacity: 0.95; }
-}
-
-/* 3D Concentric Orbital Rings */
-.tesseract-orbital-rings {
-  position: absolute;
-  top: 48%;
-  left: 50%;
-  width: 180px;
-  height: 180px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  perspective: 600px;
-}
-
-.tesseract-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px dashed rgba(0, 240, 255, 0.35);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
-}
-
-.tesseract-ring.ring-1 {
-  transform: rotateX(68deg) rotateZ(0deg);
-  animation: tesseract-ring-spin-1 14s linear infinite;
-}
-
-.tesseract-ring.ring-2 {
-  inset: 15px;
-  border-style: solid;
-  border-width: 1px;
-  border-color: rgba(0, 255, 157, 0.4);
-  transform: rotateY(68deg) rotateZ(0deg);
-  animation: tesseract-ring-spin-2 10s linear infinite reverse;
-}
-
-@keyframes tesseract-ring-spin-1 {
-  to { transform: rotateX(68deg) rotateZ(360deg); }
-}
-
-@keyframes tesseract-ring-spin-2 {
-  to { transform: rotateY(68deg) rotateZ(360deg); }
-}
-
-/* Canvas */
-.boot-tesseract-canvas {
-  width: 220px;
-  height: 220px;
-  display: block;
-  z-index: 2;
-  filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.45));
-  transition: transform 0.2s ease;
-}
-
-.boot-tesseract-hub:hover .boot-tesseract-canvas {
-  filter: drop-shadow(0 0 24px rgba(0, 240, 255, 0.8));
-}
-
-/* Tactical Prompts & Badges */
-.tesseract-prompt {
-  font-size: 0.65rem;
+.boot-cli-title {
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #00ff9d;
-  text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
-  text-align: center;
-  z-index: 2;
-  animation: tesseract-prompt-pulse 1.2s ease-in-out infinite alternate;
 }
 
-@keyframes tesseract-prompt-pulse {
-  0% { opacity: 0.75; transform: scale(0.98); }
-  100% { opacity: 1; transform: scale(1.02); text-shadow: 0 0 14px rgba(0, 255, 157, 0.9); }
-}
-
-.tesseract-telemetry-badge {
-  font-size: 0.55rem;
-  font-family: var(--font-code, monospace);
+.boot-cli-status {
+  font-size: 0.58rem;
+  font-weight: 800;
   letter-spacing: 0.10em;
+  color: #ffaa00;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 170, 0, 0.12);
+  border: 1px solid rgba(255, 170, 0, 0.4);
+}
+
+.boot-cli-status.ready {
+  color: #00ff9d;
+  background: rgba(0, 255, 157, 0.15);
+  border-color: #00ff9d;
+  animation: cli-status-pulse 0.8s infinite alternate;
+}
+
+.boot-cli-status.executing {
+  color: #fff;
+  background: #00ff9d;
+  border-color: #fff;
+}
+
+@keyframes cli-status-pulse {
+  from { opacity: 0.7; }
+  to { opacity: 1; box-shadow: 0 0 10px rgba(0, 255, 157, 0.8); }
+}
+
+/* Terminal Security Logs */
+.boot-cli-logs {
+  font-size: 0.62rem;
+  font-family: var(--font-code, monospace);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cli-tag {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.cli-log-warn {
+  color: #ffaa00;
+}
+
+.cli-log-info {
+  color: #7085a0;
+}
+
+.cli-log-hint {
+  color: #5ceaff;
+}
+
+.cli-log-success {
+  color: #00ff9d;
+  font-weight: 700;
+  animation: cli-log-pop 0.2s ease-out;
+}
+
+@keyframes cli-log-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Prompt Line */
+.boot-cli-prompt-row {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-code, monospace);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 255, 157, 0.25);
+  border-radius: 4px;
+  color: #fff;
+  word-break: break-all;
+}
+
+.boot-cli-prefix {
+  color: #00ff9d;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.boot-cli-command {
+  display: inline-block;
+  min-width: 4px;
+  color: #fff;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  min-height: 1.2em;
+}
+
+.boot-cli-cursor {
+  color: #00ff9d;
+  margin-left: 2px;
+  font-size: 0.80rem;
+  line-height: 1;
+  animation: cli-cursor-blink 0.7s infinite alternate;
+}
+
+@keyframes cli-cursor-blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Action Bar */
+.boot-cli-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 4px;
+  font-family: var(--font-code, monospace);
+}
+
+.boot-cli-key-hint {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
   color: var(--text-muted, #7085a0);
-  text-align: center;
-  z-index: 2;
+}
+
+.boot-cli-execute-btn {
+  font-size: 0.62rem;
+  font-family: var(--font-code, monospace);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #000;
+  background: #00ff9d;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.boot-cli-execute-btn:hover {
+  background: #fff;
+  box-shadow: 0 0 16px #00ff9d;
+  transform: scale(1.04);
+}
+
+.boot-cli-execute-btn.pulse {
+  animation: cli-btn-pulse 0.9s infinite alternate;
+}
+
+@keyframes cli-btn-pulse {
+  from { transform: scale(1); box-shadow: 0 0 6px #00ff9d; }
+  to { transform: scale(1.05); box-shadow: 0 0 20px #00ff9d; }
 }
 
 /* Gravitational Singularity Collapse before Dissolve */
