@@ -424,76 +424,106 @@ export function playDecryptionTick(): void {
  */
 export function playCyberBootSequence(): void {
   playSound((ctx, output, now) => {
-    // Phase 1: Biometric radar pulses (0.0s - 0.9s)
-    [0.0, 0.3, 0.6].forEach((delay, idx) => {
+    // Phase 1: Biometric radar pulses & low hum (0.0s - 1.5s)
+    [0.0, 0.35, 0.7, 1.05].forEach((delay, idx) => {
       const ping = ctx.createOscillator();
       const pingGain = ctx.createGain();
       ping.type = "sine";
-      ping.frequency.setValueAtTime(1100 + idx * 220, now + delay);
+      ping.frequency.setValueAtTime(1050 + idx * 180, now + delay);
       pingGain.gain.setValueAtTime(0.001, now + delay);
-      pingGain.gain.linearRampToValueAtTime(0.08, now + delay + 0.02);
-      pingGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.12);
+      pingGain.gain.linearRampToValueAtTime(0.09, now + delay + 0.02);
+      pingGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.14);
       ping.connect(pingGain);
       pingGain.connect(output);
       ping.start(now + delay);
-      ping.stop(now + delay + 0.13);
+      ping.stop(now + delay + 0.15);
     });
 
-    // Phase 2: Turbine spool-up & quantum reactor ignition (0.9s - 2.2s)
+    const subHum = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    subHum.type = "sine";
+    subHum.frequency.setValueAtTime(55, now);
+    subHum.frequency.linearRampToValueAtTime(65, now + 1.5);
+    subGain.gain.setValueAtTime(0.001, now);
+    subGain.gain.linearRampToValueAtTime(0.12, now + 0.4);
+    subGain.gain.linearRampToValueAtTime(0.05, now + 1.5);
+    subHum.connect(subGain);
+    subGain.connect(output);
+    subHum.start(now);
+    subHum.stop(now + 1.5);
+
+    // Phase 2: Turbine spool-up & quantum reactor ignition (1.5s - 3.2s)
     const turbine = ctx.createOscillator();
     const turbineGain = ctx.createGain();
     const filter = ctx.createBiquadFilter();
     turbine.type = "sawtooth";
-    turbine.frequency.setValueAtTime(45, now + 0.9);
-    turbine.frequency.exponentialRampToValueAtTime(190, now + 2.2);
+    turbine.frequency.setValueAtTime(45, now + 1.5);
+    turbine.frequency.exponentialRampToValueAtTime(260, now + 3.2);
 
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(150, now + 0.9);
-    filter.frequency.exponentialRampToValueAtTime(1600, now + 2.2);
+    filter.frequency.setValueAtTime(120, now + 1.5);
+    filter.frequency.exponentialRampToValueAtTime(2400, now + 3.2);
 
-    turbineGain.gain.setValueAtTime(0.001, now + 0.9);
-    turbineGain.gain.linearRampToValueAtTime(0.24, now + 1.8);
-    turbineGain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
+    turbineGain.gain.setValueAtTime(0.001, now + 1.5);
+    turbineGain.gain.linearRampToValueAtTime(0.25, now + 2.8);
+    turbineGain.gain.exponentialRampToValueAtTime(0.02, now + 3.4);
 
     turbine.connect(filter);
     filter.connect(turbineGain);
     turbineGain.connect(output);
-    turbine.start(now + 0.9);
-    turbine.stop(now + 2.4);
+    turbine.start(now + 1.5);
+    turbine.stop(now + 3.4);
 
-    // Phase 3: Majestic cyberpunk harmonic chord bloom (2.1s - 3.1s)
-    const chords = [220, 329.63, 440, 554.37, 659.25];
+    // Phase 3: High-speed matrix decryption arpeggio (3.2s - 4.8s)
+    const arpeggio = [587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51, 1567.98];
+    arpeggio.forEach((freq, idx) => {
+      const noteDelay = 3.2 + idx * 0.18;
+      const noteOsc = ctx.createOscillator();
+      const noteGain = ctx.createGain();
+      noteOsc.type = "sine";
+      noteOsc.frequency.setValueAtTime(freq, now + noteDelay);
+      noteGain.gain.setValueAtTime(0.001, now + noteDelay);
+      noteGain.gain.linearRampToValueAtTime(0.08, now + noteDelay + 0.02);
+      noteGain.gain.exponentialRampToValueAtTime(0.001, now + noteDelay + 0.15);
+      noteOsc.connect(noteGain);
+      noteGain.connect(output);
+      noteOsc.start(now + noteDelay);
+      noteOsc.stop(now + noteDelay + 0.16);
+    });
+
+    // Phase 4: Majestic cyberpunk harmonic chord bloom & sub-bass drop (4.8s - 5.8s)
+    const chords = [220, 329.63, 440, 554.37, 659.25, 880];
     chords.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(freq * 0.92, now + 2.1);
-      osc.frequency.exponentialRampToValueAtTime(freq, now + 2.25 + idx * 0.04);
+      osc.frequency.setValueAtTime(freq * 0.94, now + 4.8);
+      osc.frequency.exponentialRampToValueAtTime(freq, now + 5.0 + idx * 0.04);
 
-      const delay = 2.1 + idx * 0.04;
+      const delay = 4.8 + idx * 0.04;
       g.gain.setValueAtTime(0.001, now + delay);
-      g.gain.linearRampToValueAtTime(0.20 / (idx + 1), now + delay + 0.15);
-      g.gain.exponentialRampToValueAtTime(0.001, now + 3.05);
+      g.gain.linearRampToValueAtTime(0.24 / (idx + 1), now + delay + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 5.85);
 
       osc.connect(g);
       g.connect(output);
       osc.start(now + delay);
-      osc.stop(now + 3.1);
+      osc.stop(now + 5.9);
     });
 
-    // High crystal confirmation chime (2.35s)
+    // High crystal confirmation chime & Supernova burst (5.4s - 6.0s)
     const chime = ctx.createOscillator();
     const chimeGain = ctx.createGain();
     chime.type = "sine";
-    chime.frequency.setValueAtTime(2200, now + 2.35);
-    chime.frequency.exponentialRampToValueAtTime(3520, now + 2.65);
-    chimeGain.gain.setValueAtTime(0.001, now + 2.35);
-    chimeGain.gain.linearRampToValueAtTime(0.14, now + 2.45);
-    chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+    chime.frequency.setValueAtTime(2200, now + 5.3);
+    chime.frequency.exponentialRampToValueAtTime(3520, now + 5.65);
+    chimeGain.gain.setValueAtTime(0.001, now + 5.3);
+    chimeGain.gain.linearRampToValueAtTime(0.16, now + 5.45);
+    chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 5.98);
     chime.connect(chimeGain);
     chimeGain.connect(output);
-    chime.start(now + 2.35);
-    chime.stop(now + 3.05);
+    chime.start(now + 5.3);
+    chime.stop(now + 6.0);
   });
 }
 
