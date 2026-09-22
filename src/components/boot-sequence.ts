@@ -37,11 +37,9 @@ const CONCRETE_BOOT_STYLES: Exclude<BootSequenceStyle, "random">[] = [
  */
 function createBrandGroup(displayName?: string | null, extraPrefix = "boot"): HTMLElement {
   const brandGroup = element("div", `boot-brand-group ${extraPrefix}-brand-group`);
-  const brandAura = element("div", "boot-brand-aura");
-  const titleLabel = element("div", `boot-title-label ${extraPrefix}-title-label`, "COMMAND VAULT");
   const userName = displayName && displayName.trim().length > 0 ? displayName.trim().toUpperCase() : "OPERATOR";
   const welcomeLabel = element("div", `boot-welcome-label ${extraPrefix}-welcome-label`, `WELCOME ${userName} BACK`);
-  brandGroup.append(brandAura, titleLabel, welcomeLabel);
+  brandGroup.append(welcomeLabel);
   return brandGroup;
 }
 

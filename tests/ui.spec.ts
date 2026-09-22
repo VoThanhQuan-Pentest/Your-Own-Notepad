@@ -1147,7 +1147,7 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   await expect(bootOverlay).toBeVisible();
   await expect(page.locator(".iris-aperture-container")).toBeVisible();
   await expect(page.locator(".iris-actuator-btn")).toBeVisible();
-  await expect(page.locator(".iris-title-label")).toContainText("COMMAND VAULT");
+  await expect(page.locator(".iris-welcome-label")).toContainText("WELCOME");
 
   // Press Escape to dismiss immediately
   await page.keyboard.press("Escape");
@@ -1198,7 +1198,7 @@ test("v0.17.0: Configurable opening intro effects in Settings and multi-style re
   await expect(blastOverlay).toBeVisible();
   await expect(page.locator(".vault-blast-gate")).toBeVisible();
   await expect(page.locator(".vault-core-button")).toBeVisible();
-  await expect(page.locator(".boot-title-label")).toContainText("COMMAND VAULT");
+  await expect(page.locator(".boot-welcome-label")).toContainText("WELCOME");
   await page.keyboard.press("Escape");
   await expect(blastOverlay).not.toBeVisible();
 
