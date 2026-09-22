@@ -601,3 +601,94 @@ export function speakSystemGreeting(text: string): void {
     // Speech synthesis error should not disrupt application
   }
 }
+
+/**
+ * High-voltage plasma capacitor discharge on command copy/execution
+ */
+export function playCircuitSurgeAudio(): void {
+  playSound((ctx, output, now) => {
+    // Electric plasma zap
+    const zap = ctx.createOscillator();
+    const zapGain = ctx.createGain();
+    zap.type = "sawtooth";
+    zap.frequency.setValueAtTime(3400, now);
+    zap.frequency.exponentialRampToValueAtTime(420, now + 0.12);
+
+    zapGain.gain.setValueAtTime(0.22, now);
+    zapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    zap.connect(zapGain);
+    zapGain.connect(output);
+    zap.start(now);
+    zap.stop(now + 0.15);
+
+    // Resonant sub-current hum
+    const hum = ctx.createOscillator();
+    const humGain = ctx.createGain();
+    hum.type = "sine";
+    hum.frequency.setValueAtTime(140, now);
+    hum.frequency.exponentialRampToValueAtTime(60, now + 0.18);
+
+    humGain.gain.setValueAtTime(0.18, now);
+    humGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    hum.connect(humGain);
+    humGain.connect(output);
+    hum.start(now);
+    hum.stop(now + 0.21);
+  });
+}
+
+/**
+ * Biometric Level 5 Clearance approved dual-tone chime
+ */
+export function playBiometricAuthSound(): void {
+  playSound((ctx, output, now) => {
+    const tone1 = ctx.createOscillator();
+    const tone2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    tone1.type = "sine";
+    tone1.frequency.setValueAtTime(740, now); // F#5
+    tone1.frequency.setValueAtTime(1108.73, now + 0.08); // C#6
+    tone1.frequency.exponentialRampToValueAtTime(1480, now + 0.22); // F#6
+
+    tone2.type = "triangle";
+    tone2.frequency.setValueAtTime(370, now);
+    tone2.frequency.setValueAtTime(554.37, now + 0.08);
+    tone2.frequency.exponentialRampToValueAtTime(740, now + 0.22);
+
+    gain.gain.setValueAtTime(0.24, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+    tone1.connect(gain);
+    tone2.connect(gain);
+    gain.connect(output);
+
+    tone1.start(now);
+    tone2.start(now);
+    tone1.stop(now + 0.33);
+    tone2.stop(now + 0.33);
+  });
+}
+
+/**
+ * Tactical military target lock beep when selecting pentest nodes
+ */
+export function playTacticalTargetLock(): void {
+  playSound((ctx, output, now) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(1864.66, now); // A#6
+    osc.frequency.setValueAtTime(2349.32, now + 0.04); // D7
+
+    gain.gain.setValueAtTime(0.20, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now);
+    osc.stop(now + 0.085);
+  });
+}

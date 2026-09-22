@@ -627,6 +627,182 @@
   font-size: 15px;
 }
 
+/* Tactical Pentest Mission Control Section */
+.welcome-tactical-center {
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 45px var(--shadow-sm), inset 0 0 20px color-mix(in srgb, var(--accent) 4%, transparent);
+  animation: dashboard-enter 380ms ease-out both;
+}
+
+.tactical-center-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.tactical-title {
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.tactical-mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.tactical-mode-btn {
+  padding: 4px 10px;
+  font-family: var(--font-code);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.tactical-mode-btn.active.red {
+  border-color: #ff3366;
+  background: rgba(255, 51, 102, 0.12);
+  color: #ff3366;
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+}
+
+.tactical-mode-btn.active.blue {
+  border-color: #00f0ff;
+  background: rgba(0, 240, 255, 0.12);
+  color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.tactical-center-body {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+.tactical-radar-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tactical-radar-label {
+  font-family: var(--font-code);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.tactical-targets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.tactical-target-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-main) 70%, var(--bg-panel));
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.tactical-target-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.target-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.target-name {
+  font-family: var(--font-code);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+}
+
+.target-badge {
+  font-family: var(--font-code);
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+}
+
+.target-badge.vulnerable,
+.target-badge.exploitable {
+  background: rgba(255, 51, 102, 0.15);
+  color: #ff3366;
+  border: 1px solid rgba(255, 51, 102, 0.4);
+}
+
+.target-badge.hardened,
+.target-badge.scanned {
+  background: rgba(0, 255, 157, 0.15);
+  color: #00ff9d;
+  border: 1px solid rgba(0, 255, 157, 0.4);
+}
+
+.target-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.target-ip {
+  color: var(--accent);
+}
+
+.target-action-row {
+  display: flex;
+  margin-top: 4px;
+}
+
+.target-action-tag {
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-bright);
+}
+
+@media (max-width: 820px) {
+  .tactical-center-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+
 .dashboard-grid {
   display: grid;
   max-width: 1180px;

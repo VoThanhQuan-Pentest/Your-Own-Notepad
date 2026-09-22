@@ -1,7 +1,8 @@
-import { playReactorOverload } from "../services/audio";
+import { playReactorOverload, playTacticalTargetLock } from "../services/audio";
 import { createCyberGlobe } from "../utils/cyber-globe";
 import { button, element } from "../utils/dom";
 import { triggerSparkBurst, triggerHexShockwave } from "../utils/particles";
+import { createTacticalRadar } from "../utils/tactical-radar";
 import { createIcon } from "./icons";
 
 export interface DashboardFavorite {
@@ -20,6 +21,7 @@ interface WelcomeDashboardOptions {
   onContinue(): void;
   onOpenWorkspace(): void;
   onCreateFile(): void;
+  onSearchQuery?: (query: string) => void;
 }
 
 export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLElement {
@@ -69,6 +71,109 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
 
   hero.append(heroLeft, heroVisuals);
 
+  // Tactical Pentest Mission Control Section
+  const tacticalCenter = element("section", "welcome-tactical-center");
+  const tacticalHeader = element("div", "tactical-center-header");
+  const tacticalTitle = element("span", "tactical-title", "// PENTEST TARGET RECON & RADAR TELEMETRY");
+
+  const modeToggle = element("div", "tactical-mode-toggle");
+  const redBtn = button("tactical-mode-btn active red", "RED TEAM [OFFENSIVE]");
+  const blueBtn = button("tactical-mode-btn blue", "BLUE TEAM [DEFENSIVE]");
+  modeToggle.append(redBtn, blueBtn);
+  tacticalHeader.append(tacticalTitle, modeToggle);
+
+  const tacticalBody = element("div", "tactical-center-body");
+
+  const targets = [
+    { id: "t1", name: "ALPHA-GATEWAY", ip: "192.168.1.1", port: "443/HTTPS", angle: 0.5, distance: 0.72, status: "vulnerable" as const, search: "nmap" },
+    { id: "t2", name: "BETA-DOMAIN-CTRL", ip: "10.0.4.20", port: "88/389 LDAP", angle: 2.1, distance: 0.55, status: "scanned" as const, search: "ssh" },
+    { id: "t3", name: "GAMMA-DATABASE", ip: "172.16.0.8", port: "5432 PGSQL", angle: 3.8, distance: 0.84, status: "exploitable" as const, search: "sqlmap" },
+    { id: "t4", name: "DELTA-API-GW", ip: "10.0.12.90", port: "8080 REST", angle: 5.2, distance: 0.42, status: "hardened" as const, search: "curl" },
+  ];
+
+  const radar = createTacticalRadar(160, targets, (target) => {
+    playTacticalTargetLock();
+    if (target.search) options.onSearchQuery?.(target.search);
+  });
+
+  redBtn.addEventListener("click", () => {
+    redBtn.classList.add("active");
+    blueBtn.classList.remove("active");
+    radar.setMode("red");
+    tacticalCenter.classList.remove("mode-blue");
+    tacticalCenter.classList.add("mode-red");
+    playTacticalTargetLock();
+  });
+
+  blueBtn.addEventListener("click", () => {
+    blueBtn.classList.add("active");
+    redBtn.classList.remove("active");
+    radar.setMode("blue");
+    tacticalCenter.classList.remove("mode-red");
+    tacticalCenter.classList.add("mode-blue");
+    playTacticalTargetLock();
+  });
+
+  const radarBox = element("div", "tactical-radar-box");
+  const radarLabel = element("span", "tactical-radar-label", "RADAR PING // 360° SWEEP");
+  radarBox.append(radar.element, radarLabel);
+
+  const targetsGrid = element("div", "tactical-targets-grid");
+  targets.forEach((t) => {
+    const card = element("div", "tactical-target-card");
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("title", `Click to quick-search ${t.search} commands`);
+
+    const headerRow = element("div", "target-header-row");
+    const nameEl = element("strong", "target-name", t.name);
+    const badgeEl = element("span", `target-badge ${t.status}`, t.status.toUpperCase());
+    headerRow.append(nameEl, badgeEl);
+
+    const ipRow = element("div", "target-meta-row");
+    ipRow.append(
+      element("code", "target-ip", t.ip),
+      element("span", "target-port", t.port),
+    );
+
+    const actionRow = element("div", "target-action-row");
+    const actionBtn = element("span", "target-action-tag", `RECON // ${t.search.toUpperCase()}`);
+    actionRow.append(actionBtn);
+
+    card.append(headerRow, ipRow, actionRow);
+
+    const triggerSelect = () => {
+      radar.pulseTarget(t.id);
+      playTacticalTargetLock();
+      const rect = card.getBoundingClientRect();
+      triggerSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      options.onSearchQuery?.(t.search);
+    };
+
+    card.addEventListener("click", triggerSelect);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        triggerSelect();
+      }
+    });
+
+    targetsGrid.append(card);
+  });
+
+  tacticalBody.append(radarBox, targetsGrid);
+  tacticalCenter.append(tacticalHeader, tacticalBody);
+
+  // Cleanup radar on detachment
+  const observer = new MutationObserver(() => {
+    if (!dashboard.isConnected) {
+      radar.destroy();
+      observer.disconnect();
+    }
+  });
+  if (typeof document !== "undefined" && document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
   const grid = element("div", "dashboard-grid");
   const continueCard = element("section", "dashboard-card dashboard-continue");
@@ -131,7 +236,7 @@ export function createWelcomeDashboard(options: WelcomeDashboardOptions): HTMLEl
   }
 
   grid.append(continueCard, stats, workspace, favorites);
-  dashboard.append(hero, grid);
+  dashboard.append(hero, tacticalCenter, grid);
   return dashboard;
 }
 

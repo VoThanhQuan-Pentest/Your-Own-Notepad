@@ -75,6 +75,7 @@ import {
   playTimeWarp,
   playTacticalBlip,
   playEmpDistortion,
+  playCircuitSurgeAudio,
   isAudioMuted,
   toggleAudioMuted,
   getAudioFrequencyData,
@@ -2249,6 +2250,7 @@ export class CommandVaultApplication {
 
   private async copyCommand(value: string, trigger: HTMLButtonElement): Promise<void> {
     playLaserChirp();
+    playCircuitSurgeAudio();
     const rect = trigger.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
@@ -2256,6 +2258,11 @@ export class CommandVaultApplication {
     triggerHexShockwave(cx, cy);
     try {
       await copyText(value);
+      const row = trigger.closest(".command-row");
+      if (row) {
+        row.classList.add("row-circuit-surge");
+        window.setTimeout(() => row.classList.remove("row-circuit-surge"), 900);
+      }
       if (trigger.classList.contains("example-copy")) {
         trigger.classList.add("copied");
         window.setTimeout(() => trigger.classList.remove("copied"), 1200);
@@ -2264,7 +2271,6 @@ export class CommandVaultApplication {
       const previous = trigger.textContent;
       trigger.textContent = "COPIED";
       trigger.classList.add("copied");
-      const row = trigger.closest(".command-row");
       const codeBlock = row?.querySelector<HTMLElement>(".command-code");
       if (codeBlock) {
         codeBlock.classList.add("code-copied-pulse");
@@ -2994,6 +3000,11 @@ export class CommandVaultApplication {
       },
       onOpenWorkspace: () => void this.chooseAndOpenWorkspace(),
       onCreateFile: () => void this.newFile(),
+      onSearchQuery: (query) => {
+        this.toolbar.input.value = query;
+        this.toolbar.input.dispatchEvent(new Event("input"));
+        this.toolbar.focusSearch();
+      },
     });
     this.workspace.replaceChildren(dashboard);
   }

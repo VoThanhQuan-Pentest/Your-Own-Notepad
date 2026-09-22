@@ -992,6 +992,23 @@
               0 0 1px color-mix(in srgb, var(--accent-bright) 40%, transparent);
 }
 
+.command-row.row-circuit-surge {
+  animation: circuit-border-surge 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  border-color: var(--accent) !important;
+}
+
+@keyframes circuit-border-surge {
+  0% {
+    box-shadow: 0 0 0 1px var(--accent), 0 0 16px var(--accent);
+  }
+  40% {
+    box-shadow: 0 0 0 2px var(--accent-bright), 0 0 30px var(--accent), inset 0 0 16px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 1px transparent;
+  }
+}
+
 :root[data-performance="full"] .command-code {
   position: relative;
   background-color: var(--cyber-obsidian-bg, #070a0f);

@@ -1178,4 +1178,35 @@ test("God-Tier 4.0: holographic cyber globe and matrix digital rain", async ({ p
   await expect(page.locator(".matrix-rain-canvas")).not.toBeVisible();
 });
 
+test("God-Tier 5.0: tactical pentest mission control, radar target acquisition, and plasma circuit surge", async ({ page }) => {
+  // 1. Verify Welcome Dashboard Tactical Mission Control & Radar
+  await page.goto("/e2e.html?reset&fixture=basic&startup-preference=performance");
+  const tacticalCenter = page.locator(".welcome-tactical-center");
+  await expect(tacticalCenter).toBeVisible();
+  await expect(page.locator(".tactical-radar-canvas")).toBeVisible();
+  await expect(page.locator(".tactical-target-card")).toHaveCount(4);
+
+  // 2. Mode toggle Red vs Blue
+  const blueBtn = page.getByRole("button", { name: "BLUE TEAM [DEFENSIVE]" });
+  await blueBtn.click();
+  await expect(tacticalCenter).toHaveClass(/mode-blue/);
+
+  // 3. Click target node ALPHA-GATEWAY to launch quick recon search
+  const alphaCard = page.locator(".tactical-target-card").filter({ hasText: "ALPHA-GATEWAY" });
+  await alphaCard.click();
+  const searchInput = page.getByRole("combobox", { name: "Search commands" });
+  await expect(searchInput).toHaveValue("nmap");
+
+  // 4. Open file and verify electric circuit surge on command copy
+  await page.getByRole("button", { name: "OPEN FILE" }).click();
+  await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
+
+  const firstRow = page.locator(".command-row").first();
+  const copyBtn = firstRow.locator(".action-button.primary-action");
+  await copyBtn.click();
+  await expect(firstRow).toHaveClass(/row-circuit-surge/);
+  await expect(copyBtn).toHaveText("COPIED");
+});
+
+
 
