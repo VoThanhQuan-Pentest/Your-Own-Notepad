@@ -1,57 +1,33 @@
 /* ==========================================================================
-   COMMAND VAULT v0.17.0 - MASSIVE CYBER VAULT BLAST DOOR (STYLE A)
-   Cinematic Brutalist Sci-Fi Blast Gate Experience
+   COMMAND VAULT v0.17.0 - DIMENSIONAL VOID SLASH (STYLE 2)
+   Cinematic Spatial Rift Cut & Reality Breach
    ========================================================================== */
 
-.cyber-boot-overlay.blast-door-overlay {
+.cyber-boot-overlay.void-slash-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #020408;
+  background: #010204;
   color: var(--text, #d0e4ff);
   font-family: var(--font-code, monospace);
   user-select: none;
-  cursor: pointer;
+  cursor: crosshair;
   overflow: hidden;
-  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cyber-boot-overlay.blast-overlay-fadeout {
+.cyber-boot-overlay.void-overlay-fadeout {
   opacity: 0;
   pointer-events: none;
-}
-
-/* Vignette Shadow for Atmospheric Depth */
-.blast-bg-vignette {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.85) 100%);
-}
-
-/* Radiant Breach Light Bloom */
-.vault-breach-light {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 0%, rgba(0, 240, 255, 0.85) 45%, rgba(5, 12, 24, 0) 75%);
-  opacity: 0;
-  transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.vault-breach-light.breach-blooming {
-  opacity: 1;
 }
 
 /* ==========================================================================
-   THE MASSIVE BLAST GATE
+   THE VOID CONTAINER
    ========================================================================== */
-.vault-blast-gate {
+.void-slash-screen {
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -60,287 +36,193 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
+  --slash-angle: -25deg;
 }
 
-/* Heavy Mechanical Screen Shake on Depressurization */
-.vault-blast-gate.gate-shaking {
-  animation: blast-gate-shake 0.38s ease-in-out;
+/* Screen Shake on Slash Impact */
+.void-slash-screen.void-screen-shaking {
+  animation: void-shake 0.35s ease-in-out;
 }
 
-@keyframes blast-gate-shake {
+@keyframes void-shake {
   0% { transform: translate(0, 0); }
-  15% { transform: translate(-4px, 2px); }
-  30% { transform: translate(4px, -3px); }
-  45% { transform: translate(-3px, -2px); }
-  60% { transform: translate(3px, 2px); }
-  75% { transform: translate(-2px, 1px); }
-  90% { transform: translate(1px, -1px); }
+  20% { transform: translate(-5px, 3px) rotate(-0.3deg); }
+  40% { transform: translate(5px, -4px) rotate(0.4deg); }
+  60% { transform: translate(-3px, -2px) rotate(-0.2deg); }
+  80% { transform: translate(3px, 2px) rotate(0.2deg); }
   100% { transform: translate(0, 0); }
 }
 
 /* ==========================================================================
-   ARMORED TITANIUM DOOR PANELS (LEFT & RIGHT)
+   COSMIC DUST PARTICLES
    ========================================================================== */
-.vault-panel {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50.4%;
-  z-index: 20;
-  background: linear-gradient(135deg, #181e28 0%, #0d121a 45%, #151b24 100%);
-  box-shadow:
-    inset 0 0 90px rgba(0, 0, 0, 0.85),
-    0 0 50px rgba(0, 0, 0, 0.95);
-  transition: transform 1.15s cubic-bezier(0.7, 0, 0.2, 1);
-  overflow: hidden;
-}
-
-.vault-panel-left {
-  left: 0;
-  border-right: 3px solid #243042;
-}
-
-.vault-panel-right {
-  right: 0;
-  border-left: 3px solid #243042;
-}
-
-/* Door Parting Slide Animation */
-.vault-blast-gate.gate-opening .vault-panel-left {
-  transform: translateX(-104%);
-}
-
-.vault-blast-gate.gate-opening .vault-panel-right {
-  transform: translateX(104%);
-}
-
-/* CNC Milled Texture Plating */
-.panel-armor-plate {
+.void-dust-container {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
-  background-size: 80px 80px;
-  opacity: 0.85;
+  z-index: 2;
 }
 
-/* Industrial Stencil Markings */
-.panel-stencil {
+.void-particle {
   position: absolute;
-  top: 28px;
-  font-family: var(--font-code, monospace);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.25em;
-  color: rgba(112, 133, 160, 0.4);
-  text-transform: uppercase;
-}
-
-.vault-panel-left .panel-stencil {
-  left: 40px;
-}
-
-.vault-panel-right .panel-stencil {
-  right: 40px;
-  text-align: right;
-}
-
-/* Hazard Warning Stripes */
-.panel-hazard-stripe {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 14px;
-  opacity: 0.65;
-  background: repeating-linear-gradient(
-    -45deg,
-    rgba(0, 240, 255, 0.3) 0,
-    rgba(0, 240, 255, 0.3) 12px,
-    rgba(10, 15, 25, 0.95) 12px,
-    rgba(10, 15, 25, 0.95) 24px
-  );
-}
-
-.vault-panel-left .panel-hazard-stripe {
-  right: 18px;
-}
-
-.vault-panel-right .panel-hazard-stripe {
-  left: 18px;
-}
-
-/* Interlocking Serrated Teeth Edge */
-.panel-teeth-edge {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 36px;
-  color: #0d121a;
-  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
-  z-index: 22;
-}
-
-.teeth-left {
-  right: -2px;
-}
-
-.teeth-right {
-  left: -2px;
-}
-
-.teeth-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* ==========================================================================
-   HEAVY HYDRAULIC PISTONS
-   ========================================================================== */
-.vault-hydraulic-piston {
-  position: absolute;
-  width: 200px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  z-index: 25;
-}
-
-.piston-tl {
-  top: 60px;
-  left: 40px;
-}
-
-.piston-bl {
-  bottom: 60px;
-  left: 40px;
-}
-
-.piston-tr {
-  top: 60px;
-  right: 40px;
-  flex-direction: row-reverse;
-}
-
-.piston-br {
-  bottom: 60px;
-  right: 40px;
-  flex-direction: row-reverse;
-}
-
-.piston-mount {
-  width: 24px;
-  height: 44px;
-  background: #2a3544;
-  border: 1px solid #48566a;
-  border-radius: 3px;
-  box-shadow: inset 0 0 6px #000;
-}
-
-.piston-cylinder {
-  width: 110px;
-  height: 32px;
-  background: linear-gradient(180deg, #3d4a5c 0%, #151c26 50%, #2b3644 100%);
-  border-radius: 4px;
-  border: 1px solid #506177;
-  position: relative;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-}
-
-.piston-rod {
-  width: 60px;
-  height: 16px;
-  background: linear-gradient(180deg, #ffffff 0%, #a8b6c6 40%, #e2e8f0 70%, #64748b 100%);
-  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
-  border-radius: 2px;
-}
-
-.piston-tl .piston-rod,
-.piston-bl .piston-rod {
-  transform: translateX(10px);
-}
-
-.piston-tr .piston-rod,
-.piston-br .piston-rod {
-  transform: translateX(-10px);
-}
-
-/* Disengaging Retraction */
-.vault-blast-gate.gate-disengaging .piston-tl .piston-rod,
-.vault-blast-gate.gate-disengaging .piston-bl .piston-rod {
-  transform: translateX(-26px);
-}
-
-.vault-blast-gate.gate-disengaging .piston-tr .piston-rod,
-.vault-blast-gate.gate-disengaging .piston-br .piston-rod {
-  transform: translateX(26px);
-}
-
-.piston-led {
-  position: absolute;
-  top: calc(50% - 5px);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ff4757;
-  box-shadow: 0 0 12px #ff4757;
-  transition: background 0.3s, box-shadow 0.3s;
-}
-
-.piston-tl .piston-led,
-.piston-bl .piston-led {
-  right: 10px;
-}
-
-.piston-tr .piston-led,
-.piston-br .piston-led {
-  left: 10px;
-}
-
-.vault-blast-gate.gate-disengaging .piston-led {
-  background: #00ff9d;
-  box-shadow: 0 0 14px #00ff9d;
-}
-
-.piston-label {
-  font-size: 0.55rem;
-  color: #7085a0;
-  margin: 0 8px;
-  font-weight: 800;
-  letter-spacing: 0.10em;
-}
-
-/* ==========================================================================
-   VERTICAL SEAM GLOW
-   ========================================================================== */
-.vault-seam-glow {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(50% - 1.5px);
+  left: var(--x, 50%);
+  top: var(--y, 50%);
   width: 3px;
+  height: 3px;
+  border-radius: 50%;
   background: #00f0ff;
+  opacity: 0.3;
+  box-shadow: 0 0 6px #00f0ff;
+  animation: void-particle-float var(--dur, 4s) ease-in-out infinite alternate var(--delay, 0s);
+}
+
+@keyframes void-particle-float {
+  from { transform: translateY(0px) scale(0.8); opacity: 0.2; }
+  to { transform: translateY(-18px) scale(1.4); opacity: 0.6; }
+}
+
+/* ==========================================================================
+   RADIANT BREACH LIGHT
+   ========================================================================== */
+.void-breach-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(0, 240, 255, 0.9) 30%,
+    rgba(180, 0, 255, 0.7) 60%,
+    rgba(1, 2, 4, 0) 85%
+  );
+  opacity: 0;
+  transition: opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.void-breach-light.breach-blooming {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   THE TWO HALVES OF REALITY (SPLIT ALONG THE SLASH)
+   ========================================================================== */
+.void-half {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.void-half-top {
+  background: linear-gradient(135deg, #070b14 0%, #010204 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 38%, 0 62%);
+  border-bottom: 2px solid rgba(0, 240, 255, 0.4);
+}
+
+.void-half-bottom {
+  background: linear-gradient(135deg, #010204 0%, #080c16 100%);
+  clip-path: polygon(0 62%, 100% 38%, 100% 100%, 0 100%);
+  border-top: 2px solid rgba(180, 0, 255, 0.4);
+}
+
+/* Rift Separation Animation */
+.void-slash-screen.rift-opening .void-half-top {
+  transform: translate(-16px, -16px);
+}
+
+.void-slash-screen.rift-opening .void-half-bottom {
+  transform: translate(16px, 16px);
+}
+
+.void-slash-screen.rift-breached .void-half-top {
+  transform: translate(-125%, -125%);
+}
+
+.void-slash-screen.rift-breached .void-half-bottom {
+  transform: translate(125%, 125%);
+}
+
+/* ==========================================================================
+   RAZOR-SHARP ENERGY BLADE LINE
+   ========================================================================== */
+.void-slash-blade {
+  position: absolute;
+  top: calc(50% - 2.5px);
+  left: -30vw;
+  width: 160vw;
+  height: 5px;
+  z-index: 25;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #00f0ff 25%,
+    #ffffff 50%,
+    #b400ff 75%,
+    transparent 100%
+  );
   box-shadow:
-    0 0 16px #00f0ff,
-    0 0 32px rgba(0, 240, 255, 0.7);
-  z-index: 22;
+    0 0 25px #00f0ff,
+    0 0 50px #b400ff,
+    0 0 75px #ffffff;
+  transform: rotate(var(--slash-angle, -25deg)) scaleX(0);
+  opacity: 0;
+  transition: transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.12s ease;
+}
+
+.void-slash-screen.slashing .void-slash-blade {
+  opacity: 1;
+  transform: rotate(var(--slash-angle, -25deg)) scaleX(1);
+}
+
+.void-slash-screen.rift-breached .void-slash-blade {
+  opacity: 0;
   transition: opacity 0.3s ease;
 }
 
-.vault-blast-gate.gate-opening .vault-seam-glow {
+/* ==========================================================================
+   SPATIAL SHARD FRAGMENTS
+   ========================================================================== */
+.spatial-shard-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 22;
+}
+
+.spatial-shard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 240, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.7);
+  clip-path: polygon(50% 0%, 100% 70%, 20% 100%);
+  opacity: 0;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s;
+}
+
+.void-slash-screen.rift-opening .shard-0 { transform: translate(-140px, -180px) rotate(120deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-1 { transform: translate(160px, -140px) rotate(-80deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-2 { transform: translate(-220px, 90px) rotate(45deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-3 { transform: translate(200px, 160px) rotate(-130deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-4 { transform: translate(-80px, -240px) rotate(200deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-5 { transform: translate(110px, -220px) rotate(-60deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-6 { transform: translate(-190px, 200px) rotate(90deg); opacity: 1; }
+.void-slash-screen.rift-opening .shard-7 { transform: translate(240px, 60px) rotate(-160deg); opacity: 1; }
+
+.void-slash-screen.rift-breached .spatial-shard {
   opacity: 0;
 }
 
 /* ==========================================================================
-   CENTRAL REACTOR LOCK & ACTUATOR CORE
+   CENTRAL SINGULARITY ASSEMBLY
    ========================================================================== */
-.vault-core-assembly {
+.void-singularity-assembly {
   position: relative;
   z-index: 30;
   display: flex;
@@ -348,206 +230,149 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-.vault-blast-gate.gate-opening .vault-core-assembly {
+.void-slash-screen.slashing .void-singularity-assembly {
+  transform: scale(1.25);
+}
+
+.void-slash-screen.rift-breached .void-singularity-assembly {
   opacity: 0;
-  transform: scale(1.15);
+  transform: scale(0.2);
   pointer-events: none;
 }
 
-/* Rotating Hazard Warning Ring */
-.core-hazard-ring {
+/* Rotating Accretion Ring */
+.singularity-accretion-ring {
   position: absolute;
-  width: 300px;
-  height: 300px;
+  width: 240px;
+  height: 240px;
   border-radius: 50%;
-  border: 4px dashed rgba(0, 240, 255, 0.35);
+  border: 2px dashed rgba(0, 240, 255, 0.45);
   box-shadow:
-    0 0 30px rgba(0, 240, 255, 0.2),
-    inset 0 0 30px rgba(0, 240, 255, 0.15);
-  animation: core-hazard-rotate 35s linear infinite;
+    0 0 30px rgba(180, 0, 255, 0.25),
+    inset 0 0 30px rgba(0, 240, 255, 0.2);
+  animation: singularity-ring-rotate 22s linear infinite;
   pointer-events: none;
 }
 
-@keyframes core-hazard-rotate {
+@keyframes singularity-ring-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* Radial Locking Dogs */
-.core-locking-dogs {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.locking-dog {
-  position: absolute;
-  background: linear-gradient(180deg, #ffaa00, #b37400);
-  border: 1px solid #ffcc00;
-  box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
-  border-radius: 3px;
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.35s;
-}
-
-.dog-top {
-  top: -46px;
-  left: calc(50% - 8px);
-  width: 16px;
-  height: 44px;
-}
-
-.dog-bottom {
-  bottom: -46px;
-  left: calc(50% - 8px);
-  width: 16px;
-  height: 44px;
-}
-
-.dog-left {
-  left: -46px;
-  top: calc(50% - 8px);
-  width: 44px;
-  height: 16px;
-}
-
-.dog-right {
-  right: -46px;
-  top: calc(50% - 8px);
-  width: 44px;
-  height: 16px;
-}
-
-/* Dogs Retracted & Disengaged */
-.vault-blast-gate.gate-dogs-released .dog-top {
-  transform: translateY(-26px) rotate(45deg);
-  opacity: 0;
-}
-
-.vault-blast-gate.gate-dogs-released .dog-bottom {
-  transform: translateY(26px) rotate(-45deg);
-  opacity: 0;
-}
-
-.vault-blast-gate.gate-dogs-released .dog-left {
-  transform: translateX(-26px) rotate(-45deg);
-  opacity: 0;
-}
-
-.vault-blast-gate.gate-dogs-released .dog-right {
-  transform: translateX(26px) rotate(45deg);
-  opacity: 0;
-}
-
-/* Central Core Button Actuator */
-.vault-core-button {
-  width: 180px;
-  height: 180px;
+/* Singularity Trigger Core Button */
+.void-singularity {
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  background: radial-gradient(circle, #1c2636 0%, #0d121a 70%, #05070a 100%);
-  border: 3px solid #00f0ff;
+  background: radial-gradient(circle, #020306 0%, #0a0f1d 60%, #1c0f33 100%);
+  border: 2px solid #00f0ff;
   box-shadow:
-    0 0 30px rgba(0, 240, 255, 0.45),
-    inset 0 0 25px rgba(0, 240, 255, 0.25);
+    0 0 35px rgba(0, 240, 255, 0.75),
+    0 0 70px rgba(180, 0, 255, 0.45);
   cursor: pointer;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  outline: none;
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  overflow: hidden;
+  outline: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
 }
 
-.vault-core-button:hover,
-.vault-core-button:focus-visible {
-  transform: scale(1.05);
-  border-color: #00ff9d;
+.void-singularity:hover,
+.void-singularity:focus-visible {
+  transform: scale(1.15);
+  border-color: #ffffff;
   box-shadow:
-    0 0 45px rgba(0, 255, 157, 0.65),
-    inset 0 0 35px rgba(0, 255, 157, 0.35);
+    0 0 50px rgba(0, 240, 255, 1),
+    0 0 100px rgba(180, 0, 255, 0.8);
 }
 
-.vault-core-button:active {
-  transform: scale(0.96);
+.void-singularity:active {
+  transform: scale(0.92);
 }
 
-.core-btn-halo {
+/* Pulsing Core Halo */
+.singularity-core-pulse {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, transparent 70%);
-  animation: core-halo-pulse 2.4s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.3) 0%, transparent 70%);
+  animation: core-pulse-anim 2s ease-in-out infinite alternate;
 }
 
-@keyframes core-halo-pulse {
-  from { opacity: 0.4; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1.08); }
+@keyframes core-pulse-anim {
+  from { opacity: 0.3; transform: scale(0.85); }
+  to { opacity: 0.9; transform: scale(1.15); }
 }
 
-.core-svg-icon {
-  width: 64px;
-  height: 64px;
-  color: #00f0ff;
-  filter: drop-shadow(0 0 10px #00f0ff);
-  transition: color 0.3s, filter 0.3s;
+.singularity-core-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 15px #ffffff,
+    0 0 30px #00f0ff,
+    0 0 45px #b400ff;
+  animation: core-dot-breath 1.8s ease-in-out infinite alternate;
 }
 
-.vault-core-button:hover .core-svg-icon {
-  color: #00ff9d;
-  filter: drop-shadow(0 0 14px #00ff9d);
+@keyframes core-dot-breath {
+  from { transform: scale(0.8); opacity: 0.7; }
+  to { transform: scale(1.2); opacity: 1; }
 }
 
-.core-btn-title {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #e2e8f0;
-  margin-top: 6px;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
-}
-
-/* Diagnostics & Status Badges */
-.core-status-badge {
+/* Stencil and Status Labels */
+.void-title-label {
   margin-top: 26px;
-  padding: 6px 18px;
-  background: rgba(10, 15, 25, 0.88);
-  border: 1px solid rgba(255, 170, 0, 0.55);
+  font-size: 0.80rem;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  color: #e2e8f0;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+  text-transform: uppercase;
+}
+
+.void-status-badge {
+  margin-top: 10px;
+  padding: 5px 16px;
+  background: rgba(4, 8, 16, 0.88);
+  border: 1px solid rgba(0, 240, 255, 0.5);
   border-radius: 4px;
   font-size: 0.65rem;
-  letter-spacing: 0.14em;
-  color: #ffaa00;
+  letter-spacing: 0.12em;
+  color: #00f0ff;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(255, 170, 0, 0.6);
+  text-shadow: 0 0 8px #00f0ff;
   transition: all 0.3s ease;
 }
 
-.core-status-badge.status-venting {
-  border-color: #00f0ff;
-  color: #00f0ff;
-  text-shadow: 0 0 10px #00f0ff;
+.void-status-badge.status-slashed {
+  border-color: #b400ff;
+  color: #b400ff;
+  text-shadow: 0 0 10px #b400ff;
 }
 
-.core-status-badge.status-disengaged {
+.void-status-badge.status-breaching {
   border-color: #00ff9d;
   color: #00ff9d;
   text-shadow: 0 0 12px #00ff9d;
 }
 
-.core-hint-label {
+.void-hint-label {
   margin-top: 12px;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  color: #a0aec0;
+  font-size: 0.70rem;
+  letter-spacing: 0.15em;
+  color: #94a3b8;
   text-align: center;
 }
 
-.core-skip-hint {
+.void-skip-hint {
   margin-top: 8px;
   font-size: 0.60rem;
-  color: #7085a0;
+  color: #64748b;
   letter-spacing: 0.10em;
 }
