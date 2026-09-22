@@ -2,8 +2,6 @@ import {
   playCyberBootSequence,
   speakSystemGreeting,
   playBiometricAuthSound,
-  playServoClick,
-  playPneumaticHiss,
   playCircuitSurgeAudio,
   playLaserChirp,
   playEnergyPulse,
@@ -123,48 +121,45 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     }
     deckLeft.append(leftHeader, metricsList, oscCanvas, freqVisualizer);
 
-    // Center Deck: Magnetic Railgun Slider & Holographic Core
+    // Center Deck: Optical Biometric Scanner & Holographic Core
     const deckCenter = element("div", "boot-deck-center");
-    const phaseBanner = element("div", "boot-phase-banner", "STANDBY // MAGNETIC RAILGUN CONDUIT READY");
+    const phaseBanner = element("div", "boot-phase-banner", "STANDBY // OPTICAL BIOMETRIC CLEARANCE MATRIX");
 
-    // 1. Magnetic Railgun Slider Assembly
-    const railSlider = element("div", "boot-magnetic-slider");
-    railSlider.setAttribute("role", "slider");
-    railSlider.setAttribute("tabindex", "0");
-    railSlider.setAttribute("aria-valuemin", "0");
-    railSlider.setAttribute("aria-valuemax", "100");
-    railSlider.setAttribute("aria-valuenow", "0");
-    railSlider.setAttribute("aria-label", "Slide magnetic puck to engage neural link");
+    // 1. Biometric Scanner Hub
+    const biometricScanner = element("div", "boot-biometric-scanner");
+    biometricScanner.setAttribute("role", "button");
+    biometricScanner.setAttribute("tabindex", "0");
+    biometricScanner.setAttribute("aria-label", "Optical Biometric Scanner. Click or hold to scan");
 
-    const railHeader = element("div", "slider-rail-header");
-    const railBadge = element("span", "slider-rail-badge", "DEFCON 1 // NEURAL RAIL CONDUIT");
-    const railStatus = element("span", "slider-rail-status", "[ ARMED: 0% ]");
-    railHeader.append(railBadge, railStatus);
+    const bioHeader = element("div", "biometric-scanner-header");
+    const bioBadge = element("span", "biometric-badge", "DEFCON 1 // BIOMETRIC CLEARANCE");
+    const bioStatus = element("span", "biometric-status", "[ AWAITING TOUCH ]");
+    bioHeader.append(bioBadge, bioStatus);
 
-    const railTrack = element("div", "slider-rail-track");
-    const railTrail = element("div", "slider-rail-trail");
-    const railText = element("div", "slider-rail-text", "SLIDE TO ENGAGE NEURAL LINK >>>>>>");
+    // The Optical Scanner Pad
+    const scannerPad = element("div", "biometric-scanner-pad");
+    const reticleRing1 = element("div", "biometric-reticle-ring ring-outer");
+    const reticleRing2 = element("div", "biometric-reticle-ring ring-inner");
+    const laserBar = element("div", "biometric-laser-bar");
 
-    // Magnetic Shuttle / Puck
-    const railPuck = element("div", "slider-rail-puck");
-    railPuck.setAttribute("title", "Drag to right or press Enter to engage");
-    const puckIcon = element("span", "slider-puck-icon", "⚡");
-    const puckGlow = element("div", "slider-puck-glow");
-    railPuck.append(puckIcon, puckGlow);
+    // Realistic Fingerprint SVG Icon
+    const fingerprintSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    fingerprintSvg.setAttribute("class", "biometric-fingerprint-svg");
+    fingerprintSvg.setAttribute("viewBox", "0 0 100 120");
+    fingerprintSvg.innerHTML = `
+      <path d="M50 15 C30 15 20 28 20 48 C20 72 30 100 50 105 C70 100 80 72 80 48 C80 28 70 15 50 15 Z" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+      <path d="M50 25 C36 25 28 35 28 50 C28 70 36 92 50 97 C64 92 72 70 72 50 C72 35 64 25 50 25 Z" fill="none" stroke="currentColor" stroke-width="2.5" opacity="0.5"/>
+      <path d="M50 35 C42 35 36 42 36 52 C36 67 42 84 50 89 C58 84 64 67 64 52 C64 42 58 35 50 35 Z" fill="none" stroke="currentColor" stroke-width="3" opacity="0.75"/>
+      <path d="M50 45 C46 45 44 48 44 54 C44 64 47 76 50 81 C53 76 56 64 56 54 C56 48 54 45 50 45 Z" fill="none" stroke="currentColor" stroke-width="3.5" opacity="0.95"/>
+      <circle cx="50" cy="54" r="3" fill="currentColor"/>
+    `;
 
-    // Target Magnetic Dock
-    const railDock = element("div", "slider-rail-dock");
-    const dockEmitter = element("div", "rail-dock-emitter");
-    const dockTag = element("span", "rail-dock-tag", "LOCK");
-    railDock.append(dockEmitter, dockTag);
+    scannerPad.append(reticleRing1, reticleRing2, laserBar, fingerprintSvg);
 
-    railTrack.append(railTrail, railText, railPuck, railDock);
+    const bioPrompt = element("div", "biometric-prompt-text", "✦ HOLD TO SCAN OR CLICK TO AUTHENTICATE ✦");
+    const bioDiagnostics = element("div", "biometric-diagnostics", "[ SENSOR: 9600 DPI OPTICAL // READY ]");
 
-    const railFooter = element("div", "slider-rail-footer");
-    const railHint = element("span", "slider-rail-hint", "⮂ DRAG PUCK TO LOCK // PRESS [ENTER] TO SLIDE");
-    railFooter.append(railHint);
-
-    railSlider.append(railHeader, railTrack, railFooter);
+    biometricScanner.append(bioHeader, scannerPad, bioPrompt, bioDiagnostics);
 
     // 2. Holographic Quantum Core (revealed once engaged)
     const holoCenter = element("div", "boot-holo-center");
@@ -188,15 +183,15 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     progressTrack.append(progressFill);
     progressContainer.append(progressHeader, progressTrack);
 
-    const skipHint = element("span", "boot-skip-hint", "[ ESC TO SKIP // ENTER TO ENGAGE ]");
-    deckCenter.append(phaseBanner, railSlider, holoCenter, clearanceContainer, progressContainer, skipHint);
+    const skipHint = element("span", "boot-skip-hint", "[ ESC TO SKIP // SPACE TO AUTHENTICATE ]");
+    deckCenter.append(phaseBanner, biometricScanner, holoCenter, clearanceContainer, progressContainer, skipHint);
 
     // Right Deck: Real-time Kernel POST Stream
     const deckRight = element("div", "boot-deck-right");
     const rightHeader = element("div", "boot-deck-header", "// REAL-TIME POST STREAM");
     const terminalLog = element("div", "boot-terminal-log");
     const hexStream = element("div", "boot-hex-stream");
-    hexStream.innerHTML = `<span class="hex-addr">0x7FFE04</span> <span class="hex-bytes">48 89 E5 31 C0 48 83 EC</span> <span class="hex-tag">[RAIL_CHARGED]</span>`;
+    hexStream.innerHTML = `<span class="hex-addr">0x7FFE04</span> <span class="hex-bytes">48 89 E5 31 C0 48 83 EC</span> <span class="hex-tag">[BIO_STANDBY]</span>`;
     const terminalPrompt = element("div", "boot-terminal-prompt", "> _");
     deckRight.append(rightHeader, terminalLog, hexStream, terminalPrompt);
 
@@ -210,95 +205,97 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     const timers: number[] = [];
 
     // ==========================================
-    // Magnetic Rail Drag & Engagement Physics
+    // Biometric Optical Scanning Engine
     // ==========================================
-    let isDragging = false;
-    let dragStartX = 0;
-    let currentPct = 0;
+    let scanProgress = 0;
+    let scanTimer: number | null = null;
 
-    function getMaxDistance() {
-      return Math.max(1, railTrack.clientWidth - railPuck.clientWidth - 10);
+    function startScanning() {
+      if (running || dismissed || scanTimer !== null) return;
+      biometricScanner.classList.add("scanning");
+      bioStatus.textContent = "[ SCANNING... ]";
+      playEnergyPulse();
+
+      scanTimer = window.setInterval(() => {
+        scanProgress += 20;
+        bioDiagnostics.textContent = `[ ANALYZING GENOMIC DATA: ${Math.min(99, scanProgress)}% ]`;
+        playDecryptionTick();
+
+        if (scanProgress >= 100) {
+          if (scanTimer !== null) {
+            window.clearInterval(scanTimer);
+            scanTimer = null;
+          }
+          engageBiometrics();
+        }
+      }, 70);
     }
 
-    function updatePuckPosition(px: number) {
-      const max = getMaxDistance();
-      const clamped = Math.max(0, Math.min(max, px));
-      currentPct = clamped / max;
-      railPuck.style.transform = `translateX(${clamped}px)`;
-      railTrail.style.width = `${currentPct * 100}%`;
-      railStatus.textContent = `[ CHARGING: ${Math.round(currentPct * 100)}% ]`;
-      railSlider.setAttribute("aria-valuenow", `${Math.round(currentPct * 100)}`);
-    }
-
-    function snapReset() {
-      railPuck.style.transition = "transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-      railTrail.style.transition = "width 0.28s ease";
-      railPuck.style.transform = "translateX(0px)";
-      railTrail.style.width = "0%";
-      currentPct = 0;
-      railStatus.textContent = "[ ARMED: 0% ]";
-      railSlider.setAttribute("aria-valuenow", "0");
-      window.setTimeout(() => {
-        railPuck.style.transition = "";
-        railTrail.style.transition = "";
-      }, 300);
-    }
-
-    function autoSlideAndEngage() {
+    function cancelScanning() {
       if (running || dismissed) return;
-      const max = getMaxDistance();
-      railPuck.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)";
-      railTrail.style.transition = "width 0.25s ease";
-      updatePuckPosition(max);
-      window.setTimeout(() => {
-        engageCore();
-      }, 260);
+      if (scanTimer !== null) {
+        window.clearInterval(scanTimer);
+        scanTimer = null;
+      }
+      scanProgress = 0;
+      biometricScanner.classList.remove("scanning");
+      bioStatus.textContent = "[ AWAITING TOUCH ]";
+      bioDiagnostics.textContent = "[ SENSOR: 9600 DPI OPTICAL // READY ]";
     }
 
-    railPuck.addEventListener("pointerdown", (e) => {
+    function engageBiometrics() {
       if (running || dismissed) return;
-      isDragging = true;
-      dragStartX = e.clientX - currentPct * getMaxDistance();
-      railPuck.setPointerCapture(e.pointerId);
-      railSlider.classList.add("dragging");
-      playPneumaticHiss(true);
+      running = true;
+      if (scanTimer !== null) {
+        window.clearInterval(scanTimer);
+        scanTimer = null;
+      }
+
+      biometricScanner.classList.add("verified");
+      bioStatus.textContent = "[ ACCESS GRANTED ]";
+      bioDiagnostics.textContent = "[ 100% MATCH // OPERATOR CONFIRMED ]";
+
+      const rect = scannerPad.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      triggerSparkBurst(cx, cy);
+      triggerHexShockwave(cx, cy);
+
+      playBiometricAuthSound();
+      playCircuitSurgeAudio();
+      playLaserChirp();
+      playCyberBootSequence();
+
+      window.setTimeout(() => {
+        biometricScanner.classList.add("engaged-hidden");
+        holoCenter.style.display = "flex";
+        holoCenter.classList.add("core-igniting");
+      }, 240);
+
+      start6SecondTimeline();
+    }
+
+    biometricScanner.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      startScanning();
     });
 
-    railPuck.addEventListener("pointermove", (e) => {
-      if (!isDragging || running || dismissed) return;
-      const currentX = e.clientX - dragStartX;
-      updatePuckPosition(currentX);
-      if (currentPct >= 0.88) {
-        isDragging = false;
-        railSlider.classList.remove("dragging");
-        autoSlideAndEngage();
+    biometricScanner.addEventListener("pointerup", (e) => {
+      e.stopPropagation();
+      if (scanProgress < 100) {
+        cancelScanning();
       }
     });
 
-    const onPointerUp = () => {
-      if (!isDragging || running || dismissed) return;
-      isDragging = false;
-      railSlider.classList.remove("dragging");
-      if (currentPct >= 0.80) {
-        autoSlideAndEngage();
-      } else {
-        snapReset();
+    biometricScanner.addEventListener("pointerleave", () => {
+      if (scanProgress < 100) {
+        cancelScanning();
       }
-    };
-
-    railPuck.addEventListener("pointerup", onPointerUp);
-    railPuck.addEventListener("pointercancel", onPointerUp);
-
-    railTrack.addEventListener("click", (e) => {
-      if (running || dismissed) return;
-      e.stopPropagation();
-      autoSlideAndEngage();
     });
 
-    railSlider.addEventListener("click", (e) => {
-      if (running || dismissed) return;
+    biometricScanner.addEventListener("click", (e) => {
       e.stopPropagation();
-      autoSlideAndEngage();
+      engageBiometrics();
     });
 
     function renderOsc() {
@@ -347,35 +344,6 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       }, 260);
     };
 
-    const engageCore = () => {
-      if (running || dismissed) return;
-      running = true;
-
-      railStatus.textContent = "[ LOCKED: 100% ]";
-      railStatus.classList.add("locked");
-      railSlider.classList.add("locked-engaged");
-      railDock.classList.add("dock-locked");
-
-      const rect = railPuck.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      triggerSparkBurst(cx, cy);
-      triggerHexShockwave(cx, cy);
-
-      playServoClick();
-      playCircuitSurgeAudio();
-      playLaserChirp();
-      playCyberBootSequence();
-
-      window.setTimeout(() => {
-        railSlider.classList.add("engaged-hidden");
-        holoCenter.style.display = "flex";
-        holoCenter.classList.add("core-igniting");
-      }, 220);
-
-      start6SecondTimeline();
-    };
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
@@ -385,7 +353,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
       if (e.key === "Enter" || e.key === " ") {
         e.stopPropagation();
         e.preventDefault();
-        autoSlideAndEngage();
+        engageBiometrics();
         return;
       }
     };
@@ -395,7 +363,7 @@ export function runBootSequence(options: BootSequenceOptions = {}, force = false
     // Auto-engage fallback after 5.0 seconds if user is idle
     const autoEngageTimer = window.setTimeout(() => {
       if (!running && !dismissed) {
-        autoSlideAndEngage();
+        engageBiometrics();
       }
     }, 5000);
     timers.push(autoEngageTimer);

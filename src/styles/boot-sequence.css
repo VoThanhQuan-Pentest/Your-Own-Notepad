@@ -618,31 +618,33 @@
    ========================================================================== */
 
 /* ==========================================================================
-   STYLE 3: MAGNETIC RAILGUN SLIDER (SLIDE-TO-ENGAGE NEURAL LINK)
+   STYLE 1: BIOMETRIC FINGERPRINT & RETINAL LASER SCANNER
    ========================================================================== */
 
-.boot-magnetic-slider {
+.boot-biometric-scanner {
   position: relative;
   width: 100%;
-  max-width: 340px;
+  max-width: 320px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
   padding: 16px 18px;
-  background: radial-gradient(circle at 50% 50%, rgba(8, 20, 32, 0.95) 0%, rgba(2, 6, 14, 0.98) 100%);
+  background: radial-gradient(circle at 50% 50%, rgba(6, 18, 30, 0.95) 0%, rgba(2, 6, 14, 0.98) 100%);
   border: 1px solid color-mix(in srgb, var(--accent, #00ffff) 35%, transparent);
   border-radius: 12px;
   box-shadow:
     0 0 35px rgba(0, 240, 255, 0.15),
     inset 0 0 30px rgba(0, 0, 0, 0.85);
   margin: 4px 0;
+  cursor: pointer;
   user-select: none;
   outline: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.boot-magnetic-slider:hover,
-.boot-magnetic-slider:focus-visible {
+.boot-biometric-scanner:hover,
+.boot-biometric-scanner:focus-visible {
   border-color: var(--accent, #00ffff);
   box-shadow:
     0 0 45px rgba(0, 240, 255, 0.35),
@@ -650,12 +652,17 @@
   transform: translateY(-2px);
 }
 
-.boot-magnetic-slider.locked-engaged {
+.boot-biometric-scanner.scanning {
   border-color: #00ff9d;
-  box-shadow: 0 0 50px rgba(0, 255, 157, 0.6);
+  box-shadow: 0 0 50px rgba(0, 255, 157, 0.4), inset 0 0 35px rgba(0, 255, 157, 0.15);
 }
 
-.boot-magnetic-slider.engaged-hidden {
+.boot-biometric-scanner.verified {
+  border-color: #00ff9d;
+  box-shadow: 0 0 60px rgba(0, 255, 157, 0.7);
+}
+
+.boot-biometric-scanner.engaged-hidden {
   opacity: 0;
   transform: scale(0.9);
   pointer-events: none;
@@ -664,7 +671,8 @@
 }
 
 /* Header */
-.slider-rail-header {
+.biometric-scanner-header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -673,14 +681,14 @@
   padding-bottom: 6px;
 }
 
-.slider-rail-badge {
+.biometric-badge {
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--accent, #00ffff);
 }
 
-.slider-rail-status {
+.biometric-status {
   font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -691,153 +699,131 @@
   border: 1px solid rgba(255, 170, 0, 0.4);
 }
 
-.slider-rail-status.locked {
-  color: #00ff9d;
-  background: rgba(0, 255, 157, 0.18);
-  border-color: #00ff9d;
-  box-shadow: 0 0 10px rgba(0, 255, 157, 0.8);
+.boot-biometric-scanner.scanning .biometric-status {
+  color: #5ceaff;
+  background: rgba(92, 234, 255, 0.2);
+  border-color: #5ceaff;
+  animation: bio-status-pulse 0.6s infinite alternate;
 }
 
-/* Track Body */
-.slider-rail-track {
-  position: relative;
-  width: 100%;
-  height: 56px;
-  background: rgba(4, 10, 18, 0.9);
-  border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 8px;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-/* Plasma Trail behind puck */
-.slider-rail-trail {
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 0%;
-  background: linear-gradient(90deg, rgba(0, 240, 255, 0.1) 0%, rgba(0, 255, 157, 0.4) 100%);
-  box-shadow: 0 0 16px rgba(0, 255, 157, 0.6);
-  pointer-events: none;
-}
-
-/* Glowing text inside rail */
-.slider-rail-text {
-  position: absolute;
-  width: 100%;
-  text-align: center;
-  font-size: 0.65rem;
-  font-family: var(--font-code, monospace);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.45);
-  pointer-events: none;
-  animation: rail-text-shimmer 2s infinite linear;
-}
-
-@keyframes rail-text-shimmer {
-  0% { color: rgba(255, 255, 255, 0.35); text-shadow: none; }
-  50% { color: #5ceaff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.8); }
-  100% { color: rgba(255, 255, 255, 0.35); text-shadow: none; }
-}
-
-/* Shuttle / Puck */
-.slider-rail-puck {
-  position: absolute;
-  left: 4px;
-  width: 50px;
-  height: 46px;
-  background: linear-gradient(135deg, #16364a 0%, #0d2230 60%, #05121c 100%);
-  border: 2px solid var(--accent, #00ffff);
-  border-radius: 6px;
-  box-shadow:
-    0 0 16px rgba(0, 240, 255, 0.6),
-    inset 0 0 8px rgba(0, 240, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  touch-action: none;
-  z-index: 5;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.boot-magnetic-slider.dragging .slider-rail-puck {
-  cursor: grabbing;
-  border-color: #00ff9d;
-  box-shadow: 0 0 24px #00ff9d;
-}
-
-.slider-puck-icon {
-  font-size: 1.15rem;
+.boot-biometric-scanner.verified .biometric-status {
   color: #fff;
-  filter: drop-shadow(0 0 6px var(--accent, #00ffff));
-}
-
-.slider-puck-glow {
-  position: absolute;
-  inset: -4px;
-  border-radius: 8px;
-  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.3) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* Target Magnetic Dock / Clamp */
-.slider-rail-dock {
-  position: absolute;
-  right: 4px;
-  width: 44px;
-  height: 46px;
-  border: 1px dashed rgba(255, 170, 0, 0.4);
-  border-radius: 6px;
-  background: rgba(255, 170, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.rail-dock-emitter {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ffaa00;
-  box-shadow: 0 0 8px #ffaa00;
-}
-
-.slider-rail-dock.dock-locked .rail-dock-emitter {
   background: #00ff9d;
+  border-color: #fff;
   box-shadow: 0 0 12px #00ff9d;
 }
 
-.rail-dock-tag {
-  font-size: 0.52rem;
-  font-family: var(--font-code, monospace);
-  font-weight: 800;
-  color: #ffaa00;
-  margin-top: 3px;
-  letter-spacing: 0.08em;
+@keyframes bio-status-pulse {
+  from { opacity: 0.7; }
+  to { opacity: 1; box-shadow: 0 0 10px #5ceaff; }
 }
 
-.slider-rail-dock.dock-locked .rail-dock-tag {
-  color: #00ff9d;
-}
-
-/* Footer */
-.slider-rail-footer {
+/* Scanner Pad */
+.biometric-scanner-pad {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.06) 0%, rgba(2, 8, 16, 0.95) 75%);
+  border: 2px solid rgba(0, 240, 255, 0.4);
+  box-shadow:
+    0 0 20px rgba(0, 240, 255, 0.25),
+    inset 0 0 25px rgba(0, 240, 255, 0.1);
   display: flex;
+  align-items: center;
   justify-content: center;
-  font-family: var(--font-code, monospace);
+  overflow: hidden;
+  margin: 4px 0;
 }
 
-.slider-rail-hint {
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
+/* Reticle Rings */
+.biometric-reticle-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.biometric-reticle-ring.ring-outer {
+  inset: 6px;
+  border: 1px dashed rgba(0, 240, 255, 0.35);
+  animation: bio-ring-rotate 12s linear infinite;
+}
+
+.biometric-reticle-ring.ring-inner {
+  inset: 18px;
+  border: 1px dotted rgba(0, 255, 157, 0.4);
+  animation: bio-ring-rotate 8s linear infinite reverse;
+}
+
+@keyframes bio-ring-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* Fingerprint SVG */
+.biometric-fingerprint-svg {
+  width: 64px;
+  height: 76px;
+  color: #00f0ff;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
+  transition: color 0.3s ease, filter 0.3s ease;
+  z-index: 2;
+}
+
+.boot-biometric-scanner.scanning .biometric-fingerprint-svg {
+  color: #5ceaff;
+  filter: drop-shadow(0 0 14px #5ceaff);
+}
+
+.boot-biometric-scanner.verified .biometric-fingerprint-svg {
+  color: #00ff9d;
+  filter: drop-shadow(0 0 20px #00ff9d);
+}
+
+/* Laser Sweep Bar */
+.biometric-laser-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #00ff9d 50%, transparent 100%);
+  box-shadow: 0 0 14px #00ff9d, 0 0 28px #5ceaff;
+  z-index: 4;
+  top: 10%;
+  animation: bio-laser-sweep 2s ease-in-out infinite alternate;
+}
+
+.boot-biometric-scanner.scanning .biometric-laser-bar {
+  background: linear-gradient(90deg, transparent 0%, #5ceaff 50%, transparent 100%);
+  box-shadow: 0 0 18px #5ceaff, 0 0 35px #00ffff;
+  animation: bio-laser-sweep 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes bio-laser-sweep {
+  0% { top: 12%; opacity: 0.6; }
+  100% { top: 86%; opacity: 1; }
+}
+
+/* Prompt Text */
+.biometric-prompt-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #00ff9d;
+  text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
+  text-align: center;
+  animation: bio-prompt-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes bio-prompt-pulse {
+  0% { opacity: 0.75; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1.02); text-shadow: 0 0 14px rgba(0, 255, 157, 0.9); }
+}
+
+/* Diagnostics */
+.biometric-diagnostics {
+  font-size: 0.55rem;
+  font-family: var(--font-code, monospace);
+  letter-spacing: 0.10em;
   color: var(--text-muted, #7085a0);
   text-align: center;
 }

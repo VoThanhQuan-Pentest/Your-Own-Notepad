@@ -1147,14 +1147,14 @@ test("God-Tier 3.0: telemetry oscilloscope, cyber boot replay, and hex shockwave
   await expect(bootOverlay).toBeVisible();
   await expect(page.locator(".boot-laser-sweep")).toBeVisible();
   await expect(page.locator(".boot-title")).toContainText("COMMAND VAULT // TACTICAL SECURE KERNEL");
-  await expect(page.locator(".boot-magnetic-slider")).toBeVisible();
+  await expect(page.locator(".boot-biometric-scanner")).toBeVisible();
 
   // Press Escape to dismiss immediately
   await page.keyboard.press("Escape");
   await expect(bootOverlay).not.toBeVisible();
 });
 
-test("v0.17.0: Magnetic Railgun Slider engage and boot sequence", async ({ page }) => {
+test("v0.17.0: Biometric Laser Scanner engage and boot sequence", async ({ page }) => {
   await page.goto("/e2e.html?reset&fixture=basic&skip-welcome&startup-preference=performance");
   await expect(page.getByRole("heading", { name: "NMAP" })).toBeVisible();
   await page.getByRole("button", { name: "Open settings" }).click();
@@ -1164,13 +1164,13 @@ test("v0.17.0: Magnetic Railgun Slider engage and boot sequence", async ({ page 
   const bootOverlay = page.locator(".cyber-boot-overlay");
   await expect(bootOverlay).toBeVisible();
 
-  const railSlider = page.locator(".boot-magnetic-slider");
-  await expect(railSlider).toBeVisible();
-  await expect(page.locator(".slider-rail-puck")).toBeVisible();
+  const biometricScanner = page.locator(".boot-biometric-scanner");
+  await expect(biometricScanner).toBeVisible();
+  await expect(page.locator(".biometric-scanner-pad")).toBeVisible();
 
-  // Press Enter to auto-slide puck to target
-  await page.keyboard.press("Enter");
-  await expect(railSlider).toHaveClass(/engaged-hidden/);
+  // Click scanner pad to verify biometrics and engage
+  await biometricScanner.click();
+  await expect(biometricScanner).toHaveClass(/engaged-hidden/);
   await expect(page.locator(".boot-holo-center")).toBeVisible();
 
   // Escape to dismiss
