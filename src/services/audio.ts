@@ -722,3 +722,76 @@ export function playTacticalTargetLock(): void {
     osc.stop(now + 0.085);
   });
 }
+
+/**
+ * Ancient monolithic stone grinding rumble for concentric ruin gate mechanics
+ */
+export function playStoneGrindRumble(): void {
+  playSound((ctx, output, now) => {
+    // Low sub rumble
+    const subOsc = ctx.createOscillator();
+    const subGain = ctx.createGain();
+    subOsc.type = "sawtooth";
+    subOsc.frequency.setValueAtTime(45, now);
+    subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.8);
+
+    // Lowpass filter to simulate massive subterranean stone mass
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(120, now);
+    filter.frequency.linearRampToValueAtTime(80, now + 0.8);
+
+    subGain.gain.setValueAtTime(0.35, now);
+    subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.85);
+
+    subOsc.connect(filter);
+    filter.connect(subGain);
+    subGain.connect(output);
+
+    subOsc.start(now);
+    subOsc.stop(now + 0.86);
+  });
+}
+
+/**
+ * Resonant heavy stone locking latch click when ancient concentric rings align
+ */
+export function playAncientKeystoneLatch(): void {
+  playSound((ctx, output, now) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(55, now + 0.25);
+
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now);
+    osc.stop(now + 0.29);
+  });
+}
+
+/**
+ * High-speed dimensional whip sound for multi-slash kinetic flurry
+ */
+export function playMultiSlashFlurry(): void {
+  playSound((ctx, output, now) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.exponentialRampToValueAtTime(160, now + 0.14);
+
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now);
+    osc.stop(now + 0.16);
+  });
+}
+

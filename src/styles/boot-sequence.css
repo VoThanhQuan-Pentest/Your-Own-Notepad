@@ -427,314 +427,331 @@
   100% { transform: translate(0, 0); }
 }
 
-.vault-panel {
+/* Megalithic Carved Stone Door Slabs */
+.ancient-ruin-slab {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 50.4%;
+  width: 50.5%;
   z-index: 20;
-  background: linear-gradient(135deg, #181e28 0%, #0d121a 45%, #151b24 100%);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(20, 28, 40, 0.95) 0%, #0a0e16 100%),
+    linear-gradient(135deg, #10151f 0%, #070a10 100%);
   box-shadow:
-    inset 0 0 90px rgba(0, 0, 0, 0.85),
-    0 0 50px rgba(0, 0, 0, 0.95);
-  transition: transform 1.15s cubic-bezier(0.7, 0, 0.2, 1);
+    inset 0 0 100px rgba(0, 0, 0, 0.92),
+    0 0 60px rgba(0, 0, 0, 0.95);
+  transition: transform 1.55s cubic-bezier(0.75, 0, 0.15, 1);
   overflow: hidden;
 }
 
-.vault-panel-left {
+.ancient-ruin-slab.slab-left {
   left: 0;
-  border-right: 3px solid #243042;
+  border-right: 3px solid rgba(255, 183, 0, 0.35);
 }
 
-.vault-panel-right {
+.ancient-ruin-slab.slab-right {
   right: 0;
-  border-left: 3px solid #243042;
+  border-left: 3px solid rgba(0, 240, 255, 0.35);
 }
 
-.vault-blast-gate.gate-opening .vault-panel-left {
+.vault-blast-gate.gate-opening .ancient-ruin-slab.slab-left {
   transform: translateX(-104%);
 }
 
-.vault-blast-gate.gate-opening .vault-panel-right {
+.vault-blast-gate.gate-opening .ancient-ruin-slab.slab-right {
   transform: translateX(104%);
 }
 
-.panel-armor-plate {
+.slab-rune-carvings {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
-  background-size: 80px 80px;
-  opacity: 0.85;
+  color: #0b0f17;
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.9));
 }
 
-.panel-stencil {
-  position: absolute;
-  top: 28px;
-  font-family: var(--font-code, monospace);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.25em;
-  color: rgba(112, 133, 160, 0.4);
-  text-transform: uppercase;
-}
-
-.vault-panel-left .panel-stencil { left: 40px; }
-.vault-panel-right .panel-stencil { right: 40px; text-align: right; }
-
-.panel-hazard-stripe {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 14px;
-  opacity: 0.65;
-  background: repeating-linear-gradient(
-    -45deg,
-    rgba(0, 240, 255, 0.3) 0,
-    rgba(0, 240, 255, 0.3) 12px,
-    rgba(10, 15, 25, 0.95) 12px,
-    rgba(10, 15, 25, 0.95) 24px
-  );
-}
-
-.vault-panel-left .panel-hazard-stripe { right: 18px; }
-.vault-panel-right .panel-hazard-stripe { left: 18px; }
-
-.panel-teeth-edge {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 36px;
-  color: #0d121a;
-  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9));
-  z-index: 22;
-}
-
-.teeth-left { right: -2px; }
-.teeth-right { left: -2px; }
-
-.teeth-svg {
+.ancient-slab-svg {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-.vault-hydraulic-piston {
+.ancient-teeth {
   position: absolute;
-  width: 200px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  z-index: 25;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  z-index: 22;
 }
 
-.piston-tl { top: 60px; left: 40px; }
-.piston-bl { bottom: 60px; left: 40px; }
-.piston-tr { top: 60px; right: 40px; flex-direction: row-reverse; }
-.piston-br { bottom: 60px; right: 40px; flex-direction: row-reverse; }
-
-.piston-mount {
-  width: 24px;
-  height: 44px;
-  background: #2a3544;
-  border: 1px solid #48566a;
-  border-radius: 3px;
-  box-shadow: inset 0 0 6px #000;
+.ancient-teeth.teeth-left {
+  right: -2px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 20px,
+    rgba(255, 183, 0, 0.25) 20px,
+    rgba(255, 183, 0, 0.25) 40px
+  );
 }
 
-.piston-cylinder {
-  width: 110px;
-  height: 32px;
-  background: linear-gradient(180deg, #3d4a5c 0%, #151c26 50%, #2b3644 100%);
-  border-radius: 4px;
-  border: 1px solid #506177;
-  position: relative;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+.ancient-teeth.teeth-right {
+  left: -2px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 20px,
+    rgba(0, 240, 255, 0.25) 20px,
+    rgba(0, 240, 255, 0.25) 40px
+  );
 }
 
-.piston-rod {
-  width: 60px;
-  height: 16px;
-  background: linear-gradient(180deg, #ffffff 0%, #a8b6c6 40%, #e2e8f0 70%, #64748b 100%);
-  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
-  border-radius: 2px;
-}
-
-.piston-tl .piston-rod,
-.piston-bl .piston-rod { transform: translateX(10px); }
-.piston-tr .piston-rod,
-.piston-br .piston-rod { transform: translateX(-10px); }
-
-.vault-blast-gate.gate-disengaging .piston-tl .piston-rod,
-.vault-blast-gate.gate-disengaging .piston-bl .piston-rod { transform: translateX(-26px); }
-.vault-blast-gate.gate-disengaging .piston-tr .piston-rod,
-.vault-blast-gate.gate-disengaging .piston-br .piston-rod { transform: translateX(26px); }
-
-.piston-led {
-  position: absolute;
-  top: calc(50% - 5px);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ff4757;
-  box-shadow: 0 0 12px #ff4757;
-  transition: background 0.3s, box-shadow 0.3s;
-}
-
-.piston-tl .piston-led,
-.piston-bl .piston-led { right: 10px; }
-.piston-tr .piston-led,
-.piston-br .piston-led { left: 10px; }
-
-.vault-blast-gate.gate-disengaging .piston-led {
-  background: #00ff9d;
-  box-shadow: 0 0 14px #00ff9d;
-}
-
-.piston-label {
-  font-size: 0.55rem;
-  color: #7085a0;
-  margin: 0 8px;
-  font-weight: 800;
-  letter-spacing: 0.10em;
-}
-
-.vault-seam-glow {
+.ancient-seam-glow {
   position: absolute;
   top: 0;
   bottom: 0;
   left: calc(50% - 1.5px);
   width: 3px;
-  background: #00f0ff;
+  background: linear-gradient(180deg, #ffb700, #00f0ff, #ffb700);
   box-shadow:
-    0 0 16px #00f0ff,
-    0 0 32px rgba(0, 240, 255, 0.7);
+    0 0 16px #ffb700,
+    0 0 32px rgba(0, 240, 255, 0.8);
   z-index: 22;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
 }
 
-.vault-blast-gate.gate-opening .vault-seam-glow {
+.vault-blast-gate.gate-opening .ancient-seam-glow {
   opacity: 0;
 }
 
-.vault-core-assembly {
+/* Concentric Mechanism Chamber */
+.ancient-concentric-chamber {
   position: relative;
   z-index: 30;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 440px;
+  height: 440px;
   pointer-events: auto;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-.vault-blast-gate.gate-opening .vault-core-assembly {
+.vault-blast-gate.gate-opening .ancient-concentric-chamber {
   opacity: 0;
-  transform: scale(1.15);
+  transform: scale(1.18);
   pointer-events: none;
 }
 
-.core-hazard-ring {
+/* Ring 4: Outer Monolith Keystones */
+.concentric-ring-outer {
   position: absolute;
-  width: 300px;
-  height: 300px;
+  width: 420px;
+  height: 420px;
   border-radius: 50%;
-  border: 4px dashed rgba(0, 240, 255, 0.35);
+  border: 4px solid rgba(255, 183, 0, 0.35);
   box-shadow:
-    0 0 30px rgba(0, 240, 255, 0.2),
-    inset 0 0 30px rgba(0, 240, 255, 0.15);
-  animation: core-hazard-rotate 35s linear infinite;
+    0 0 40px rgba(255, 183, 0, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
+  transition: border-color 0.5s ease;
 }
 
-@keyframes core-hazard-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.core-locking-dogs {
+.concentric-keystones-container {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-}
-
-.locking-dog {
-  position: absolute;
-  background: linear-gradient(180deg, #ffaa00, #b37400);
-  border: 1px solid #ffcc00;
-  box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
-  border-radius: 3px;
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.35s;
-}
-
-.dog-top { top: -46px; left: calc(50% - 8px); width: 16px; height: 44px; }
-.dog-bottom { bottom: -46px; left: calc(50% - 8px); width: 16px; height: 44px; }
-.dog-left { left: -46px; top: calc(50% - 8px); width: 44px; height: 16px; }
-.dog-right { right: -46px; top: calc(50% - 8px); width: 44px; height: 16px; }
-
-.vault-blast-gate.gate-dogs-released .dog-top { transform: translateY(-26px) rotate(45deg); opacity: 0; }
-.vault-blast-gate.gate-dogs-released .dog-bottom { transform: translateY(26px) rotate(-45deg); opacity: 0; }
-.vault-blast-gate.gate-dogs-released .dog-left { transform: translateX(-26px) rotate(-45deg); opacity: 0; }
-.vault-blast-gate.gate-dogs-released .dog-right { transform: translateX(26px) rotate(45deg); opacity: 0; }
-
-.vault-core-button {
-  width: 180px;
-  height: 180px;
   border-radius: 50%;
-  background: radial-gradient(circle, #1c2636 0%, #0d121a 70%, #05070a 100%);
-  border: 3px solid #00f0ff;
+}
+
+.monolith-keystone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 72px;
+  margin-top: -36px;
+  margin-left: -18px;
+  transform-origin: center center;
+  transform: rotate(var(--keystone-angle, 0deg)) translateY(-168px);
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s;
+}
+
+.keystone-stone {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #2a3444 0%, #121822 60%, #1f2734 100%);
+  border: 2px solid rgba(255, 183, 0, 0.6);
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85), inset 0 0 8px rgba(255, 183, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keystone-glyph {
+  font-family: var(--font-code, monospace);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #ffb700;
+  text-shadow: 0 0 8px #ffb700;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+/* Tầng 4 mở khóa: 8 chốt đá rút lùi xuyên tâm */
+.vault-blast-gate.outer-keystones-retracted .monolith-keystone {
+  transform: rotate(var(--keystone-angle, 0deg)) translateY(-240px);
+  opacity: 0.2;
+}
+
+.vault-blast-gate.outer-keystones-retracted .concentric-ring-outer {
+  border-color: #00f0ff;
+  box-shadow: 0 0 50px rgba(0, 240, 255, 0.6);
+}
+
+/* Ring 3: Middle Astrolabe Planetary Gear Ring */
+.concentric-ring-middle {
+  position: absolute;
+  width: 290px;
+  height: 290px;
+  border-radius: 50%;
+  border: 3px dashed rgba(0, 240, 255, 0.4);
+  background: radial-gradient(circle, rgba(14, 21, 32, 0.9) 0%, rgba(6, 9, 15, 0.95) 100%);
   box-shadow:
-    0 0 30px rgba(0, 240, 255, 0.45),
-    inset 0 0 25px rgba(0, 240, 255, 0.25);
+    0 0 25px rgba(0, 240, 255, 0.2),
+    inset 0 0 25px rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: transform 0.85s cubic-bezier(0.2, 0.9, 0.3, 1), border-color 0.4s;
+}
+
+.astrolabe-gear-dial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.astrolabe-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+}
+
+/* Tầng 3 mở khóa: Vòng giữa xoay thuận chiều kim đồng hồ +120deg */
+.vault-blast-gate.middle-ring-unlocked .concentric-ring-middle {
+  transform: rotate(120deg);
+  border-color: #ffb700;
+}
+
+/* Ring 2: Inner Glyph Ring */
+.concentric-ring-inner {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 183, 0, 0.5);
+  background: radial-gradient(circle, rgba(18, 26, 38, 0.95) 0%, rgba(8, 12, 18, 0.98) 100%);
+  box-shadow:
+    0 0 20px rgba(255, 183, 0, 0.25),
+    inset 0 0 15px rgba(255, 183, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: transform 0.75s cubic-bezier(0.2, 0.9, 0.3, 1), border-color 0.4s;
+}
+
+.inner-glyph-dial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inner-glyph-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 6px rgba(255, 183, 0, 0.6));
+}
+
+/* Tầng 2 mở khóa: Vòng trong xoay ngược chiều kim đồng hồ -180deg */
+.vault-blast-gate.inner-ring-unlocked .concentric-ring-inner {
+  transform: rotate(-180deg);
+  border-color: #00f0ff;
+}
+
+/* Ring 1: Prime Core Dial housing .vault-core-button */
+.ancient-core-dial {
+  position: relative;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ancient-core-btn {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #253346 0%, #0d131c 70%, #040609 100%);
+  border: 3px solid #ffb700;
+  box-shadow:
+    0 0 28px rgba(255, 183, 0, 0.5),
+    inset 0 0 20px rgba(255, 183, 0, 0.3);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   outline: none;
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
 }
 
-.vault-core-button:hover,
-.vault-core-button:focus-visible {
-  transform: scale(1.05);
-  border-color: #00ff9d;
+.ancient-core-btn:hover,
+.ancient-core-btn:focus-visible {
+  transform: scale(1.08);
+  border-color: #00f0ff;
   box-shadow:
-    0 0 45px rgba(0, 255, 157, 0.65),
-    inset 0 0 35px rgba(0, 255, 157, 0.35);
+    0 0 40px rgba(0, 240, 255, 0.7),
+    inset 0 0 30px rgba(0, 240, 255, 0.4);
 }
 
-.vault-core-button:active {
-  transform: scale(0.96);
+.ancient-core-btn:active {
+  transform: scale(0.95);
 }
 
-.core-btn-halo {
+.ancient-btn-halo {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 240, 255, 0.2) 0%, transparent 70%);
-  animation: core-halo-pulse 2.4s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(255, 183, 0, 0.25) 0%, transparent 70%);
+  animation: ancient-halo-pulse 2.8s ease-in-out infinite alternate;
 }
 
-@keyframes core-halo-pulse {
-  from { opacity: 0.4; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1.08); }
+@keyframes ancient-halo-pulse {
+  from { opacity: 0.5; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1.1); }
 }
 
-.core-svg-icon {
-  width: 64px;
-  height: 64px;
-  color: #00f0ff;
-  filter: drop-shadow(0 0 10px #00f0ff);
-  transition: color 0.3s, filter 0.3s;
+.ancient-eye-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Tầng 1 mở khóa: Lõi xoay 90 độ */
+.vault-blast-gate.gate-awakening .ancient-eye-icon {
+  transform: rotate(90deg);
 }
 
 .vault-core-button:hover .core-svg-icon {
@@ -759,19 +776,17 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
-  --slash-angle: -25deg;
 }
 
 .void-slash-screen.void-screen-shaking {
-  animation: void-shake 0.35s ease-in-out;
+  animation: void-multi-shake 0.15s ease-in-out;
 }
 
-@keyframes void-shake {
+@keyframes void-multi-shake {
   0% { transform: translate(0, 0); }
-  20% { transform: translate(-5px, 3px) rotate(-0.3deg); }
-  40% { transform: translate(5px, -4px) rotate(0.4deg); }
-  60% { transform: translate(-3px, -2px) rotate(-0.2deg); }
-  80% { transform: translate(3px, 2px) rotate(0.2deg); }
+  25% { transform: translate(-6px, 4px) rotate(-0.4deg); }
+  50% { transform: translate(6px, -5px) rotate(0.4deg); }
+  75% { transform: translate(-4px, -3px) rotate(-0.2deg); }
   100% { transform: translate(0, 0); }
 }
 
@@ -808,83 +823,111 @@
   background: radial-gradient(
     ellipse at center,
     rgba(255, 255, 255, 1) 0%,
-    rgba(0, 240, 255, 0.9) 30%,
-    rgba(180, 0, 255, 0.7) 60%,
+    rgba(0, 240, 255, 0.95) 30%,
+    rgba(190, 0, 255, 0.8) 60%,
     rgba(1, 2, 4, 0) 85%
   );
   opacity: 0;
-  transition: opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .void-breach-light.breach-blooming {
   opacity: 1;
 }
 
-.void-half {
+/* 4 Fractured Quadrants */
+.void-quad {
   position: absolute;
   inset: 0;
   z-index: 10;
   pointer-events: none;
-  transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1);
-}
-
-.void-half-top {
+  transition: transform 1.05s cubic-bezier(0.7, 0, 0.2, 1);
   background: linear-gradient(135deg, #070b14 0%, #010204 100%);
-  clip-path: polygon(0 0, 100% 0, 100% 38%, 0 62%);
-  border-bottom: 2px solid rgba(0, 240, 255, 0.4);
 }
 
-.void-half-bottom {
-  background: linear-gradient(135deg, #010204 0%, #080c16 100%);
-  clip-path: polygon(0 62%, 100% 38%, 100% 100%, 0 100%);
+.void-quad-tl {
+  clip-path: polygon(0 0, 50% 0, 50% 50%, 0 50%);
+  border-right: 2px solid rgba(0, 240, 255, 0.4);
+  border-bottom: 2px solid rgba(180, 0, 255, 0.4);
+}
+
+.void-quad-tr {
+  clip-path: polygon(50% 0, 100% 0, 100% 50%, 50% 50%);
+  border-left: 2px solid rgba(0, 240, 255, 0.4);
+  border-bottom: 2px solid rgba(180, 0, 255, 0.4);
+}
+
+.void-quad-bl {
+  clip-path: polygon(0 50%, 50% 50%, 50% 100%, 0 100%);
+  border-right: 2px solid rgba(0, 240, 255, 0.4);
   border-top: 2px solid rgba(180, 0, 255, 0.4);
 }
 
-.void-slash-screen.reality-torn .void-half-top,
-.void-slash-screen.rift-opening .void-half-top {
-  transform: translate(-125%, -125%);
+.void-quad-br {
+  clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%);
+  border-left: 2px solid rgba(0, 240, 255, 0.4);
+  border-top: 2px solid rgba(180, 0, 255, 0.4);
 }
 
-.void-slash-screen.reality-torn .void-half-bottom,
-.void-slash-screen.rift-opening .void-half-bottom {
-  transform: translate(125%, 125%);
+.void-slash-screen.reality-torn .void-quad-tl {
+  transform: translate(-120%, -120%) rotate(-12deg);
+}
+
+.void-slash-screen.reality-torn .void-quad-tr {
+  transform: translate(120%, -120%) rotate(12deg);
+}
+
+.void-slash-screen.reality-torn .void-quad-bl {
+  transform: translate(-120%, 120%) rotate(12deg);
+}
+
+.void-slash-screen.reality-torn .void-quad-br {
+  transform: translate(120%, 120%) rotate(-12deg);
+}
+
+/* Sequential Slashing Blades */
+.void-slashes-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
 }
 
 .void-slash-blade {
   position: absolute;
-  top: calc(50% - 2.5px);
-  left: -30vw;
-  width: 160vw;
-  height: 5px;
-  z-index: 25;
+  top: calc(50% - 3px);
+  left: -40vw;
+  width: 180vw;
+  height: 6px;
   pointer-events: none;
   background: linear-gradient(
     90deg,
     transparent 0%,
     #00f0ff 25%,
     #ffffff 50%,
-    #b400ff 75%,
+    #d400ff 75%,
     transparent 100%
   );
   box-shadow:
     0 0 25px #00f0ff,
-    0 0 50px #b400ff,
-    0 0 75px #ffffff;
-  transform: rotate(var(--slash-angle, -25deg)) scaleX(0);
+    0 0 55px #d400ff,
+    0 0 85px #ffffff;
+  transform: rotate(var(--slash-angle, -30deg)) scaleX(0);
   opacity: 0;
   transition: transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.12s ease;
 }
 
 .void-slash-blade.blade-striking {
   opacity: 1;
-  transform: rotate(var(--slash-angle, -25deg)) scaleX(1);
+  transform: rotate(var(--slash-angle, -30deg)) scaleX(1);
 }
 
 .void-slash-screen.reality-torn .void-slash-blade {
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
 }
 
+/* 24 Spatial Voronoi Shards */
 .spatial-shard-container {
   position: absolute;
   inset: 0;
@@ -896,24 +939,41 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 32px;
-  height: 32px;
-  background: rgba(0, 240, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.7);
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 240, 255, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.85);
   clip-path: polygon(50% 0%, 100% 70%, 20% 100%);
   opacity: 0;
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s;
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s;
 }
 
-.void-slash-screen.reality-torn .shard-0 { transform: translate(-140px, -180px) rotate(120deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-1 { transform: translate(160px, -140px) rotate(-80deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-2 { transform: translate(-220px, 90px) rotate(45deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-3 { transform: translate(200px, 160px) rotate(-130deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-4 { transform: translate(-80px, -240px) rotate(200deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-5 { transform: translate(110px, -220px) rotate(-60deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-6 { transform: translate(-190px, 200px) rotate(90deg); opacity: 1; }
-.void-slash-screen.reality-torn .shard-7 { transform: translate(240px, 60px) rotate(-160deg); opacity: 1; }
+/* 24 Multi-Directional Shard Explosions */
+.void-slash-screen.reality-torn .shard-0  { transform: translate(-260px, -240px) rotate(160deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-1  { transform: translate(280px, -220px) rotate(-140deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-2  { transform: translate(-320px, 140px) rotate(85deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-3  { transform: translate(300px, 220px) rotate(-160deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-4  { transform: translate(-140px, -320px) rotate(220deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-5  { transform: translate(160px, -300px) rotate(-90deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-6  { transform: translate(-250px, 280px) rotate(115deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-7  { transform: translate(340px, 90px) rotate(-190deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-8  { transform: translate(-180px, -160px) rotate(45deg); opacity: 1; clip-path: polygon(0 0, 100% 20%, 80% 100%); }
+.void-slash-screen.reality-torn .shard-9  { transform: translate(190px, -150px) rotate(-65deg); opacity: 1; clip-path: polygon(20% 0, 100% 60%, 0 100%); }
+.void-slash-screen.reality-torn .shard-10 { transform: translate(-210px, 80px) rotate(135deg); opacity: 1; clip-path: polygon(40% 0, 100% 100%, 0 80%); }
+.void-slash-screen.reality-torn .shard-11 { transform: translate(220px, 150px) rotate(-110deg); opacity: 1; clip-path: polygon(0 30%, 80% 0, 100% 100%); }
+.void-slash-screen.reality-torn .shard-12 { transform: translate(-90px, -260px) rotate(180deg); opacity: 1; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.void-slash-screen.reality-torn .shard-13 { transform: translate(110px, -250px) rotate(-170deg); opacity: 1; clip-path: polygon(30% 0, 100% 30%, 70% 100%, 0 70%); }
+.void-slash-screen.reality-torn .shard-14 { transform: translate(-130px, 240px) rotate(75deg); opacity: 1; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.void-slash-screen.reality-torn .shard-15 { transform: translate(140px, 250px) rotate(-85deg); opacity: 1; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.void-slash-screen.reality-torn .shard-16 { transform: translate(-380px, -90px) rotate(230deg); opacity: 1; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); }
+.void-slash-screen.reality-torn .shard-17 { transform: translate(390px, -80px) rotate(-220deg); opacity: 1; clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%); }
+.void-slash-screen.reality-torn .shard-18 { transform: translate(-360px, 220px) rotate(140deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-19 { transform: translate(370px, 210px) rotate(-130deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-20 { transform: translate(-50px, -360px) rotate(270deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-21 { transform: translate(60px, -370px) rotate(-280deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-22 { transform: translate(-70px, 360px) rotate(190deg); opacity: 1; }
+.void-slash-screen.reality-torn .shard-23 { transform: translate(80px, 370px) rotate(-200deg); opacity: 1; }
 
 .void-singularity-assembly {
   position: relative;
@@ -923,12 +983,12 @@
   align-items: center;
   justify-content: center;
   pointer-events: auto;
-  transition: opacity 0.35s ease, transform 0.35s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .void-slash-screen.reality-torn .void-singularity-assembly {
   opacity: 0;
-  transform: scale(0.2);
+  transform: scale(0.15);
   pointer-events: none;
 }
 

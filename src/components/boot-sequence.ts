@@ -10,6 +10,9 @@ import {
   playEmpDistortion,
   playReactorOverload,
   playDecryptionTick,
+  playStoneGrindRumble,
+  playAncientKeystoneLatch,
+  playMultiSlashFlurry,
 } from "../services/audio";
 import { type BootSequenceStyle } from "../models/settings";
 import { element } from "../utils/dom";
@@ -276,7 +279,8 @@ function setupMechanicalIris(
 }
 
 /* ==========================================================================
-   STYLE 2: MASSIVE CYBER BLAST DOOR (Cánh Cổng Titan Cơ Khí)
+   STYLE 2: ANCIENT CONCENTRIC RUIN VAULT GATE (Cánh Cổng Di Tích Cổ Đại Khóa Đồng Tâm Đa Lớp)
+   Multi-tiered stone concentric locking rings opening sequentially from INSIDE OUT
    ========================================================================== */
 function setupBlastDoor(
   overlay: HTMLElement,
@@ -287,118 +291,167 @@ function setupBlastDoor(
   setRunning: (r: boolean) => void,
   getDismissed: () => boolean,
 ): () => void {
-  overlay.classList.add("blast-door-overlay");
-  overlay.setAttribute("aria-label", "Command Vault Blast Door Clearance");
+  overlay.classList.add("blast-door-overlay", "ancient-ruin-overlay");
+  overlay.setAttribute("aria-label", "Ancient Concentric Ruin Vault Clearance");
 
   // Top Title Aura Group
   const brandGroup = createBrandGroup(options.displayName, "blast");
   overlay.append(brandGroup);
 
   const bgVignette = element("div", "blast-bg-vignette");
-  const breachLight = element("div", "vault-breach-light");
-  const blastGate = element("div", "vault-blast-gate");
+  const breachLight = element("div", "vault-breach-light ancient-breach-light");
+  const blastGate = element("div", "vault-blast-gate ancient-ruin-gate");
 
-  function createHydraulicPiston(posClass: string): HTMLElement {
-    const piston = element("div", `vault-hydraulic-piston ${posClass}`);
-    const mount = element("div", "piston-mount");
-    const cylinder = element("div", "piston-cylinder");
-    const rod = element("div", "piston-rod");
-    const led = element("div", "piston-led");
-    const label = element("span", "piston-label", "HYD-04");
-    cylinder.append(rod, led);
-    piston.append(mount, cylinder, label);
-    return piston;
+  // Left & Right Ancient Megalithic Stone Slabs
+  const slabLeft = element("div", "ancient-ruin-slab slab-left");
+  const runeCarvingL = element("div", "slab-rune-carvings");
+  runeCarvingL.innerHTML = `
+    <svg class="ancient-slab-svg" viewBox="0 0 300 800" preserveAspectRatio="none">
+      <path d="M280,0 L240,120 L270,220 L230,340 L260,460 L230,580 L270,680 L240,800 L0,800 L0,0 Z" fill="currentColor"/>
+      <path d="M120,40 L160,180 L80,300 L180,420 L100,560 L170,700" stroke="rgba(0, 240, 255, 0.45)" stroke-width="2.5" fill="none" stroke-dasharray="8 6"/>
+      <circle cx="160" cy="180" r="5" fill="rgba(0, 240, 255, 0.8)"/>
+      <circle cx="180" cy="420" r="5" fill="rgba(255, 183, 0, 0.8)"/>
+      <circle cx="100" cy="560" r="5" fill="rgba(0, 240, 255, 0.8)"/>
+    </svg>
+  `;
+  const teethLeft = element("div", "ancient-teeth teeth-left");
+  slabLeft.append(runeCarvingL, teethLeft);
+
+  const slabRight = element("div", "ancient-ruin-slab slab-right");
+  const runeCarvingR = element("div", "slab-rune-carvings");
+  runeCarvingR.innerHTML = `
+    <svg class="ancient-slab-svg" viewBox="0 0 300 800" preserveAspectRatio="none">
+      <path d="M20,0 L60,120 L30,220 L70,340 L40,460 L70,580 L30,680 L60,800 L300,800 L300,0 Z" fill="currentColor"/>
+      <path d="M180,40 L140,180 L220,300 L120,420 L200,560 L130,700" stroke="rgba(255, 183, 0, 0.45)" stroke-width="2.5" fill="none" stroke-dasharray="8 6"/>
+      <circle cx="140" cy="180" r="5" fill="rgba(255, 183, 0, 0.8)"/>
+      <circle cx="120" cy="420" r="5" fill="rgba(0, 240, 255, 0.8)"/>
+      <circle cx="200" cy="560" r="5" fill="rgba(255, 183, 0, 0.8)"/>
+    </svg>
+  `;
+  const teethRight = element("div", "ancient-teeth teeth-right");
+  slabRight.append(runeCarvingR, teethRight);
+
+  const seamGlow = element("div", "vault-seam-glow ancient-seam-glow");
+
+  // Multi-Tier Concentric Mechanism Chamber
+  const concentricChamber = element("div", "ancient-concentric-chamber");
+
+  // Ring 4 (Outer Monolith Keystones Ring): 8 radial stone locking pins
+  const ringOuter = element("div", "concentric-ring concentric-ring-outer");
+  const keystonesContainer = element("div", "concentric-keystones-container");
+  for (let i = 0; i < 8; i++) {
+    const keystone = element("div", `monolith-keystone keystone-idx-${i}`);
+    keystone.style.setProperty("--keystone-angle", `${i * 45}deg`);
+    const stoneBlock = element("div", "keystone-stone");
+    const runeGlyph = element("span", "keystone-glyph");
+    runeGlyph.textContent = ["᚛", "᚜", "ᚠ", "ᚢ", "ᚦ", "ᚨ", "ᚱ", "ᚲ"][i];
+    stoneBlock.append(runeGlyph);
+    keystone.append(stoneBlock);
+    keystonesContainer.append(keystone);
   }
+  ringOuter.append(keystonesContainer);
 
-  // Left Panel
-  const panelLeft = element("div", "vault-panel vault-panel-left");
-  const armorPlateL = element("div", "panel-armor-plate");
-  const stencilL = element("div", "panel-stencil", "SECTOR-01 // AIRGAPPED CORE");
-  const hazardStripeL = element("div", "panel-hazard-stripe");
-  const teethLeft = element("div", "panel-teeth-edge teeth-left");
-  teethLeft.innerHTML = `
-    <svg class="teeth-svg" viewBox="0 0 40 400" preserveAspectRatio="none">
-      <path d="M40,0 L15,40 L40,80 L15,120 L40,160 L15,200 L40,240 L15,280 L40,320 L15,360 L40,400 L0,400 L0,0 Z" fill="currentColor"/>
+  // Ring 3 (Middle Astrolabe Gear Ring)
+  const ringMiddle = element("div", "concentric-ring concentric-ring-middle");
+  const middleDial = element("div", "astrolabe-gear-dial");
+  middleDial.innerHTML = `
+    <svg viewBox="0 0 200 200" class="astrolabe-svg">
+      <circle cx="100" cy="100" r="92" stroke="rgba(255, 183, 0, 0.4)" stroke-width="2" fill="none" stroke-dasharray="14 8"/>
+      <circle cx="100" cy="100" r="82" stroke="rgba(0, 240, 255, 0.5)" stroke-width="1.5" fill="none"/>
+      <path d="M100 12 L100 24 M100 176 L100 188 M12 100 L24 100 M176 100 L188 100" stroke="rgba(255, 183, 0, 0.8)" stroke-width="3"/>
+      <path d="M38 38 L46 46 M154 154 L162 162 M162 38 L154 46 M38 162 L46 154" stroke="rgba(0, 240, 255, 0.8)" stroke-width="3"/>
+      <circle cx="100" cy="40" r="4" fill="rgba(255, 183, 0, 0.9)"/>
+      <circle cx="160" cy="100" r="4" fill="rgba(0, 240, 255, 0.9)"/>
+      <circle cx="100" cy="160" r="4" fill="rgba(255, 183, 0, 0.9)"/>
+      <circle cx="40" cy="100" r="4" fill="rgba(0, 240, 255, 0.9)"/>
     </svg>
   `;
-  panelLeft.append(armorPlateL, stencilL, hazardStripeL, teethLeft, createHydraulicPiston("piston-tl"), createHydraulicPiston("piston-bl"));
+  ringMiddle.append(middleDial);
 
-  // Right Panel
-  const panelRight = element("div", "vault-panel vault-panel-right");
-  const armorPlateR = element("div", "panel-armor-plate");
-  const stencilR = element("div", "panel-stencil", "VAULT D-07 // HYDRAULIC SEAL");
-  const hazardStripeR = element("div", "panel-hazard-stripe");
-  const teethRight = element("div", "panel-teeth-edge teeth-right");
-  teethRight.innerHTML = `
-    <svg class="teeth-svg" viewBox="0 0 40 400" preserveAspectRatio="none">
-      <path d="M0,0 L25,40 L0,80 L25,120 L0,160 L25,200 L0,240 L25,280 L0,320 L25,360 L0,400 L40,400 L40,0 Z" fill="currentColor"/>
+  // Ring 2 (Inner Glyph Disc)
+  const ringInner = element("div", "concentric-ring concentric-ring-inner");
+  const innerDial = element("div", "inner-glyph-dial");
+  innerDial.innerHTML = `
+    <svg viewBox="0 0 140 140" class="inner-glyph-svg">
+      <circle cx="70" cy="70" r="62" stroke="rgba(0, 240, 255, 0.6)" stroke-width="2" fill="none" stroke-dasharray="6 4"/>
+      <polygon points="70,18 115,96 25,96" stroke="rgba(255, 183, 0, 0.6)" stroke-width="1.5" fill="none"/>
+      <polygon points="70,122 115,44 25,44" stroke="rgba(0, 240, 255, 0.6)" stroke-width="1.5" fill="none"/>
+      <circle cx="70" cy="70" r="32" stroke="rgba(255, 255, 255, 0.5)" stroke-width="1.5" fill="none"/>
     </svg>
   `;
-  panelRight.append(armorPlateR, stencilR, hazardStripeR, teethRight, createHydraulicPiston("piston-tr"), createHydraulicPiston("piston-br"));
+  ringInner.append(innerDial);
 
-  const seamGlow = element("div", "vault-seam-glow");
-
-  // Center Core
-  const coreAssembly = element("div", "vault-core-assembly");
-  const hazardRing = element("div", "core-hazard-ring");
-  const lockingDogs = element("div", "core-locking-dogs");
-  lockingDogs.append(
-    element("div", "locking-dog dog-top"),
-    element("div", "locking-dog dog-right"),
-    element("div", "locking-dog dog-bottom"),
-    element("div", "locking-dog dog-left"),
-  );
-
-  const coreButton = element("button", "vault-core-button");
+  // Ring 1: Prime Core Dial housing .vault-core-button
+  const coreDial = element("div", "ancient-core-dial");
+  const coreButton = element("button", "vault-core-button ancient-core-btn");
   coreButton.setAttribute("type", "button");
-  coreButton.setAttribute("aria-label", "Disengage Blast Locks and Open Vault");
+  coreButton.setAttribute("aria-label", "Awaken Ancient Ruin Mechanism and Unlock Vault");
 
-  const coreHalo = element("div", "core-btn-halo");
-  const coreIcon = element("div", "core-btn-icon");
-  coreIcon.innerHTML = `
+  const coreEye = element("div", "ancient-eye-icon");
+  coreEye.innerHTML = `
     <svg viewBox="0 0 64 64" class="core-svg-icon" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="32" cy="32" r="28" stroke-dasharray="6 3"/>
-      <circle cx="32" cy="32" r="18"/>
-      <path d="M32 18 V10 M32 54 V46 M18 32 H10 M54 32 H46"/>
-      <path d="M22 22 L16 16 M48 48 L42 42 M48 16 L42 22 M16 48 L22 42"/>
-      <circle cx="32" cy="32" r="6" fill="currentColor"/>
+      <circle cx="32" cy="32" r="28" stroke="rgba(255, 183, 0, 0.8)" stroke-dasharray="5 3"/>
+      <path d="M32 12 Q48 32 32 52 Q16 32 32 12 Z" stroke="rgba(0, 240, 255, 0.9)"/>
+      <circle cx="32" cy="32" r="8" fill="rgba(255, 183, 0, 0.95)" stroke="#ffffff"/>
+      <circle cx="32" cy="32" r="3" fill="#ffffff"/>
     </svg>
   `;
-  coreButton.append(coreHalo, coreIcon);
-  coreAssembly.append(hazardRing, lockingDogs, coreButton);
+  const coreHalo = element("div", "core-btn-halo ancient-btn-halo");
+  coreButton.append(coreHalo, coreEye);
+  coreDial.append(coreButton);
 
-  blastGate.append(panelLeft, panelRight, seamGlow, coreAssembly);
+  concentricChamber.append(ringOuter, ringMiddle, ringInner, coreDial);
+  blastGate.append(slabLeft, slabRight, seamGlow, concentricChamber);
   overlay.append(bgVignette, breachLight, blastGate);
 
   function disengageLocks() {
     if (getRunning() || getDismissed()) return;
     setRunning(true);
 
-    blastGate.classList.add("gate-disengaging", "gate-shaking");
-    playPneumaticHiss(true);
-    playServoClick();
-
     const rect = coreButton.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     triggerAuraPulse(cx, cy, overlay);
 
+    // 1. TẦNG 1: Lõi trung tâm thức tỉnh (0ms)
+    blastGate.classList.add("gate-awakening", "gate-shaking");
+    playStoneGrindRumble();
+    playServoClick();
+
+    // 2. TẦNG 2: Vòng đá Cổ tự bên trong mở khóa (700ms)
     const t1 = window.setTimeout(() => {
       if (getDismissed()) return;
       blastGate.classList.remove("gate-shaking");
-      blastGate.classList.add("gate-dogs-released");
-
-      triggerSparkBurst(cx, cy);
-      triggerHexShockwave(cx, cy);
-      triggerAuraPulse(cx, cy, overlay);
-
-      playMechanicalClick();
-      playCircuitSurgeAudio();
+      blastGate.classList.add("inner-ring-unlocked");
+      playAncientKeystoneLatch();
       playLaserChirp();
-    }, 550);
+      triggerSparkBurst(cx, cy);
+    }, 700);
     timers.push(t1);
 
+    // 3. TẦNG 3: Vòng bánh răng thiên văn giữa xoay khớp rãnh (1500ms)
     const t2 = window.setTimeout(() => {
+      if (getDismissed()) return;
+      blastGate.classList.add("middle-ring-unlocked");
+      playStoneGrindRumble();
+      playMechanicalClick();
+      triggerHexShockwave(cx, cy);
+    }, 1500);
+    timers.push(t2);
+
+    // 4. TẦNG 4: 8 chốt đá nguyên khối vòng ngoài rút lùi xuyên tâm (2350ms)
+    const t3 = window.setTimeout(() => {
+      if (getDismissed()) return;
+      blastGate.classList.add("outer-keystones-retracted");
+      playPneumaticHiss(true);
+      playCircuitSurgeAudio();
+      playAncientKeystoneLatch();
+      triggerAuraPulse(cx, cy, overlay);
+    }, 2350);
+    timers.push(t3);
+
+    // 5. Cánh cổng cự thạch khổng lồ trượt mở giải phóng lối vào (3200ms)
+    const t4 = window.setTimeout(() => {
       if (getDismissed()) return;
       blastGate.classList.add("gate-opening");
       breachLight.classList.add("breach-blooming");
@@ -406,19 +459,21 @@ function setupBlastDoor(
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 1300);
-    timers.push(t2);
+    }, 3200);
+    timers.push(t4);
 
-    const t3 = window.setTimeout(() => {
+    // 6. Mờ dần (4400ms)
+    const t5 = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("blast-overlay-fadeout");
-    }, 2700);
-    timers.push(t3);
+    }, 4400);
+    timers.push(t5);
 
-    const t4 = window.setTimeout(() => {
+    // 7. Hoàn tất (4800ms)
+    const t6 = window.setTimeout(() => {
       finish();
-    }, 3100);
-    timers.push(t4);
+    }, 4800);
+    timers.push(t6);
   }
 
   coreButton.addEventListener("click", (e) => {
@@ -433,7 +488,8 @@ function setupBlastDoor(
 }
 
 /* ==========================================================================
-   STYLE 3: DIMENSIONAL VOID SLASH (Nhát Cắt Không Gian)
+   STYLE 3: DIMENSIONAL VOID SLASH (Nhát Cắt Không Gian Đa Chiều)
+   Multi-angle kinetic slashes flurry tearing space into 24 polygonal shards
    ========================================================================== */
 function setupVoidSlash(
   overlay: HTMLElement,
@@ -447,28 +503,42 @@ function setupVoidSlash(
   overlay.classList.add("void-slash-overlay");
   overlay.setAttribute("aria-label", "Dimensional Void Slash Gateway");
 
-  // Top Title Aura Group
   const brandGroup = createBrandGroup(options.displayName, "void");
   overlay.append(brandGroup);
 
   const voidScreen = element("div", "void-slash-screen");
   const breachLight = element("div", "void-breach-light");
-  const halfTop = element("div", "void-half void-half-top");
-  const halfBottom = element("div", "void-half void-half-bottom");
+
+  // 4 fractured quadrants of space tearing apart
+  const quadTL = element("div", "void-quad void-quad-tl");
+  const quadTR = element("div", "void-quad void-quad-tr");
+  const quadBL = element("div", "void-quad void-quad-bl");
+  const quadBR = element("div", "void-quad void-quad-br");
 
   const dustContainer = element("div", "void-dust-container");
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 28; i++) {
     const p = element("span", "void-particle");
-    p.style.setProperty("--x", `${(i * 17) % 100}%`);
-    p.style.setProperty("--y", `${(i * 23) % 100}%`);
-    p.style.setProperty("--dur", `${3 + (i % 4)}s`);
-    p.style.setProperty("--delay", `${(i * 0.2).toFixed(1)}s`);
+    p.style.setProperty("--x", `${(i * 13) % 100}%`);
+    p.style.setProperty("--y", `${(i * 19) % 100}%`);
+    p.style.setProperty("--dur", `${2.5 + (i % 4)}s`);
+    p.style.setProperty("--delay", `${(i * 0.15).toFixed(1)}s`);
     dustContainer.append(p);
   }
 
-  const slashBlade = element("div", "void-slash-blade");
+  // 4 Sequential Kinetic Slashing Blades
+  const slashContainer = element("div", "void-slashes-container");
+  const slashAngles = [-32, 48, 0, 86];
+  const slashBlades: HTMLElement[] = [];
+  slashAngles.forEach((angle, idx) => {
+    const blade = element("div", `void-slash-blade slash-combo-${idx}`);
+    blade.style.setProperty("--slash-angle", `${angle}deg`);
+    slashBlades.push(blade);
+    slashContainer.append(blade);
+  });
+
+  // 24 Spatial Voronoi Shards with varied clip paths and trajectories
   const shardContainer = element("div", "spatial-shard-container");
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 24; i++) {
     const s = element("div", `spatial-shard shard-${i}`);
     shardContainer.append(s);
   }
@@ -487,9 +557,11 @@ function setupVoidSlash(
   voidScreen.append(
     dustContainer,
     breachLight,
-    halfTop,
-    halfBottom,
-    slashBlade,
+    quadTL,
+    quadTR,
+    quadBL,
+    quadBR,
+    slashContainer,
     shardContainer,
     singularityAssembly,
   );
@@ -499,30 +571,42 @@ function setupVoidSlash(
     if (getRunning() || getDismissed()) return;
     setRunning(true);
 
-    slashBlade.classList.add("blade-striking");
-    playTimeWarp();
-    playLaserChirp();
-
     const rect = singularityBtn.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     triggerAuraPulse(cx, cy, overlay);
 
-    const t1 = window.setTimeout(() => {
+    // Flurry of sequential kinetic slashes
+    slashBlades.forEach((blade, index) => {
+      const delay = index * 130; // 0ms, 130ms, 260ms, 390ms
+      const t = window.setTimeout(() => {
+        if (getDismissed()) return;
+        blade.classList.add("blade-striking");
+        playMultiSlashFlurry();
+        playLaserChirp();
+        triggerSparkBurst(cx + (index - 1.5) * 60, cy + (index % 2 === 0 ? -40 : 40));
+        voidScreen.classList.add("void-screen-shaking");
+        window.setTimeout(() => voidScreen.classList.remove("void-screen-shaking"), 110);
+      }, delay);
+      timers.push(t);
+    });
+
+    // Space breaks apart along all intersecting cuts
+    const tBreak = window.setTimeout(() => {
       if (getDismissed()) return;
       voidScreen.classList.add("reality-torn", "rift-opening");
 
-      triggerSparkBurst(cx, cy);
+      playTimeWarp();
+      playEmpDistortion();
+      playCircuitSurgeAudio();
+
       triggerHexShockwave(cx, cy);
       triggerAuraPulse(cx, cy, overlay);
+    }, 560);
+    timers.push(tBreak);
 
-      playEmpDistortion();
-      playMechanicalClick();
-      playCircuitSurgeAudio();
-    }, 260);
-    timers.push(t1);
-
-    const t2 = window.setTimeout(() => {
+    // Bloom breach light and entry
+    const tBloom = window.setTimeout(() => {
       if (getDismissed()) return;
       voidScreen.classList.add("rift-breached");
       breachLight.classList.add("breach-blooming");
@@ -530,19 +614,19 @@ function setupVoidSlash(
       if (options.displayName) {
         speakSystemGreeting(options.displayName);
       }
-    }, 900);
-    timers.push(t2);
+    }, 1500);
+    timers.push(tBloom);
 
-    const t3 = window.setTimeout(() => {
+    const tFade = window.setTimeout(() => {
       if (getDismissed()) return;
       overlay.classList.add("void-overlay-fadeout");
-    }, 2400);
-    timers.push(t3);
+    }, 2950);
+    timers.push(tFade);
 
-    const t4 = window.setTimeout(() => {
+    const tFinish = window.setTimeout(() => {
       finish();
-    }, 2800);
-    timers.push(t4);
+    }, 3350);
+    timers.push(tFinish);
   }
 
   // Pointer drag to slash gesture
